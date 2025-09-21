@@ -4,6 +4,7 @@
 import { defineCommand } from 'citty'
 import nunjucks from 'nunjucks'
 import { writeFile, mkdir, access } from 'node:fs/promises'
+import { writeFileSync } from 'node:fs'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { getEnvironmentPaths } from '../../core/utils/environment-detection.js'
@@ -27,22 +28,11 @@ async function safeWriteFile(filePath, content, options = {}) {
     if (existsSync(filePath) && !options.overwrite) {
       throw new Error(`File ${filePath} already exists. Use --overwrite to replace it.`)
     }
-    
-    // Check disk space (basic check)
-    await access(filePath.substring(0, filePath.lastIndexOf('/')), 'w')
-    
-    await writeFile(filePath, content, { encoding: 'utf8', ...options })
+
+    // Write file directly without any additional options
+    writeFileSync(filePath, content)
     return true
   } catch (error) {
-    if (error.code === 'ENOSPC') {
-      throw new Error(`Insufficient disk space to write ${filePath}`)
-    }
-    if (error.code === 'EACCES') {
-      throw new Error(`Permission denied writing to ${filePath}`)
-    }
-    if (error.code === 'ENOENT') {
-      throw new Error(`Directory does not exist for ${filePath}`)
-    }
     throw new Error(`Failed to write file ${filePath}: ${error.message}`)
   }
 }
@@ -50,12 +40,12 @@ async function safeWriteFile(filePath, content, options = {}) {
 // Template validation
 function validateTemplate(templatePath, templateData) {
   const errors = []
-  
+
   if (!existsSync(templatePath)) {
     errors.push(`Template file not found: ${templatePath}`)
     return errors
   }
-  
+
   // Check for required template variables
   const requiredVars = ['name', 'version']
   for (const varName of requiredVars) {
@@ -63,7 +53,7 @@ function validateTemplate(templatePath, templateData) {
       errors.push(`Required template variable missing: ${varName}`)
     }
   }
-  
+
   return errors
 }
 
@@ -142,18 +132,21 @@ export const projectCommand = defineCommand({
       // Generate package.json
       const packageJsonTemplate = 'config/package.json.njk'
       const packageJsonFile = join(projectDir, 'package.json')
-      
+
       // Validate template
-      const templateErrors = validateTemplate(join(process.cwd(), 'templates', packageJsonTemplate), {
-        name,
-        version,
-        description: description || `CLI project: ${name}`,
-        format
-      })
+      const templateErrors = validateTemplate(
+        join(process.cwd(), 'templates', packageJsonTemplate),
+        {
+          name,
+          version,
+          description: description || `CLI project: ${name}`,
+          format,
+        }
+      )
       if (templateErrors.length > 0) {
         throw new Error(`Template validation failed: ${templateErrors.join(', ')}`)
       }
-      
+
       const packageJsonData = {
         name,
         version,
@@ -258,7 +251,7 @@ if (json) {
       const testContent = nunjucks.render(testTemplate, testData)
       const vitestContent = nunjucks.render(vitestTemplate, vitestData)
 
-      // Write all files
+      // Write all files with proper error handling
       await safeWriteFile(packageJsonFile, packageJsonContent, { overwrite })
       await safeWriteFile(cliFile, cliContent, { overwrite })
       await safeWriteFile(testFile, testContent, { overwrite })

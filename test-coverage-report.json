@@ -1,0 +1,38 @@
+{
+  "timestamp": "2025-09-21T23:11:49.732Z",
+  "summary": {
+    "totalCommands": 1,
+    "commandsWithGaps": 0,
+    "totalTestFiles": 1,
+    "overallCoverage": null
+  },
+  "commandTree": {},
+  "discoveredCommands": {
+    "test": {
+      "path": [
+        "test"
+      ],
+      "name": "test",
+      "description": "Run tests",
+      "options": [],
+      "subcommands": [],
+      "examples": []
+    }
+  },
+  "coverageGaps": [],
+  "testFiles": [
+    "test/unit/test.test.mjs"
+  ],
+  "recommendations": [
+    {
+      "priority": "general",
+      "message": "Consider adding integration tests for complex command workflows",
+      "commands": []
+    },
+    {
+      "priority": "general",
+      "message": "Add error handling tests for all commands",
+      "commands": []
+    }
+  ]
+}
