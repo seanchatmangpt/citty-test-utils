@@ -1,0 +1,64 @@
+{
+  "name": "citty-test-utils",
+  "version": "0.2.4",
+  "description": "Testing utilities for GitVan CLI with Docker cleanroom support, fluent assertions, and snapshot testing",
+  "type": "module",
+  "main": "index.js",
+  "types": "src/types.d.ts",
+  "keywords": [
+    "testing",
+    "cli",
+    "docker",
+    "testcontainers",
+    "gitvan",
+    "citty",
+    "cleanroom",
+    "assertions",
+    "snapshot",
+    "snapshot-testing"
+  ],
+  "author": "GitVan Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seanchatmangpt/gitvan.git",
+    "directory": "vendors/citty-test-utils"
+  },
+  "bugs": {
+    "url": "https://github.com/seanchatmangpt/gitvan/issues"
+  },
+  "homepage": "https://github.com/seanchatmangpt/gitvan#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "testcontainers": "^10.0.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^1.6.1",
+    "citty": "^0.1.6",
+    "vitest": "^1.0.0"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:fast": "vitest run --reporter=basic --no-coverage",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:citty-integration": "vitest run test/integration/citty-integration.test.mjs",
+    "test:bdd": "vitest run test/bdd",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "test:ui": "vitest --ui",
+    "demo": "node demo.mjs"
+  },
+  "files": [
+    "index.js",
+    "src/",
+    "playground/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs/"
+  ]
+}
