@@ -1,6 +1,5 @@
 // vendors/citty-test-utils/scenarios.js
-import { runLocalCitty } from '../runners/local-runner.js'
-import { runCitty } from '../runners/cleanroom-runner.js'
+import { runLocalCitty, runCitty } from '../runners/legacy-compatibility.js'
 
 // tiny runner selector
 async function exec(env, args, opts = {}) {

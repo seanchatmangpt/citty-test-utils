@@ -31,32 +31,47 @@ export class RuntimeDomainRegistry extends DomainRegistry {
       source = 'runtime',
     } = options
 
-    // Check if domain already exists
-    if (this.domains.has(domain.name) && !overwrite) {
-      throw new Error(`Domain '${domain.name}' already exists. Use overwrite: true to replace.`)
+    try {
+      // Check if domain already exists
+      if (this.domains.has(domain.name) && !overwrite) {
+        throw new Error(`Domain '${domain.name}' already exists. Use overwrite: true to replace.`)
+      }
+
+      // Validate domain if requested
+      if (validate) {
+        this.validateDomain(domain)
+      }
+
+      // Register the domain
+      super.registerDomain(domain)
+
+      // Track registration
+      this.registrationHistory.push({
+        domain: domain.name,
+        source,
+        timestamp: new Date(),
+        overwrite,
+      })
+
+      // Mark as dynamic
+      this.dynamicDomains.add(domain.name)
+
+      console.log(`Registered domain '${domain.name}' from ${source}`)
+      return {
+        success: true,
+        domain: domain,
+        source: source,
+        timestamp: new Date(),
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        domain: domain,
+        source: source,
+        timestamp: new Date(),
+      }
     }
-
-    // Validate domain if requested
-    if (validate) {
-      this.validateDomain(domain)
-    }
-
-    // Register the domain
-    super.registerDomain(domain)
-
-    // Track registration
-    this.registrationHistory.push({
-      domain: domain.name,
-      source,
-      timestamp: new Date(),
-      overwrite,
-    })
-
-    // Mark as dynamic
-    this.dynamicDomains.add(domain.name)
-
-    console.log(`Registered domain '${domain.name}' from ${source}`)
-    return this
   }
 
   /**
@@ -79,29 +94,96 @@ export class RuntimeDomainRegistry extends DomainRegistry {
   }
 
   /**
-   * Register domain from CLI analysis
+   * Parse resources from CLI analysis
    */
-  registerDomainFromCLI(domainName, cliAnalysis, options = {}) {
-    const domain = {
-      name: domainName,
-      displayName: domainName.charAt(0).toUpperCase() + domainName.slice(1),
-      description: `Auto-discovered domain: ${domainName}`,
-      category: 'discovered',
-      resources: (cliAnalysis.resources?.[domainName] || []).map((resourceName) => ({
+  parseResourcesFromCLI(resources, domainName) {
+    if (!resources) return []
+
+    // Handle array format: [{ name: 'resource', domain: 'test', actions: ['create'] }]
+    if (Array.isArray(resources)) {
+      return resources
+        .filter((resource) => resource.domain === domainName)
+        .map((resource) => ({
+          name: resource.name,
+          displayName: resource.name.charAt(0).toUpperCase() + resource.name.slice(1),
+          description: `Resource: ${resource.name}`,
+          actions: resource.actions || ['create', 'list', 'show', 'update', 'delete'],
+          attributes: [],
+          relationships: [],
+        }))
+    }
+
+    // Handle object format: { 'test': ['resource'] }
+    if (typeof resources === 'object') {
+      const domainResources = resources[domainName] || []
+      return domainResources.map((resourceName) => ({
         name: resourceName,
         displayName: resourceName.charAt(0).toUpperCase() + resourceName.slice(1),
         description: `Resource: ${resourceName}`,
         actions: ['create', 'list', 'show', 'update', 'delete'],
         attributes: [],
         relationships: [],
-      })),
-      actions: (cliAnalysis.actions || []).map((actionName) => ({
+      }))
+    }
+
+    return []
+  }
+
+  /**
+   * Parse actions from CLI analysis
+   */
+  parseActionsFromCLI(actions, domainName) {
+    if (!actions) return []
+
+    // Handle array format: [{ name: 'create', domain: 'test', resource: 'resource' }]
+    if (Array.isArray(actions)) {
+      return actions
+        .filter((action) => action.domain === domainName)
+        .map((action) => ({
+          name: action.name,
+          description: `Action: ${action.name}`,
+          category: 'Discovered',
+          requires: [],
+          optional: [],
+        }))
+    }
+
+    // Handle array of strings format: ['create', 'list']
+    if (Array.isArray(actions) && actions.every((action) => typeof action === 'string')) {
+      return actions.map((actionName) => ({
         name: actionName,
         description: `Action: ${actionName}`,
         category: 'Discovered',
         requires: [],
         optional: [],
-      })),
+      }))
+    }
+
+    return []
+  }
+
+  /**
+   * Register domain from CLI analysis
+   */
+  registerDomainFromCLI(domainName, cliAnalysis, options = {}) {
+    // Validate domain name
+    if (!domainName || typeof domainName !== 'string' || domainName.trim() === '') {
+      return {
+        success: false,
+        error: 'Domain name must be a non-empty string',
+        domain: null,
+        source: 'cli-analysis',
+        timestamp: new Date(),
+      }
+    }
+
+    const domain = {
+      name: domainName,
+      displayName: domainName.charAt(0).toUpperCase() + domainName.slice(1),
+      description: `Auto-discovered domain: ${domainName}`,
+      category: 'discovered',
+      resources: this.parseResourcesFromCLI(cliAnalysis.resources, domainName),
+      actions: this.parseActionsFromCLI(cliAnalysis.actions, domainName),
     }
 
     return this.registerDomain(domain, { ...options, source: 'cli-analysis' })

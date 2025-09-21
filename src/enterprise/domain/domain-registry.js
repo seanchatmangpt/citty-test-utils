@@ -56,6 +56,16 @@ export class DomainRegistry {
     return Array.from(this.domains.values())
   }
 
+  // Get all resources
+  getAllResources() {
+    return Array.from(this.resources.values())
+  }
+
+  // Get all actions
+  getAllActions() {
+    return Array.from(this.actions.values())
+  }
+
   // Get resources for a domain
   getDomainResources(domainName) {
     return Array.from(this.resources.values()).filter((resource) => resource.domain === domainName)

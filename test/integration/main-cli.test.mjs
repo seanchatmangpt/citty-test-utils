@@ -38,7 +38,7 @@ describe('Main CLI Commands', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toMatch(/0\.3\.1/)
+      expect(result.stdout).toMatch(/0\.4\.0/)
     })
 
     it('should support JSON output', async () => {
@@ -48,7 +48,7 @@ describe('Main CLI Commands', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.json).toBeDefined()
-      expect(result.json.version).toBe('0.3.1')
+      expect(result.json.version).toBe('0.4.0')
     })
   })
 

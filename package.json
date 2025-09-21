@@ -1,12 +1,12 @@
 {
-  "name": "citty-test-utils",
-  "version": "0.3.1",
-  "description": "Comprehensive testing framework for CLI applications with Docker cleanroom support, fluent assertions, scenario DSL, and noun-verb CLI structure",
+  "name": "cli-testing-utils",
+  "version": "0.1.0",
+  "description": "Universal CLI testing framework with contract-adapter architecture, supporting any CLI in any language with Docker cleanroom, PTY interactive testing, matrix testing, and comprehensive reporting.",
   "type": "module",
   "main": "index.js",
   "bin": {
     "ctu": "./src/cli.mjs",
-    "citty-test-utils": "./src/cli.mjs"
+    "cli-testing-utils": "./src/cli.mjs"
   },
   "types": "src/types/types.d.ts",
   "keywords": [
@@ -14,8 +14,6 @@
     "cli",
     "docker",
     "testcontainers",
-    "gitvan",
-    "citty",
     "cleanroom",
     "assertions",
     "snapshot",
@@ -23,14 +21,35 @@
     "noun-verb",
     "scenario-dsl",
     "template-generation",
-    "file-generation"
+    "file-generation",
+    "universal-cli-testing",
+    "contract-adapter",
+    "cross-language",
+    "framework-agnostic",
+    "pty-testing",
+    "matrix-testing",
+    "docker-cleanroom",
+    "network-policies",
+    "deterministic-testing",
+    "comprehensive-reporting",
+    "nodejs",
+    "python",
+    "go",
+    "rust",
+    "deno",
+    "java",
+    "csharp",
+    "php",
+    "ruby",
+    "shell",
+    "powershell"
   ],
   "author": "GitVan Team",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/seanchatmangpt/gitvan.git",
-    "directory": "vendors/citty-test-utils"
+    "directory": "vendors/cli-testing-utils"
   },
   "bugs": {
     "url": "https://github.com/seanchatmangpt/gitvan/issues"

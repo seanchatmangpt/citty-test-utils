@@ -17,6 +17,13 @@ import { DomainTemplates } from './domain-templates.js'
 export class DomainDiscoveryOrchestrator {
   constructor(options = {}) {
     this.options = {
+      rootDir: '.',
+      timeout: 30000,
+      enablePlugins: true,
+      enableCLIAnalysis: true,
+      enableConfigLoading: true,
+      enablePackageJsonAnalysis: true,
+      discoverySources: ['cli-analysis', 'config', 'package-json', 'plugins'],
       configPath: './citty-test-config.json',
       pluginDirectory: './plugins',
       cliPath: './cli.js',
@@ -29,9 +36,12 @@ export class DomainDiscoveryOrchestrator {
 
     // Initialize components
     this.analyzer = new CLIAnalyzer()
+    this.cliAnalyzer = this.analyzer // Alias for backward compatibility
     this.loader = new DomainLoader()
+    this.domainLoader = this.loader // Alias for backward compatibility
     this.pluginSystem = new DomainPluginSystem()
     this.registry = new RuntimeDomainRegistry()
+    this.runtimeRegistry = this.registry // Alias for backward compatibility
     this.validator = new DomainValidator()
     this.configManager = new DomainConfigManager()
     this.templates = new DomainTemplates()
@@ -152,11 +162,7 @@ export class DomainDiscoveryOrchestrator {
 
       console.log(`✅ Successfully discovered and registered ${validatedDomains.length} domains`)
 
-      return {
-        domains: validatedDomains,
-        metadata: discoveryResult.metadata,
-        validation: validate ? await this.getValidationSummary(validatedDomains) : null,
-      }
+      return validatedDomains
     } catch (error) {
       console.error('❌ Domain discovery failed:', error.message)
       throw error
@@ -311,43 +317,96 @@ export class DomainDiscoveryOrchestrator {
   async createDomainFromTemplate(templateName, data, options = {}) {
     const { register = true, validate = true } = options
 
-    const domain = this.templates.createDomainFromTemplate(templateName, data)
+    try {
+      const domain = this.templates.createDomainFromTemplate(templateName, data)
 
-    if (register) {
-      this.registry.registerDomain(domain, { source: 'template' })
+      if (register) {
+        const registrationResult = this.registry.registerDomain(domain, { source: 'template' })
+        if (!registrationResult.success) {
+          return registrationResult
+        }
+      }
+
+      if (validate && options.cliPath) {
+        const validation = await this.validator.validateDomain(domain, options.cliPath)
+        domain.validation = validation
+      }
+
+      return {
+        success: true,
+        domain: domain,
+        source: 'template',
+        timestamp: new Date(),
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        domain: null,
+        source: 'template',
+        timestamp: new Date(),
+      }
     }
-
-    if (validate && options.cliPath) {
-      const validation = await this.validator.validateDomain(domain, options.cliPath)
-      domain.validation = validation
-    }
-
-    return domain
   }
 
   /**
    * Suggest template for CLI
    */
-  async suggestTemplateForCLI(cliPath) {
+  async suggestTemplateForCLI(cliStructure) {
     try {
-      const cliAnalysis = await this.analyzer.analyze({ cliPath })
+      // If cliStructure is a string (cliPath), analyze it
+      if (typeof cliStructure === 'string') {
+        const cliAnalysis = await this.analyzer.analyze({ cliPath: cliStructure })
+        const commands = Object.keys(cliAnalysis.commands || {})
+        cliStructure = { commands }
+      }
 
-      // Extract commands from the analysis result
-      const commands = Object.keys(cliAnalysis.commands || {})
-      const cliStructure = { commands }
+      const analysis = await this.analyzer.analyzeCLI(cliStructure)
+      const commands = Object.keys(analysis.commands || {})
+      const patterns = this.templates.analyzeCommandPatterns(commands)
 
-      return this.templates.suggestTemplate(cliStructure)
+      // Determine best template based on patterns
+      let template = 'noun-verb'
+      if (patterns.hierarchical) {
+        template = 'hierarchical'
+      } else if (patterns.microservice) {
+        template = 'microservice'
+      } else if (patterns.database) {
+        template = 'database'
+      } else if (patterns.api) {
+        template = 'api'
+      }
+
+      return { success: true, template }
     } catch (error) {
       console.warn('Failed to analyze CLI for template suggestion:', error.message)
-      return 'noun-verb'
+      return { success: false, error: error.message }
     }
   }
 
   /**
    * Register domain at runtime
    */
-  registerDomain(domain, options = {}) {
-    return this.registry.registerDomain(domain, options)
+  registerDomain(domainNameOrDomain, domainDataOrOptions = {}, options = {}) {
+    // Handle both signatures: registerDomain(domain) and registerDomain(name, data)
+    if (typeof domainNameOrDomain === 'string') {
+      // Called with name and data
+      const domainName = domainNameOrDomain
+      const domainData = domainDataOrOptions
+
+      // Create domain object from data
+      const domain = {
+        name: domainName,
+        ...domainData,
+      }
+
+      return this.registry.registerDomain(domain, options)
+    } else {
+      // Called with domain object
+      const domain = domainNameOrDomain
+      const opts = domainDataOrOptions
+      return this.registry.registerDomain(domain, opts)
+    }
   }
 
   /**
@@ -409,8 +468,46 @@ export class DomainDiscoveryOrchestrator {
   /**
    * Validate command structure
    */
-  validateCommand(domain, resource, action) {
-    return this.registry.validateCommand(domain, resource, action)
+  validateCommand(command) {
+    if (typeof command === 'string') {
+      // Parse command string like "test resource create"
+      const parts = command.split(' ')
+      if (parts.length < 3) {
+        return { valid: false, error: 'Command must have at least 3 parts: domain resource action' }
+      }
+
+      const [domain, resource, action] = parts
+      const domainObj = this.registry.getDomain(domain)
+
+      if (!domainObj) {
+        return { valid: false, error: `Domain '${domain}' not found` }
+      }
+
+      const resources = this.registry.getDomainResources(domain)
+      const resourceObj = resources.find((r) => r.name === resource)
+
+      if (!resourceObj) {
+        return { valid: false, error: `Resource '${resource}' not found in domain '${domain}'` }
+      }
+
+      const actions = this.registry.getDomainActions(domain)
+      const actionObj = actions.find((a) => a.name === action)
+
+      if (!actionObj) {
+        return { valid: false, error: `Action '${action}' not found in resource '${resource}'` }
+      }
+
+      return {
+        valid: true,
+        domain,
+        resource,
+        action,
+        command: `${domain} ${resource} ${action}`,
+      }
+    } else {
+      // Handle object-based validation
+      return this.registry.validateCommand(command.domain, command.resource, command.action)
+    }
   }
 
   /**
@@ -448,6 +545,22 @@ export class DomainDiscoveryOrchestrator {
   }
 
   /**
+   * Get component statistics
+   */
+  getComponentStats() {
+    return {
+      cliAnalyzer: this.analyzer.getStats ? this.analyzer.getStats() : { commands: 0, patterns: 0 },
+      domainLoader: this.loader.getStats ? this.loader.getStats() : { loaded: 0, errors: 0 },
+      pluginSystem: this.pluginSystem.getPluginStats(),
+      runtimeRegistry: this.registry.getStats(),
+      validator: this.validator.getCacheStats ? this.validator.getCacheStats() : { validations: 0 },
+      configManager: this.configManager.getCacheStats
+        ? this.configManager.getCacheStats()
+        : { configs: 0 },
+    }
+  }
+
+  /**
    * Clear all caches
    */
   clearCaches() {
@@ -455,6 +568,50 @@ export class DomainDiscoveryOrchestrator {
     this.loader.clearCache()
     this.validator.clearCache()
     this.configManager.clearCache()
+  }
+
+  /**
+   * Get orchestrator statistics
+   */
+  getOrchestratorStats() {
+    return {
+      domains: this.registry.getAllDomains().length,
+      resources: this.registry.getAllResources().length,
+      actions: this.registry.getAllActions().length,
+      plugins: this.pluginSystem.getEnabledPlugins().length,
+      templates: this.templates.listTemplates().length,
+      discoverySources: this.options.discoverySources.length,
+      registrationHistory: this.registry.registrationHistory.length,
+    }
+  }
+
+  /**
+   * Get component statistics
+   */
+  getComponentStats() {
+    return {
+      cliAnalyzer: this.cliAnalyzer ? 'initialized' : 'not initialized',
+      domainLoader: this.domainLoader ? 'initialized' : 'not initialized',
+      pluginSystem: this.pluginSystem ? 'initialized' : 'not initialized',
+      runtimeRegistry: this.registry ? 'initialized' : 'not initialized',
+      validator: this.validator ? 'initialized' : 'not initialized',
+      configManager: this.configManager ? 'initialized' : 'not initialized',
+      templates: this.templates ? 'initialized' : 'not initialized',
+    }
+  }
+
+  /**
+   * Get performance metrics
+   */
+  getPerformanceMetrics() {
+    const metrics = this.performanceMetrics || {}
+    return {
+      discoveryTime: metrics.discoveryTime || 0,
+      registrationTime: metrics.registrationTime || 0,
+      validationTime: metrics.validationTime || 0,
+      totalOperations: metrics.totalOperations || 0,
+      averageOperationTime: metrics.averageOperationTime || 0,
+    }
   }
 
   /**

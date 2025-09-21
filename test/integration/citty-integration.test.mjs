@@ -35,7 +35,7 @@ describe('Citty Integration Tests', () => {
       })
 
       expect(versionResult.exitCode).toBe(0)
-      expect(versionResult.stdout).toMatch(/1\.0\.0/)
+      expect(versionResult.stdout).toMatch(/0\.4\.0/)
     })
 
     it('should test info version command', async () => {
@@ -45,7 +45,7 @@ describe('Citty Integration Tests', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 1.0.0')
+      expect(result.stdout).toContain('Version: 0.4.0')
     })
 
     it('should test gen project command', async () => {
@@ -81,7 +81,7 @@ describe('Citty Integration Tests', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.json).toBeDefined()
-      expect(result.json.version).toBe('1.0.0')
+      expect(result.json.version).toBe('0.4.0')
       expect(result.json.name).toBe('ctu')
     })
 
@@ -117,7 +117,7 @@ describe('Citty Integration Tests', () => {
       })
 
       expect(versionResult.exitCode).toBe(0)
-      expect(versionResult.stdout).toMatch(/1\.0\.0/)
+      expect(versionResult.stdout).toMatch(/0\.4\.0/)
     })
 
     it('should test info version command in cleanroom', async () => {
@@ -127,7 +127,7 @@ describe('Citty Integration Tests', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 1.0.0')
+      expect(result.stdout).toContain('Version: 0.4.0')
     })
 
     it('should test gen project command in cleanroom', async () => {
@@ -153,7 +153,7 @@ describe('Citty Integration Tests', () => {
 
       result
         .expectSuccess()
-        .expectOutput(/Version: 1\.0\.0/)
+        .expectOutput(/Version: 0\.4\.0/)
         .expectNoStderr()
     })
 
@@ -165,7 +165,7 @@ describe('Citty Integration Tests', () => {
 
       result
         .expectSuccess()
-        .expectOutput(/Version: 1\.0\.0/)
+        .expectOutput(/Version: 0\.4\.0/)
         .expectNoStderr()
     })
 
@@ -176,8 +176,12 @@ describe('Citty Integration Tests', () => {
       })
 
       result.expectSuccess().expectJson((data) => {
-        expect(data.version).toBe('1.0.0')
-        expect(data.name).toBe('ctu')
+        if (data.version !== '0.4.0') {
+          throw new Error(`Expected version '0.4.0', got '${data.version}'`)
+        }
+        if (data.name !== 'ctu') {
+          throw new Error(`Expected name 'ctu', got '${data.name}'`)
+        }
       })
     })
   })

@@ -75,7 +75,7 @@ describe('Error Handling', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 1.0.0')
+      expect(result.stdout).toContain('Version: 0.4.0')
     })
 
     it('should work without TEST_CLI environment variable', async () => {
@@ -84,7 +84,7 @@ describe('Error Handling', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 1.0.0')
+      expect(result.stdout).toContain('Version: 0.4.0')
     })
   })
 })

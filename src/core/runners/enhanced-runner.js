@@ -6,8 +6,7 @@
  * Supports domain-aware execution, batch processing, and pipeline execution
  */
 
-import { runLocalCitty } from './local-runner.js'
-import { runCitty } from './cleanroom-runner.js'
+import { runLocalCitty, runCitty } from './legacy-compatibility.js'
 import { domainRegistry } from '../../enterprise/domain/domain-registry.js'
 
 export class EnterpriseRunner {

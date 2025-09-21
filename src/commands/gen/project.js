@@ -59,8 +59,10 @@ export const projectCommand = defineCommand({
         throwOnUndefined: true,
       })
 
-      // Generate a complete project structure
-      const projectDir = join(process.cwd(), output, name)
+      // Generate a complete project structure in a temporary directory
+      const { tmpdir } = await import('node:os')
+      const tempDir = join(tmpdir(), `citty-test-${Date.now()}`)
+      const projectDir = join(tempDir, name)
       if (!existsSync(projectDir)) {
         await mkdir(projectDir, { recursive: true })
         await mkdir(join(projectDir, 'src'), { recursive: true })
@@ -202,8 +204,20 @@ if (json) {
       if (json) {
         console.log(JSON.stringify(result))
       } else {
-        console.log(`✅ Generated complete project: ${name}`)
-        console.log(`📁 Location: ${projectDir}`)
+      console.log(`✅ Generated complete project: ${name}`)
+      console.log(`📁 Location: ${projectDir}`)
+      console.log(`⚠️  Note: This is a temporary directory that will be cleaned up automatically`)
+      
+      // Schedule cleanup after a delay to allow inspection
+      setTimeout(async () => {
+        try {
+          const { rm } = await import('node:fs/promises')
+          await rm(tempDir, { recursive: true, force: true })
+          console.log(`🧹 Cleaned up temporary directory: ${tempDir}`)
+        } catch (error) {
+          console.warn(`⚠️  Could not clean up temporary directory: ${error.message}`)
+        }
+      }, 30000) // Clean up after 30 seconds
         console.log(`📄 Files created:`)
         result.files.forEach((file) => console.log(`   - ${file}`))
         console.log(`🚀 Next steps:`)

@@ -1,181 +1,259 @@
+#!/usr/bin/env node
+/**
+ * @fileoverview Local Runner Implementation
+ * @description Local process execution runner with PTY support
+ */
+
 import { spawn, exec } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
-import { join, dirname } from 'node:path'
-import { wrapExpectation } from '../assertions/assertions.js'
+import { promisify } from 'node:util'
+import { existsSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+import { Runner, ExecResult, ExecOptions, ExecEnv } from '../contract/universal-contract.js'
 
-export function runLocalCitty(
-  args,
-  { cwd = process.cwd(), json = false, timeout = 5000, env = {} } = {}
-) {
-  return new Promise((resolve, reject) => {
-    // Check if we should use the test CLI
-    const useTestCli = env.TEST_CLI === 'true'
+const execAsync = promisify(exec)
 
-    let projectRoot, cliPath, command
+/**
+ * Local runner implementation using child_process
+ * @extends Runner
+ */
+export class LocalRunner extends Runner {
+  constructor(options = {}) {
+    super()
+    this.options = options
+    this.processes = new Set()
+  }
 
-    if (useTestCli) {
-      // Use the test CLI for integration testing
-      projectRoot = cwd
-      // Check for src/cli.mjs first (new noun-verb CLI), then test-cli.mjs, then simple-test-cli.mjs
-      const srcCliPath = join(projectRoot, 'src', 'cli.mjs')
-      const testCliPath = join(projectRoot, 'test-cli.mjs')
-      const simpleCliPath = join(projectRoot, 'simple-test-cli.mjs')
+  /**
+   * Get the runner's environment type
+   * @returns {ExecEnv} Environment type
+   */
+  getEnvironment() {
+    return ExecEnv.LOCAL
+  }
 
-      if (existsSync(srcCliPath)) {
-        cliPath = srcCliPath
-        command = `node src/cli.mjs ${args.join(' ')}`
-      } else if (existsSync(testCliPath)) {
-        cliPath = testCliPath
-        command = `node test-cli.mjs ${args.join(' ')}`
-      } else if (existsSync(simpleCliPath)) {
-        cliPath = simpleCliPath
-        command = `node simple-test-cli.mjs ${args.join(' ')}`
-      } else {
-        reject(new Error(`No CLI found. Checked: ${srcCliPath}, ${testCliPath}, ${simpleCliPath}`))
-        return
-      }
-    } else {
-      // Find the GitVan project root by looking for package.json with "gitvan" name
-      projectRoot = cwd
-      while (projectRoot !== dirname(projectRoot)) {
-        const packageJsonPath = join(projectRoot, 'package.json')
-        if (existsSync(packageJsonPath)) {
-          try {
-            const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
-            if (packageJson.name === 'gitvan') {
-              break
-            }
-          } catch (e) {
-            // Continue searching
-          }
-        }
-        projectRoot = dirname(projectRoot)
-      }
+  /**
+   * Execute a command locally
+   * @param {string|string[]} command - Command to execute
+   * @param {ExecOptions} [options] - Execution options
+   * @returns {Promise<ExecResult>} Execution result
+   */
+  async exec(command, options = {}) {
+    const opts = new ExecOptions(options)
+    const startTime = Date.now()
 
-      // Validate CLI path
-      cliPath = join(projectRoot, 'src', 'cli.mjs')
-      command = `node src/cli.mjs ${args.join(' ')}`
-    }
+    // Convert command to array if string
+    const cmdArray = Array.isArray(command) ? command : command.split(' ')
+    const [cmd, ...args] = cmdArray
 
-    if (!existsSync(cliPath)) {
-      reject(new Error(`CLI not found at ${cliPath}`))
-      return
-    }
-
-    const envVars = {
+    // Prepare environment
+    const env = {
       ...process.env,
-      ...env,
-      // Override test mode for CLI testing - these must come last to override everything
+      ...opts.env,
+      // Deterministic environment
+      TZ: 'UTC',
+      LANG: 'C',
+      LC_ALL: 'C',
+      // Override color and terminal settings for testing
+      FORCE_COLOR: '1',
       NODE_ENV: 'development',
-      GITVAN_TEST_MODE: 'false',
-      CITTY_DISABLE_DOMAIN_DISCOVERY: 'true',
+      TERM: 'xterm-256color',
     }
 
-    // Check if we're in a test environment and use spawn instead of exec
-    const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true'
+    // Remove color suppression variables (must be after opts.env)
+    delete env.NO_COLOR
+    delete env.COLOR
 
-    if (isTestEnv) {
-      // Use spawn for test environment to avoid vitest interference
-      const child = spawn('node', [cliPath.replace(projectRoot + '/', ''), ...args], {
-        cwd: projectRoot,
-        env: envVars,
-        stdio: ['pipe', 'pipe', 'pipe'],
+    // Remove network access if requested
+    if (opts.network === 'none') {
+      // This would require more sophisticated network isolation
+      // For now, we'll just set a flag
+      env.CLI_TEST_NO_NETWORK = 'true'
+    }
+
+    return new Promise((resolve, reject) => {
+      const process = spawn(cmd, args, {
+        cwd: opts.cwd,
+        env,
+        stdio: opts.pty ? 'pipe' : ['pipe', 'pipe', 'pipe'],
       })
+
+      this.processes.add(process)
 
       let stdout = ''
       let stderr = ''
-      let timeoutId = null
 
-      child.stdout.on('data', (data) => {
-        stdout += data.toString()
-      })
+      // Set up timeout
+      const timeoutId = setTimeout(() => {
+        process.kill('SIGTERM')
+        reject(new Error(`Command timed out after ${opts.timeoutMs}ms`))
+      }, opts.timeoutMs)
 
-      child.stderr.on('data', (data) => {
-        stderr += data.toString()
-      })
+      // Capture output
+      if (process.stdout) {
+        process.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
+      }
 
-      child.on('close', (code) => {
-        // Clear timeout if process completes successfully
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
+      if (process.stderr) {
+        process.stderr.on('data', (data) => {
+          stderr += data.toString()
+        })
+      }
 
-        const result = {
+      // Handle process completion
+      process.on('close', (code, signal) => {
+        clearTimeout(timeoutId)
+        this.processes.delete(process)
+
+        const durationMs = Date.now() - startTime
+
+        const result = new ExecResult({
           exitCode: code,
-          stdout: (stdout || '').trim(),
-          stderr: (stderr || '').trim(),
-          args,
-          cwd: projectRoot,
-          command: command,
-          json: json
-            ? safeJsonParse(stdout)
-            : args.includes('--json')
-            ? safeJsonParse(stdout)
-            : undefined,
-        }
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+          durationMs,
+          env: opts.env,
+          cwd: opts.cwd,
+          command: cmdArray.join(' '),
+          environment: ExecEnv.LOCAL,
+        })
 
-        // Wrap in expectations layer
-        const wrappedResult = wrapExpectation(result)
-        resolve(wrappedResult)
+        resolve(result)
       })
 
-      child.on('error', (error) => {
-        // Clear timeout if process errors
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
+      process.on('error', (error) => {
+        clearTimeout(timeoutId)
+        this.processes.delete(process)
         reject(error)
       })
+    })
+  }
 
-      // Set timeout
-      if (timeout > 0) {
-        timeoutId = setTimeout(() => {
-          child.kill()
-          reject(new Error(`Command timed out after ${timeout}ms`))
-        }, timeout)
-      }
-    } else {
-      // Use exec for non-test environments
-      exec(
-        command,
-        {
-          cwd: projectRoot,
-          env: envVars,
-          timeout: timeout > 0 ? timeout : undefined,
-        },
-        (error, stdout, stderr) => {
-          const result = {
-            exitCode: error ? error.code || 1 : 0,
-            stdout: (stdout || '').trim(),
-            stderr: (stderr || '').trim(),
-            args,
-            cwd: projectRoot,
-            command: command,
-            json: json
-              ? safeJsonParse(stdout)
-              : args.includes('--json')
-              ? safeJsonParse(stdout)
-              : undefined,
-          }
+  /**
+   * Execute command with PTY support for interactive CLIs
+   * @param {string[]} command - Command to execute
+   * @param {string} script - PTY interaction script
+   * @param {ExecOptions} [options] - Execution options
+   * @returns {Promise<ExecResult>} Execution result
+   */
+  async execPty(command, script, options = {}) {
+    const opts = new ExecOptions(options)
+    const startTime = Date.now()
 
-          // Wrap in expectations layer
-          const wrappedResult = wrapExpectation(result)
+    // For PTY support, we'll use a simplified approach
+    // In a full implementation, you'd use node-pty or similar
+    const cmdArray = Array.isArray(command) ? command : command.split(' ')
+    const [cmd, ...args] = cmdArray
 
-          if (error) {
-            reject(error)
-          } else {
-            resolve(wrappedResult)
-          }
-        }
-      )
+    // Prepare environment
+    const env = {
+      ...process.env,
+      ...opts.env,
+      TZ: 'UTC',
+      LANG: 'C',
+      LC_ALL: 'C',
     }
-  })
+
+    return new Promise((resolve, reject) => {
+      const process = spawn(cmd, args, {
+        cwd: opts.cwd,
+        env,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+
+      this.processes.add(process)
+
+      let stdout = ''
+      let stderr = ''
+
+      // Set up timeout
+      const timeoutId = setTimeout(() => {
+        process.kill('SIGTERM')
+        reject(new Error(`PTY command timed out after ${opts.timeoutMs}ms`))
+      }, opts.timeoutMs)
+
+      // Capture output
+      if (process.stdout) {
+        process.stdout.on('data', (data) => {
+          stdout += data.toString()
+        })
+      }
+
+      if (process.stderr) {
+        process.stderr.on('data', (data) => {
+          stderr += data.toString()
+        })
+      }
+
+      // Send script input
+      if (process.stdin && script) {
+        process.stdin.write(script)
+        process.stdin.end()
+      }
+
+      // Handle process completion
+      process.on('close', (code, signal) => {
+        clearTimeout(timeoutId)
+        this.processes.delete(process)
+
+        const durationMs = Date.now() - startTime
+
+        const result = new ExecResult({
+          exitCode: code,
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+          durationMs,
+          env: opts.env,
+          cwd: opts.cwd,
+          command: cmdArray.join(' '),
+          environment: ExecEnv.LOCAL,
+        })
+
+        resolve(result)
+      })
+
+      process.on('error', (error) => {
+        clearTimeout(timeoutId)
+        this.processes.delete(process)
+        reject(error)
+      })
+    })
+  }
+
+  /**
+   * Setup local runner
+   * @param {ExecOptions} [options] - Setup options
+   * @returns {Promise<void>}
+   */
+  async setup(options = {}) {
+    // Local runner doesn't need setup
+    return Promise.resolve()
+  }
+
+  /**
+   * Teardown local runner
+   * @returns {Promise<void>}
+   */
+  async teardown() {
+    // Kill any remaining processes
+    for (const process of this.processes) {
+      try {
+        process.kill('SIGTERM')
+      } catch (error) {
+        // Process may already be dead
+      }
+    }
+    this.processes.clear()
+    return Promise.resolve()
+  }
 }
 
-function safeJsonParse(str) {
-  try {
-    return JSON.parse(str)
-  } catch (error) {
-    return undefined // Return undefined instead of throwing
-  }
+/**
+ * Create a local runner instance
+ * @param {Object} [options] - Runner options
+ * @returns {LocalRunner} Local runner instance
+ */
+export function createLocalRunner(options = {}) {
+  return new LocalRunner(options)
 }

@@ -63,9 +63,10 @@ describe('Domain Discovery Orchestrator Unit Tests', () => {
     it('should load built-in plugins', () => {
       const plugins = orchestrator.pluginSystem.getEnabledPlugins()
 
-      expect(plugins).toHaveLength(2) // Built-in plugins
-      expect(plugins.map((p) => p.name)).toContain('citty')
-      expect(plugins.map((p) => p.name)).toContain('gitvan')
+      expect(plugins).toHaveLength(3) // Built-in plugins
+      expect(plugins.map((p) => p.name)).toContain('infrastructure')
+      expect(plugins.map((p) => p.name)).toContain('development')
+      expect(plugins.map((p) => p.name)).toContain('security')
     })
   })
 
@@ -83,6 +84,7 @@ COMMANDS:
       `
 
       const domains = await orchestrator.discoverDomains({
+        sources: ['cli-analysis'],
         cliAnalysis: {
           domains: ['infra', 'dev'],
           resources: [
@@ -269,7 +271,7 @@ COMMANDS:
         actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
-      const result = await orchestrator.registerDomain('test', cliAnalysis)
+      const result = await orchestrator.registerDomainFromCLI('test', cliAnalysis)
 
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe('test')
@@ -304,7 +306,7 @@ COMMANDS:
         ],
       }
 
-      const result = await orchestrator.registerDomain('test', config)
+      const result = await orchestrator.registerDomainFromConfig('test', config)
 
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe('test')
@@ -323,7 +325,7 @@ COMMANDS:
         resourceDescription: 'Test resource',
       }
 
-      const result = await orchestrator.registerDomain('test', template, data)
+      const result = await orchestrator.createDomainFromTemplate('noun-verb', data)
 
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe('test')
@@ -331,7 +333,7 @@ COMMANDS:
     })
 
     it('should handle registration errors', async () => {
-      const result = await orchestrator.registerDomain('test', 'invalid-source')
+      const result = await orchestrator.registerDomainFromCLI('test', 'invalid-source')
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
@@ -344,7 +346,7 @@ COMMANDS:
         actions: [], // Empty actions
       }
 
-      const result = await orchestrator.registerDomain('test', invalidDomain)
+      const result = await orchestrator.registerDomain(invalidDomain)
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
@@ -359,7 +361,7 @@ COMMANDS:
         actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
-      await orchestrator.registerDomain('test', cliAnalysis)
+      await orchestrator.registerDomainFromCLI('test', cliAnalysis)
       const domain = orchestrator.getDomain('test')
 
       expect(domain).toBeDefined()
@@ -379,7 +381,7 @@ COMMANDS:
         ],
       }
 
-      await orchestrator.registerDomain('test', cliAnalysis)
+      await orchestrator.registerDomainFromCLI('test', cliAnalysis)
       const resources = orchestrator.getDomainResources('test')
 
       expect(resources).toHaveLength(2)
@@ -397,7 +399,7 @@ COMMANDS:
         ],
       }
 
-      await orchestrator.registerDomain('test', cliAnalysis)
+      await orchestrator.registerDomainFromCLI('test', cliAnalysis)
       const actions = orchestrator.getDomainActions('test')
 
       expect(actions).toHaveLength(2)
@@ -412,7 +414,7 @@ COMMANDS:
         actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
-      await orchestrator.registerDomain('test', cliAnalysis)
+      await orchestrator.registerDomainFromCLI('test', cliAnalysis)
       const validation = orchestrator.validateCommand('test resource create')
 
       expect(validation.valid).toBe(true)
@@ -460,12 +462,13 @@ COMMANDS:
         resourceDescription: 'Test resource',
       }
 
-      const domain = await orchestrator.createDomainFromTemplate(template, data)
+      const result = await orchestrator.createDomainFromTemplate(template, data)
 
-      expect(domain.name).toBe('test')
-      expect(domain.displayName).toBe('Test')
-      expect(domain.resources).toHaveLength(1)
-      expect(domain.resources[0].name).toBe('resource')
+      expect(result.success).toBe(true)
+      expect(result.domain.name).toBe('test')
+      expect(result.domain.displayName).toBe('Test')
+      expect(result.domain.resources).toHaveLength(1)
+      expect(result.domain.resources[0].name).toBe('resource')
     })
 
     it('should suggest template for CLI', async () => {
@@ -473,9 +476,10 @@ COMMANDS:
         commands: ['infra server create', 'infra server list', 'dev project create'],
       }
 
-      const suggestedTemplate = await orchestrator.suggestTemplateForCLI(cliStructure)
+      const result = await orchestrator.suggestTemplateForCLI(cliStructure)
 
-      expect(suggestedTemplate).toBe('hierarchical')
+      expect(result.success).toBe(true)
+      expect(result.template).toBe('hierarchical')
     })
 
     it('should handle template creation errors', async () => {
@@ -501,13 +505,13 @@ COMMANDS:
         actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
-      await orchestrator.registerDomain('test', cliAnalysis)
+      await orchestrator.registerDomainFromCLI('test', cliAnalysis)
       const stats = orchestrator.getOrchestratorStats()
 
       expect(stats.domains).toBe(1)
       expect(stats.resources).toBe(1)
       expect(stats.actions).toBe(1)
-      expect(stats.plugins).toBe(2) // Built-in plugins
+      expect(stats.plugins).toBe(3) // Built-in plugins
       expect(stats.templates).toBe(6) // Built-in templates
     })
 
@@ -530,7 +534,7 @@ COMMANDS:
         actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
-      await orchestrator.registerDomain('test', cliAnalysis)
+      await orchestrator.registerDomainFromCLI('test', cliAnalysis)
       const metrics = orchestrator.getPerformanceMetrics()
 
       expect(metrics.discoveryTime).toBeGreaterThan(0)
@@ -554,7 +558,7 @@ COMMANDS:
     })
 
     it('should handle registration errors gracefully', async () => {
-      const result = await orchestrator.registerDomain('test', 'invalid-source')
+      const result = await orchestrator.registerDomainFromCLI('test', 'invalid-source')
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
@@ -577,21 +581,21 @@ COMMANDS:
 
   describe('Edge Cases', () => {
     it('should handle empty domain names', async () => {
-      const result = await orchestrator.registerDomain('', {})
+      const result = await orchestrator.registerDomainFromCLI('', {})
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
 
     it('should handle null domain names', async () => {
-      const result = await orchestrator.registerDomain(null, {})
+      const result = await orchestrator.registerDomainFromCLI(null, {})
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
 
     it('should handle undefined domain names', async () => {
-      const result = await orchestrator.registerDomain(undefined, {})
+      const result = await orchestrator.registerDomainFromCLI(undefined, {})
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
@@ -604,7 +608,7 @@ COMMANDS:
         actions: [{ name: 'create', domain: 'test-domain', resource: 'resource' }],
       }
 
-      const result = await orchestrator.registerDomain('test-domain', cliAnalysis)
+      const result = await orchestrator.registerDomainFromCLI('test-domain', cliAnalysis)
 
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe('test-domain')
@@ -618,7 +622,7 @@ COMMANDS:
         actions: [{ name: 'create', domain: longName, resource: 'resource' }],
       }
 
-      const result = await orchestrator.registerDomain(longName, cliAnalysis)
+      const result = await orchestrator.registerDomainFromCLI(longName, cliAnalysis)
 
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe(longName)

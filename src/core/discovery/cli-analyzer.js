@@ -478,6 +478,70 @@ export class CLIAnalyzer {
   }
 
   /**
+   * Analyze CLI structure from provided structure object
+   */
+  async analyzeCLI(cliStructure) {
+    const results = {
+      domains: new Set(),
+      resources: new Map(),
+      actions: new Set(),
+      commands: new Map(),
+      structure: cliStructure,
+      metadata: {},
+    }
+
+    if (cliStructure.commands) {
+      // Handle both array and object formats
+      const commandList = Array.isArray(cliStructure.commands)
+        ? cliStructure.commands
+        : Object.keys(cliStructure.commands)
+
+      // Analyze commands to extract domains, resources, and actions
+      commandList.forEach((command) => {
+        const parts = command.split(' ')
+        if (parts.length >= 2) {
+          const domain = parts[0]
+          results.domains.add(domain)
+
+          if (parts.length >= 3) {
+            const resource = parts[1]
+            const action = parts[2]
+
+            if (!results.resources.has(domain)) {
+              results.resources.set(domain, new Set())
+            }
+            results.resources.get(domain).add(resource)
+            results.actions.add(action)
+          }
+        }
+
+        // Store command in commands map
+        results.commands.set(command, {
+          command,
+          parts: command.split(' '),
+          domain: parts[0],
+          resource: parts[1],
+          action: parts[2],
+        })
+      })
+    }
+
+    return {
+      domains: Array.from(results.domains),
+      resources: Object.fromEntries(
+        Array.from(results.resources.entries()).map(([domain, resources]) => [
+          domain,
+          Array.from(resources),
+        ])
+      ),
+      actions: Array.from(results.actions),
+      commands: Object.fromEntries(results.commands),
+      structure: results.structure,
+      metadata: results.metadata,
+    }
+  }
+
+  /**
    * Clear analysis cache
    */
   clearCache() {

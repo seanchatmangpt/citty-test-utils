@@ -173,8 +173,8 @@ export class DomainTemplates {
       displayName: '{{displayName}}',
       description: '{{description}}',
       category: 'microservice',
-      compliance: ['SOC2'],
-      governance: ['RBAC'],
+      compliance: 'SOC2',
+      governance: 'RBAC',
       resources: [
         {
           name: 'service',
@@ -274,8 +274,8 @@ export class DomainTemplates {
       displayName: '{{displayName}}',
       description: '{{description}}',
       category: 'database',
-      compliance: ['SOC2', 'GDPR'],
-      governance: ['RBAC', 'Audit'],
+      compliance: 'SOC2',
+      governance: 'RBAC',
       resources: [
         {
           name: 'database',
@@ -368,8 +368,8 @@ export class DomainTemplates {
       displayName: '{{displayName}}',
       description: '{{description}}',
       category: 'api',
-      compliance: ['SOC2'],
-      governance: ['RBAC'],
+      compliance: 'SOC2',
+      governance: 'RBAC',
       resources: [
         {
           name: 'endpoint',
@@ -543,17 +543,23 @@ export class DomainTemplates {
       flat: false,
     }
 
+    let hierarchicalCount = 0
+    let microserviceCount = 0
+    let databaseCount = 0
+    let apiCount = 0
+    let flatCount = 0
+
     commands.forEach((command) => {
       const parts = command.split(' ')
 
       // Check for hierarchical pattern (3+ levels)
       if (parts.length >= 3) {
-        patterns.hierarchical = true
+        hierarchicalCount++
       }
 
       // Check for microservice keywords
       if (command.includes('service') || command.includes('deploy') || command.includes('scale')) {
-        patterns.microservice = true
+        microserviceCount++
       }
 
       // Check for database keywords
@@ -562,19 +568,33 @@ export class DomainTemplates {
         command.includes('backup') ||
         command.includes('restore')
       ) {
-        patterns.database = true
+        databaseCount++
       }
 
       // Check for API keywords
       if (command.includes('endpoint') || command.includes('api') || command.includes('auth')) {
-        patterns.api = true
+        apiCount++
       }
 
-      // Check for flat pattern (single command)
-      if (parts.length === 1) {
-        patterns.flat = true
+      // Check for flat pattern (1-2 levels)
+      if (parts.length <= 2) {
+        flatCount++
       }
     })
+
+    // Determine dominant pattern - hierarchical takes precedence
+    const total = commands.length
+    if (hierarchicalCount > 0) {
+      patterns.hierarchical = true
+    } else if (microserviceCount > total * 0.5) {
+      patterns.microservice = true
+    } else if (databaseCount > total * 0.5) {
+      patterns.database = true
+    } else if (apiCount > total * 0.5) {
+      patterns.api = true
+    } else if (flatCount > total * 0.5) {
+      patterns.flat = true
+    }
 
     return patterns
   }

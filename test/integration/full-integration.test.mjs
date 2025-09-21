@@ -18,24 +18,24 @@ describe('Integration Tests', () => {
 
       console.log('Result:', JSON.stringify(result.result, null, 2))
 
-      expect(result.result.exitCode).toBe(0)
-      expect(result.result.stdout).toContain('USAGE')
-      expect(result.result.stdout).toContain('test-cli')
-      expect(result.result.stderr).toBe('')
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain('USAGE')
+      expect(result.stdout).toContain('ctu')
+      expect(result.stderr).toBe('')
     })
 
     it('should handle version command', async () => {
       const result = await runLocalCitty(['--version'], { env: { TEST_CLI: 'true' } })
 
-      expect(result.result.exitCode).toBe(0)
-      expect(result.result.stdout).toMatch(/^\d+\.\d+\.\d+$/)
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toMatch(/^\d+\.\d+\.\d+$/)
     })
 
     it('should handle invalid commands gracefully', async () => {
       const result = await runLocalCitty(['invalid-command'], { env: { TEST_CLI: 'true' } })
 
-      expect(result.result.exitCode).not.toBe(0)
-      expect(result.result.stderr).toContain('Unknown command')
+      expect(result.exitCode).not.toBe(0)
+      expect(result.stderr).toContain('Unknown command')
     })
 
     it('should support fluent assertions', async () => {
@@ -44,7 +44,7 @@ describe('Integration Tests', () => {
       result
         .expectSuccess()
         .expectOutput('USAGE')
-        .expectOutput(/test-cli/)
+        .expectOutput(/ctu/)
         .expectNoStderr()
         .expectOutputLength(100, 5000)
     })
@@ -53,13 +53,13 @@ describe('Integration Tests', () => {
       const result = await runLocalCitty(['--help'], { json: true })
 
       // Help command doesn't output JSON, so json should be undefined
-      expect(result.result.json).toBeUndefined()
+      expect(result.json).toBeUndefined()
     })
 
     it('should respect timeout settings', async () => {
       const result = await runLocalCitty(['--help'], { timeout: 5000 })
 
-      expect(result.result.exitCode).toBe(0)
+      expect(result.exitCode).toBe(0)
     })
   })
 
@@ -95,11 +95,7 @@ describe('Integration Tests', () => {
     it('should support fluent assertions in container', async () => {
       const result = await runCitty(['--help'])
 
-      result
-        .expectSuccess()
-        .expectOutput('USAGE')
-        .expectOutput(/gitvan/)
-        .expectNoStderr()
+      result.expectSuccess().expectOutput('USAGE').expectOutput(/ctu/).expectNoStderr()
     })
   })
 

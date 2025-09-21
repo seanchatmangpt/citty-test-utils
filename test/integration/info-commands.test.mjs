@@ -21,7 +21,7 @@ describe('Info Noun Commands', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 0.3.1')
+      expect(result.stdout).toContain('Version: 0.4.0')
     })
 
     it('should show version info in JSON', async () => {
@@ -31,7 +31,7 @@ describe('Info Noun Commands', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.json).toBeDefined()
-      expect(result.json.version).toBe('0.3.1')
+      expect(result.json.version).toBe('0.4.0')
       expect(result.json.name).toBe('ctu')
     })
   })
@@ -73,7 +73,7 @@ describe('Info Noun Commands', () => {
 
       result
         .expectSuccess()
-        .expectOutput(/Version: 0\.3\.1/)
+        .expectOutput(/Version: 0\.4\.0/)
         .expectNoStderr()
     })
 
@@ -85,8 +85,12 @@ describe('Info Noun Commands', () => {
       result
         .expectSuccess()
         .expectJson((json) => {
-          expect(json.version).toBe('0.3.1')
-          expect(json.name).toBe('ctu')
+          if (json.version !== '0.4.0') {
+            throw new Error(`Expected version '0.4.0', got '${json.version}'`)
+          }
+          if (json.name !== 'ctu') {
+            throw new Error(`Expected name 'ctu', got '${json.name}'`)
+          }
         })
         .expectNoStderr()
     })

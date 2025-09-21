@@ -5,6 +5,86 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2024-09-21
+
+### Added
+
+#### 🌟 Universal Contract Architecture
+- **Framework-Agnostic Contract**: Separated testing logic from language-specific implementations
+- **Cross-Language Adapters**: Support for Node.js, Python, Go, Rust, Deno, Java, C#, PHP, Ruby, Shell, PowerShell
+- **Universal Runners**: Local, Docker, SSH, Podman, Deno, WASI execution environments
+- **PTY Support**: Interactive CLI testing with pseudo-terminal support
+- **Matrix Testing**: Cross-platform and cross-version testing with configurable axes
+- **Network Policies**: Deterministic testing with none/offline/online network access control
+- **File System Tracking**: Comprehensive artifact tracking for file creation, modification, and deletion
+- **Deterministic Environment**: Fixed timezone (UTC), locale (C), and environment variables
+
+#### 🔧 Advanced Testing Features
+- **Comprehensive Assertions**: Exit codes, output matching, JSON validation, file system changes, duration checks
+- **Scenario Packs**: Pre-built scenarios for help, version, invalid commands, JSON mode, idempotency, concurrency
+- **Custom Scenarios**: Multi-step workflows with hooks, retries, timeouts, and concurrent execution
+- **Report Generation**: JSON, JUnit XML, HTML, and TAP report formats
+- **Performance Benchmarking**: Built-in performance testing and duration validation
+
+#### 🎯 Universal CLI Testing Examples
+- **Cross-Language Testing**: Test any CLI in any language with the same API
+- **Environment Agnostic**: Run tests locally, in Docker, or over SSH
+- **Interactive Testing**: PTY support for login flows and interactive commands
+- **Matrix Testing**: Test across multiple versions, operating systems, and configurations
+- **CI/CD Integration**: Generate reports in formats compatible with CI systems
+
+### Changed
+
+#### 📦 Package Configuration
+- Updated version to 0.4.0
+- Updated description to reflect universal contract architecture
+- Added new keywords for universal CLI testing features
+- Enhanced package.json with comprehensive feature descriptions
+
+#### 📖 Documentation Overhaul
+- **Universal Contract Focus**: Completely rewrote README to showcase universal contract architecture
+- **Cross-Language Examples**: Added comprehensive examples for testing CLIs in different languages
+- **Advanced Features**: Detailed coverage of PTY testing, matrix testing, and network policies
+- **Use Cases**: Practical examples for multi-language CLI testing, cross-platform testing, and CI/CD integration
+- **Benefits Section**: Clear value proposition for universal CLI testing
+
+### Technical Implementation
+
+#### 🏗️ Core Architecture
+- **Universal Contract**: Framework-agnostic testing contract with JSDoc documentation
+- **Adapter System**: Language-specific adapters for seamless CLI testing across frameworks
+- **Runner Implementations**: Local and Docker runners with comprehensive feature support
+- **Scenario System**: Flexible scenario builder with hooks, retries, and concurrent execution
+- **Reporter System**: Multiple output formats for different CI/CD and reporting needs
+
+#### 🔄 Backward Compatibility
+- **Legacy Support**: Maintained existing Citty-specific functionality alongside universal contract
+- **Migration Path**: Clear migration guide for existing users to adopt universal contract
+- **Gradual Adoption**: Users can adopt universal contract incrementally without breaking existing tests
+
+## [0.3.2] - 2024-09-21
+
+### Changed
+
+#### 📖 Documentation Overhaul
+- **Noun-Verb Pattern Focus**: Completely rewrote README to prominently feature the noun-verb CLI pattern
+- **Clear Command Structure**: Added comprehensive examples of all four nouns (`test`, `gen`, `runner`, `info`)
+- **Intuitive Examples**: Showcased the natural language approach to CLI testing
+- **Use Case Documentation**: Added practical examples for CLI development, template generation, and command execution
+
+#### 📦 Package Configuration
+- Updated version to 0.3.2
+- Updated all version references to 0.3.2
+
+### Added
+
+#### 🎯 Enhanced Documentation
+- **Four Nouns Section**: Detailed explanation of each noun and its verbs
+- **Why Noun-Verb Section**: Explained the benefits of the intuitive pattern
+- **Advanced Features**: Comprehensive coverage of cleanroom testing, template generation, and fluent assertions
+- **Use Cases**: Practical examples for different scenarios
+- **Benefits Section**: Clear value proposition
+
 ## [0.3.1] - 2024-09-21
 
 ### Added

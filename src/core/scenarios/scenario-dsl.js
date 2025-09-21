@@ -1,6 +1,5 @@
 // Scenario DSL for building complex test scenarios
-import { runCitty } from '../runners/cleanroom-runner.js'
-import { runLocalCitty } from '../runners/local-runner.js'
+import { runLocalCitty, runCitty } from '../runners/legacy-compatibility.js'
 import { matchSnapshot, snapshotUtils } from '../assertions/snapshot.js'
 
 export function scenario(name) {

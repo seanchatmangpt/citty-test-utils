@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // test/unit/domain-plugin-system.test.mjs - Domain Plugin System Unit Tests
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   DomainPluginSystem,
   builtInPlugins,
@@ -199,8 +199,8 @@ describe('Domain Plugin System Unit Tests', () => {
 
   describe('Hook System', () => {
     it('should register and execute hooks', async () => {
-      const hook1 = jest.fn().mockReturnValue('result1')
-      const hook2 = jest.fn().mockReturnValue('result2')
+      const hook1 = vi.fn().mockReturnValue('result1')
+      const hook2 = vi.fn().mockReturnValue('result2')
 
       pluginSystem.registerHook('test-hook', hook1)
       pluginSystem.registerHook('test-hook', hook2)
@@ -213,8 +213,8 @@ describe('Domain Plugin System Unit Tests', () => {
     })
 
     it('should handle hook execution errors gracefully', async () => {
-      const goodHook = jest.fn().mockReturnValue('good')
-      const badHook = jest.fn().mockImplementation(() => {
+      const goodHook = vi.fn().mockReturnValue('good')
+      const badHook = vi.fn().mockImplementation(() => {
         throw new Error('Hook failed')
       })
 
