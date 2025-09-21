@@ -28,8 +28,7 @@ describe('Domain Discovery System', () => {
     // Create test CLI file
     await writeFile(
       testCLIPath,
-      `
-#!/usr/bin/env node
+      `#!/usr/bin/env node
 // Test CLI for domain discovery
 
 console.log(\`USAGE:

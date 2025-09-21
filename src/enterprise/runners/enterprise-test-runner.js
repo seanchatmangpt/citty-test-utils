@@ -420,6 +420,34 @@ export class EnterpriseTestRunner {
     return this.domainOrchestrator.getStats()
   }
 
+  /**
+   * Get domain registry
+   */
+  getDomainRegistry() {
+    return Array.from(this.domainOrchestrator.getAllDomains())
+  }
+
+  /**
+   * Get domain by name
+   */
+  getDomain(name) {
+    return this.domainOrchestrator.getDomain(name)
+  }
+
+  /**
+   * Get domain resources
+   */
+  getDomainResources(name) {
+    return this.domainOrchestrator.getDomainResources(name)
+  }
+
+  /**
+   * Get domain actions
+   */
+  getDomainActions(name) {
+    return this.domainOrchestrator.getDomainActions(name)
+  }
+
   reset() {
     this.performanceMetrics.clear()
     this.auditLog = []

@@ -26,6 +26,34 @@ export class DomainLoader {
     this.analyzer = new CLIAnalyzer()
     this.loadedDomains = new Map()
     this.sourceRegistry = new Map()
+    
+    // Register built-in sources
+    this.registerBuiltInSources()
+  }
+
+  /**
+   * Register built-in domain sources
+   */
+  registerBuiltInSources() {
+    this.registerSource('cli-analysis', {
+      loader: (options) => this.loadFromCLI(options),
+      priority: 1,
+    })
+    
+    this.registerSource('config', {
+      loader: (options) => this.loadFromConfig(options),
+      priority: 2,
+    })
+    
+    this.registerSource('package-json', {
+      loader: (options) => this.loadFromPackageJson(options),
+      priority: 3,
+    })
+    
+    this.registerSource('plugins', {
+      loader: (options) => this.loadFromPlugins(options),
+      priority: 4,
+    })
   }
 
   /**
@@ -390,7 +418,7 @@ export class DomainLoader {
         })
 
         if (domainConfig.resources) {
-          resources.set(name, domainConfig.resources)
+          resources.set(name, domainConfig.resources.map(r => r.name))
         }
       })
     }
@@ -467,7 +495,16 @@ export class DomainLoader {
   mergeSourceResults(target, source, sourceName) {
     // Merge domains
     if (source.domains) {
-      source.domains.forEach((domain) => {
+      let domainsToMerge = []
+      
+      if (Array.isArray(source.domains)) {
+        domainsToMerge = source.domains
+      } else if (typeof source.domains === 'object') {
+        // Handle case where domains is an object (raw config data)
+        domainsToMerge = Object.keys(source.domains)
+      }
+      
+      domainsToMerge.forEach((domain) => {
         if (!target.domains.has(domain)) {
           target.domains.set(domain, {
             name: domain,

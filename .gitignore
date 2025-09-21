@@ -121,3 +121,5 @@ build.config.*
 
 # Debug files
 debug-local-runner.mjs
+
+generated/

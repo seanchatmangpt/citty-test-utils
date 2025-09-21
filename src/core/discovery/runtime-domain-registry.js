@@ -223,6 +223,23 @@ export class RuntimeDomainRegistry extends DomainRegistry {
   }
 
   /**
+   * Validate command against registered domains
+   */
+  validateCommand(domain, resource, action) {
+    const domainInfo = this.domains.get(domain)
+    if (!domainInfo) {
+      return false
+    }
+
+    const resourceInfo = domainInfo.resources.find(r => r.name === resource)
+    if (!resourceInfo) {
+      return false
+    }
+
+    return resourceInfo.actions.includes(action)
+  }
+
+  /**
    * Unregister domain
    */
   unregisterDomain(domainName) {

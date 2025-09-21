@@ -330,7 +330,12 @@ export class DomainDiscoveryOrchestrator {
    */
   async suggestTemplateForCLI(cliPath) {
     try {
-      const cliStructure = await this.analyzer.analyze({ cliPath })
+      const cliAnalysis = await this.analyzer.analyze({ cliPath })
+      
+      // Extract commands from the analysis result
+      const commands = Object.keys(cliAnalysis.commands || {})
+      const cliStructure = { commands }
+      
       return this.templates.suggestTemplate(cliStructure)
     } catch (error) {
       console.warn('Failed to analyze CLI for template suggestion:', error.message)

@@ -165,7 +165,8 @@ export class CLIAnalyzer {
       }
 
       // Parse command patterns - look for patterns like "infra server create <name>"
-      const commandMatch = trimmed.match(/^(\w+)\s+(\w+)\s+(\w+)/)
+      // Handle both indented and non-indented commands
+      const commandMatch = trimmed.match(/^\s*(\w+)\s+(\w+)\s+(\w+)/)
       if (commandMatch) {
         const [, domain, resource, action] = commandMatch
         domains.add(domain)
@@ -184,7 +185,7 @@ export class CLIAnalyzer {
         })
       } else {
         // Try simpler patterns
-        const simpleMatch = trimmed.match(/^(\w+)\s+(\w+)/)
+        const simpleMatch = trimmed.match(/^\s*(\w+)\s+(\w+)/)
         if (simpleMatch) {
           const [, part1, part2] = simpleMatch
           if (this.isLikelyAction(part2)) {
@@ -205,7 +206,7 @@ export class CLIAnalyzer {
           }
         } else {
           // Single word - could be domain or command
-          const singleMatch = trimmed.match(/^(\w+)/)
+          const singleMatch = trimmed.match(/^\s*(\w+)/)
           if (singleMatch) {
             domains.add(singleMatch[1])
           }
@@ -394,9 +395,20 @@ export class CLIAnalyzer {
 
       const config = JSON.parse(await readFile(configPath, 'utf8'))
 
+      const domains = config.domains ? Object.keys(config.domains) : []
+      const resources = {}
+      
+      if (config.domains) {
+        Object.entries(config.domains).forEach(([domainName, domainConfig]) => {
+          if (domainConfig.resources) {
+            resources[domainName] = domainConfig.resources.map(r => r.name)
+          }
+        })
+      }
+
       return {
-        domains: config.domains ? Object.keys(config.domains) : [],
-        resources: config.domains || {},
+        domains,
+        resources,
         actions: config.actions || [],
         commands: config.commands || {},
         metadata: {
