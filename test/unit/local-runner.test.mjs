@@ -3,10 +3,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 // Mock child_process at the module level
 vi.mock('node:child_process', () => ({
   exec: vi.fn(),
+  execSync: vi.fn(),
+  spawn: vi.fn(),
 }))
 
-import { runLocalCitty } from '../../src/local-runner.js'
-import { exec } from 'node:child_process'
+import { runLocalCitty } from '../../src/core/runners/legacy-compatibility.js'
+import { execSync, spawn } from 'node:child_process'
 
 describe('Local Runner Unit Tests', () => {
   describe('runLocalCitty', () => {
@@ -14,80 +16,87 @@ describe('Local Runner Unit Tests', () => {
       vi.clearAllMocks()
     })
 
-    it('should find GitVan project root correctly', async () => {
-      // Mock the exec function to avoid actual process execution
-      exec.mockImplementation((command, options, callback) => {
-        // Simulate successful process completion
-        setTimeout(() => callback(null, 'Mock output', ''), 10)
-      })
+    it('should execute command successfully', async () => {
+      // Mock execSync for vitest environment
+      execSync.mockReturnValue('Mock output')
 
-      const result = await runLocalCitty(['--help'])
+      const result = await runLocalCitty(['--help'], { env: { TEST_CLI: 'true' } })
 
       expect(result).toBeDefined()
       expect(result.result).toBeDefined()
       expect(result.result.exitCode).toBe(0)
+      expect(result.result.stdout).toBe('Mock output')
     })
 
-    it('should handle process errors', async () => {
-      exec.mockImplementation((command, options, callback) => {
-        // Simulate process error
-        setTimeout(() => callback(new Error('Process exec failed')), 10)
+    it('should handle process errors by returning result with exit code', async () => {
+      // Mock execSync to throw error
+      const error = new Error('Process exec failed')
+      error.status = 1
+      error.stdout = ''
+      error.stderr = 'Error message'
+      execSync.mockImplementation(() => {
+        throw error
       })
 
-      await expect(runLocalCitty(['--help'])).rejects.toThrow('Process exec failed')
+      const result = await runLocalCitty(['--help'], { env: { TEST_CLI: 'true' } })
+
+      expect(result).toBeDefined()
+      expect(result.result.exitCode).toBe(1)
+      expect(result.result.stderr).toBe('Error message')
     })
 
-    it('should handle timeout', async () => {
-      exec.mockImplementation((command, options, callback) => {
-        // Simulate timeout error
-        const error = new Error('Command timed out after 10ms')
-        error.code = 'TIMEOUT'
-        setTimeout(() => callback(error), 10)
+    it('should handle timeout by returning result with exit code', async () => {
+      // Mock execSync to throw timeout error
+      const error = new Error('Command timed out')
+      error.status = 1
+      error.stdout = ''
+      error.stderr = 'Command timed out'
+      execSync.mockImplementation(() => {
+        throw error
       })
 
-      await expect(runLocalCitty(['--help'], { timeout: 10 })).rejects.toThrow(
-        'Command timed out after 10ms'
-      )
+      const result = await runLocalCitty(['--help'], { timeout: 10, env: { TEST_CLI: 'true' } })
+
+      expect(result).toBeDefined()
+      expect(result.result.exitCode).toBe(1)
+      expect(result.result.stderr).toBe('Command timed out')
     })
 
     it('should handle JSON parsing', async () => {
-      exec.mockImplementation((command, options, callback) => {
-        // Simulate successful process completion with JSON output
-        setTimeout(() => callback(null, '{"version": "3.0.0"}', ''), 10)
-      })
+      // Mock execSync to return JSON output
+      execSync.mockReturnValue('{"version": "3.0.0"}')
 
-      const result = await runLocalCitty(['--version'], { json: true })
+      const result = await runLocalCitty(['--version'], { env: { TEST_CLI: 'true' } })
 
-      expect(result.result.json).toEqual({ version: '3.0.0' })
+      // Use expectJson to parse JSON
+      result.expectJson()
+      expect(result.json).toEqual({ version: '3.0.0' })
     })
 
     it('should handle invalid JSON gracefully', async () => {
-      exec.mockImplementation((command, options, callback) => {
-        // Simulate successful process completion with invalid JSON output
-        setTimeout(() => callback(null, 'not json', ''), 10)
-      })
+      // Mock execSync to return invalid JSON
+      execSync.mockReturnValue('not json')
 
-      const result = await runLocalCitty(['--help'], { json: true })
+      const result = await runLocalCitty(['--help'], { env: { TEST_CLI: 'true' } })
 
-      expect(result.result.json).toBeUndefined()
+      // expectJson should throw for invalid JSON
+      expect(() => result.expectJson()).toThrow('Expected valid JSON output')
     })
 
     it('should pass environment variables', async () => {
-      exec.mockImplementation((command, options, callback) => {
-        // Simulate successful process completion
-        setTimeout(() => callback(null, 'Mock output', ''), 10)
-      })
+      // Mock execSync
+      execSync.mockReturnValue('Mock output')
 
-      await runLocalCitty(['--help'], { env: { TEST_VAR: 'test_value' } })
+      await runLocalCitty(['--help'], { env: { TEST_VAR: 'test_value', TEST_CLI: 'true' } })
 
-      expect(exec).toHaveBeenCalledWith(
-        expect.stringContaining('node src/cli.mjs --help'),
+      expect(execSync).toHaveBeenCalledWith(
+        expect.stringContaining('node test-cli.mjs --help'),
         expect.objectContaining({
           env: expect.objectContaining({
             TEST_VAR: 'test_value',
+            TEST_CLI: 'true',
           }),
-        }),
-        expect.any(Function)
+        })
       )
     })
   })

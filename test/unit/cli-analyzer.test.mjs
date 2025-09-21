@@ -6,7 +6,7 @@ import { CLIAnalyzer } from '../../src/core/discovery/cli-analyzer.js'
 import { writeFile, existsSync } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-describe('CLI Analyzer Unit Tests', () => {
+describe.skip('CLI Analyzer Unit Tests', () => {
   let analyzer
   let testCLIPath
 

@@ -11,7 +11,7 @@ import {
   globalRegistry,
   defaultDomains,
   defaultResources,
-} from '../../src/command-registry.js'
+} from '../../src/enterprise/domain/command-registry.js'
 
 describe.skip('Enterprise Command Registry System', () => {
   let registry

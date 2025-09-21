@@ -6,6 +6,7 @@ import nunjucks from 'nunjucks'
 import { writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { getEnvironmentPaths } from '../../core/utils/environment-detection.js'
 
 export const testCommand = defineCommand({
   meta: {
@@ -87,8 +88,14 @@ export const testCommand = defineCommand({
         throwOnUndefined: true,
       })
 
-      // Ensure output directory exists
-      const outputDir = join(process.cwd(), output)
+      // Generate test in environment-appropriate directory
+      const paths = getEnvironmentPaths({ 
+        output, 
+        tempPrefix: 'citty-test',
+        filename: `${name}.test.${format}` 
+      })
+      
+      const outputDir = paths.fullTempDir
       if (!existsSync(outputDir)) {
         await mkdir(outputDir, { recursive: true })
       }
@@ -137,6 +144,25 @@ export const testCommand = defineCommand({
       } else {
         console.log(`✅ Generated test template: ${name}.${format}`)
         console.log(`📁 Location: ${outputFile}`)
+        console.log(`🌍 Environment: ${paths.environment}`)
+        
+        if (paths.isCleanroom) {
+          console.log(`🐳 Note: File created in cleanroom container at ${outputFile}`)
+          console.log(`⚠️  File will be cleaned up when container is destroyed`)
+        } else {
+          console.log(`⚠️  Note: This is a temporary directory that will be cleaned up automatically`)
+          
+          // Schedule cleanup after a delay to allow inspection (only in local environment)
+          setTimeout(async () => {
+            try {
+              const { rm } = await import('node:fs/promises')
+              await rm(paths.fullTempDir, { recursive: true, force: true })
+              console.log(`🧹 Cleaned up temporary directory: ${paths.fullTempDir}`)
+            } catch (error) {
+              console.warn(`⚠️  Could not clean up temporary directory: ${error.message}`)
+            }
+          }, 30000) // Clean up after 30 seconds
+        }
         console.log(`📄 Template: ${templateFile}`)
         console.log(`🎯 Status: ${result.status}`)
       }

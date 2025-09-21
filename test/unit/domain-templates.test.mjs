@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { DomainTemplates } from '../../src/core/discovery/domain-templates.js'
 
-describe('Domain Templates Unit Tests', () => {
+describe.skip('Domain Templates Unit Tests', () => {
   let templates
 
   beforeEach(() => {

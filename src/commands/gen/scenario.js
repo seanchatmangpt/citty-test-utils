@@ -6,6 +6,7 @@ import nunjucks from 'nunjucks'
 import { writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { getEnvironmentPaths } from '../../core/utils/environment-detection.js'
 
 export const scenarioCommand = defineCommand({
   meta: {
@@ -87,8 +88,14 @@ export const scenarioCommand = defineCommand({
         throwOnUndefined: true,
       })
 
-      // Ensure output directory exists
-      const outputDir = join(process.cwd(), output)
+      // Generate scenario in environment-appropriate directory
+      const paths = getEnvironmentPaths({ 
+        output, 
+        tempPrefix: 'citty-scenario',
+        filename: `${name}.scenario.${format}` 
+      })
+      
+      const outputDir = paths.fullTempDir
       if (!existsSync(outputDir)) {
         await mkdir(outputDir, { recursive: true })
       }
@@ -141,6 +148,18 @@ export const scenarioCommand = defineCommand({
       } else {
         console.log(`✅ Generated scenario template: ${name}.${format}`)
         console.log(`📁 Location: ${outputFile}`)
+        console.log(`⚠️  Note: This is a temporary directory that will be cleaned up automatically`)
+
+        // Schedule cleanup after a delay to allow inspection
+        setTimeout(async () => {
+          try {
+            const { rm } = await import('node:fs/promises')
+            await rm(tempDir, { recursive: true, force: true })
+            console.log(`🧹 Cleaned up temporary directory: ${tempDir}`)
+          } catch (error) {
+            console.warn(`⚠️  Could not clean up temporary directory: ${error.message}`)
+          }
+        }, 30000) // Clean up after 30 seconds
         console.log(`📄 Template: ${templateFile}`)
         console.log(`🎯 Status: ${result.status}`)
       }

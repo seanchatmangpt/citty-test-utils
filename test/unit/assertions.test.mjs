@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { wrapExpectation } from '../../src/assertions.js'
+import { wrapExpectation } from '../../src/core/assertions/assertions.js'
 
 describe('Assertions Unit Tests', () => {
   let mockResult

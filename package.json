@@ -1,17 +1,18 @@
 {
-  "name": "cli-testing-utils",
-  "version": "0.1.0",
-  "description": "Universal CLI testing framework with contract-adapter architecture, supporting any CLI in any language with Docker cleanroom, PTY interactive testing, matrix testing, and comprehensive reporting.",
+  "name": "citty-test-utils",
+  "version": "0.4.0",
+  "description": "A comprehensive testing framework for CLI applications built with Citty, featuring Docker cleanroom support, fluent assertions, advanced scenario DSL, and noun-verb CLI structure with template generation.",
   "type": "module",
   "main": "index.js",
   "bin": {
     "ctu": "./src/cli.mjs",
-    "cli-testing-utils": "./src/cli.mjs"
+    "citty-test-utils": "./src/cli.mjs"
   },
   "types": "src/types/types.d.ts",
   "keywords": [
     "testing",
     "cli",
+    "citty",
     "docker",
     "testcontainers",
     "cleanroom",
@@ -22,39 +23,23 @@
     "scenario-dsl",
     "template-generation",
     "file-generation",
-    "universal-cli-testing",
-    "contract-adapter",
-    "cross-language",
-    "framework-agnostic",
-    "pty-testing",
-    "matrix-testing",
+    "citty-testing",
     "docker-cleanroom",
-    "network-policies",
-    "deterministic-testing",
-    "comprehensive-reporting",
-    "nodejs",
-    "python",
-    "go",
-    "rust",
-    "deno",
-    "java",
-    "csharp",
-    "php",
-    "ruby",
-    "shell",
-    "powershell"
+    "fluent-assertions",
+    "test-scenarios",
+    "cli-testing",
+    "nodejs"
   ],
   "author": "GitVan Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/seanchatmangpt/gitvan.git",
-    "directory": "vendors/cli-testing-utils"
+    "url": "https://github.com/seanchatmangpt/citty-test-utils.git"
   },
   "bugs": {
-    "url": "https://github.com/seanchatmangpt/gitvan/issues"
+    "url": "https://github.com/seanchatmangpt/citty-test-utils/issues"
   },
-  "homepage": "https://github.com/seanchatmangpt/gitvan#readme",
+  "homepage": "https://github.com/seanchatmangpt/citty-test-utils#readme",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -76,6 +61,11 @@
     "test:integration": "vitest run test/integration",
     "test:citty-integration": "vitest run test/integration/citty-integration.test.mjs",
     "test:bdd": "vitest run test/bdd",
+    "test:readme": "vitest run test/readme",
+    "test:readme:cleanroom": "vitest run test/readme/cleanroom.test.mjs",
+    "test:readme:cleanroom:complete": "vitest run test/readme/cleanroom-complete.test.mjs",
+    "test:readme:cleanroom:gen": "vitest run test/readme/cleanroom-gen-focus.test.mjs",
+    "test:readme:e2e": "vitest run test/readme/end-to-end.test.mjs",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",

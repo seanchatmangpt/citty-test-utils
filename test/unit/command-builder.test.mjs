@@ -11,7 +11,7 @@ import {
   ResourceBuilder,
   ActionBuilder,
   enterprise,
-} from '../../src/command-builder.js'
+} from '../../src/enterprise/domain/command-builder.js'
 
 describe.skip('Enterprise Command Builder System', () => {
   let builder

@@ -116,10 +116,10 @@ describe('Integration Tests', () => {
 
       const results = await testScenario.execute(runLocalCitty)
 
-      expect(results).toHaveLength(3)
-      expect(results[0].step).toBe('Get help information')
-      expect(results[1].step).toBe('Get version information')
-      expect(results[2].step).toBe('Test info command')
+      expect(results.results).toHaveLength(3)
+      expect(results.results[0].step).toBe('Get help information')
+      expect(results.results[1].step).toBe('Get version information')
+      expect(results.results[2].step).toBe('Test info command')
     })
 
     it('should handle scenario failures gracefully', async () => {

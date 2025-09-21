@@ -11,7 +11,7 @@ import {
   EnterpriseContextManager,
   globalContextManager,
   contextUtils,
-} from '../../src/enterprise-context.js'
+} from '../../src/enterprise/domain/enterprise-context.js'
 
 describe.skip('Enterprise Context Management System', () => {
   let context, workspace, manager

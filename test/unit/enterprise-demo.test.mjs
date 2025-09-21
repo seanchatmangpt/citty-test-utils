@@ -10,7 +10,7 @@ import {
   CommandBuilder,
   ResourceBuilder,
   ActionBuilder,
-} from '../../src/command-builder.js'
+} from '../../src/enterprise/domain/command-builder.js'
 
 describe.skip('Enterprise Noun-Verb CLI Testing Framework Demo', () => {
   describe('Command Builder System', () => {

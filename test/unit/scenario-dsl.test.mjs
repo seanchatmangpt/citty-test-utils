@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { scenario, testUtils } from '../../src/scenario-dsl.js'
+import { scenario, testUtils } from '../../src/core/scenarios/scenario-dsl.js'
 
 describe('Scenario DSL Unit Tests', () => {
   describe('scenario', () => {

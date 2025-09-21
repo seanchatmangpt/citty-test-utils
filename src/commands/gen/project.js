@@ -6,6 +6,7 @@ import nunjucks from 'nunjucks'
 import { writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { getEnvironmentPaths } from '../../core/utils/environment-detection.js'
 
 export const projectCommand = defineCommand({
   meta: {
@@ -59,14 +60,24 @@ export const projectCommand = defineCommand({
         throwOnUndefined: true,
       })
 
-      // Generate a complete project structure in a temporary directory
-      const { tmpdir } = await import('node:os')
-      const tempDir = join(tmpdir(), `citty-test-${Date.now()}`)
-      const projectDir = join(tempDir, name)
+      // Generate a complete project structure in environment-appropriate directory
+      const paths = getEnvironmentPaths({ 
+        output, 
+        tempPrefix: 'citty-project',
+        filename: name 
+      })
+      
+      const projectDir = join(paths.fullTempDir, name)
       if (!existsSync(projectDir)) {
         await mkdir(projectDir, { recursive: true })
         await mkdir(join(projectDir, 'src'), { recursive: true })
         await mkdir(join(projectDir, 'tests'), { recursive: true })
+      }
+
+      // In cleanroom, ensure files stay isolated and don't pollute the main project
+      const isCleanroom = paths.isCleanroom
+      if (isCleanroom && verbose) {
+        console.error(`🐳 Cleanroom detected: Generating in isolated directory ${projectDir}`)
       }
 
       // Generate package.json
@@ -146,11 +157,7 @@ if (json) {
         args: "['--help']",
         cwd: '.',
         expectedOutput: 'USAGE|COMMANDS',
-        expectations: [
-          'expectSuccess()',
-          'expectOutput(/USAGE|COMMANDS/)',
-          'expectNoStderr()',
-        ],
+        expectations: ['expectSuccess()', 'expectOutput(/USAGE|COMMANDS/)', 'expectNoStderr()'],
       }
 
       // Generate vitest config
@@ -204,20 +211,27 @@ if (json) {
       if (json) {
         console.log(JSON.stringify(result))
       } else {
-      console.log(`✅ Generated complete project: ${name}`)
-      console.log(`📁 Location: ${projectDir}`)
-      console.log(`⚠️  Note: This is a temporary directory that will be cleaned up automatically`)
-      
-      // Schedule cleanup after a delay to allow inspection
-      setTimeout(async () => {
-        try {
-          const { rm } = await import('node:fs/promises')
-          await rm(tempDir, { recursive: true, force: true })
-          console.log(`🧹 Cleaned up temporary directory: ${tempDir}`)
-        } catch (error) {
-          console.warn(`⚠️  Could not clean up temporary directory: ${error.message}`)
+        console.log(`✅ Generated complete project: ${name}`)
+        console.log(`📁 Location: ${projectDir}`)
+        console.log(`🌍 Environment: ${paths.environment}`)
+        
+        if (paths.isCleanroom) {
+          console.log(`🐳 Note: Files created in cleanroom container at ${projectDir}`)
+          console.log(`⚠️  Files will be cleaned up when container is destroyed`)
+        } else {
+          console.log(`⚠️  Note: This is a temporary directory that will be cleaned up automatically`)
+          
+          // Schedule cleanup after a delay to allow inspection (only in local environment)
+          setTimeout(async () => {
+            try {
+              const { rm } = await import('node:fs/promises')
+              await rm(paths.fullTempDir, { recursive: true, force: true })
+              console.log(`🧹 Cleaned up temporary directory: ${paths.fullTempDir}`)
+            } catch (error) {
+              console.warn(`⚠️  Could not clean up temporary directory: ${error.message}`)
+            }
+          }, 30000) // Clean up after 30 seconds
         }
-      }, 30000) // Clean up after 30 seconds
         console.log(`📄 Files created:`)
         result.files.forEach((file) => console.log(`   - ${file}`))
         console.log(`🚀 Next steps:`)

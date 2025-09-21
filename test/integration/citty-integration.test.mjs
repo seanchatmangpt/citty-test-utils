@@ -31,7 +31,7 @@ describe('Citty Integration Tests', () => {
     it('should test version command', async () => {
       const versionResult = await runLocalCitty(['--show-version'], {
         cwd: process.cwd(),
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       expect(versionResult.exitCode).toBe(0)
@@ -41,7 +41,7 @@ describe('Citty Integration Tests', () => {
     it('should test info version command', async () => {
       const result = await runLocalCitty(['info', 'version'], {
         cwd: process.cwd(),
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       expect(result.exitCode).toBe(0)
@@ -53,7 +53,7 @@ describe('Citty Integration Tests', () => {
         ['gen', 'project', 'test-project', '--description', 'Test project'],
         {
           cwd: process.cwd(),
-          env: { TEST_CLI: 'true' },
+          env: {}, // Use main CLI, not test CLI
         }
       )
 
@@ -64,7 +64,7 @@ describe('Citty Integration Tests', () => {
     it('should test runner execute command', async () => {
       const result = await runLocalCitty(['runner', 'execute', 'node --version'], {
         cwd: process.cwd(),
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       expect(result.exitCode).toBe(0)
@@ -76,7 +76,7 @@ describe('Citty Integration Tests', () => {
     it('should test JSON output', async () => {
       const result = await runLocalCitty(['info', 'version', '--json'], {
         cwd: process.cwd(),
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       expect(result.exitCode).toBe(0)
@@ -88,7 +88,7 @@ describe('Citty Integration Tests', () => {
     it('should test invalid arguments', async () => {
       const result = await runLocalCitty(['--invalid-flag'], {
         cwd: process.cwd(),
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       // Citty doesn't fail on unknown flags, it shows help
@@ -102,7 +102,7 @@ describe('Citty Integration Tests', () => {
     it('should test basic citty CLI commands in cleanroom', async () => {
       const helpResult = await runCitty(['--help'], {
         cwd: '/app',
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       expect(helpResult.exitCode).toBe(0)
@@ -113,7 +113,7 @@ describe('Citty Integration Tests', () => {
     it('should test version command in cleanroom', async () => {
       const versionResult = await runCitty(['--show-version'], {
         cwd: '/app',
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       expect(versionResult.exitCode).toBe(0)
@@ -123,7 +123,7 @@ describe('Citty Integration Tests', () => {
     it('should test info version command in cleanroom', async () => {
       const result = await runCitty(['info', 'version'], {
         cwd: '/app',
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       expect(result.exitCode).toBe(0)
@@ -135,7 +135,7 @@ describe('Citty Integration Tests', () => {
         ['gen', 'project', 'cleanroom-test', '--description', 'Cleanroom test project'],
         {
           cwd: '/app',
-          env: { TEST_CLI: 'true' },
+          env: {}, // Use main CLI, not test CLI
         }
       )
 
@@ -172,7 +172,7 @@ describe('Citty Integration Tests', () => {
     it('should handle JSON assertions', async () => {
       const result = await runLocalCitty(['info', 'version', '--json'], {
         cwd: process.cwd(),
-        env: { TEST_CLI: 'true' },
+        env: {}, // Use main CLI, not test CLI
       })
 
       result.expectSuccess().expectJson((data) => {

@@ -76,8 +76,15 @@ export class DomainPluginSystem {
       try {
         const plugin = await this.loadPluginFile(file)
         if (plugin) {
-          this.registerPlugin(plugin.name, plugin)
-          loadedPlugins.push(plugin.name)
+          // Handle both default exports and named exports
+          const pluginObj = plugin.default || plugin
+          if (pluginObj && pluginObj.name) {
+            // Use the plugin's name property as the key
+            this.registerPlugin(pluginObj.name, pluginObj)
+            loadedPlugins.push(pluginObj.name)
+          } else {
+            console.warn(`Plugin ${file} does not have a name property`)
+          }
         }
       } catch (error) {
         console.warn(`Failed to load plugin ${file}:`, error.message)
@@ -126,10 +133,11 @@ export class DomainPluginSystem {
    */
   async loadPluginFile(filePath) {
     const ext = extname(filePath)
+    const resolvedPath = resolve(filePath)
 
     if (ext === '.js' || ext === '.mjs') {
-      const module = await import(resolve(filePath))
-      return module.default || module
+      const module = await import(resolvedPath)
+      return module
     } else if (ext === '.json') {
       const content = await readFile(filePath, 'utf8')
       return JSON.parse(content)

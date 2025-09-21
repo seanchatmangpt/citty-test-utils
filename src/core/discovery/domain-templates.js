@@ -22,8 +22,8 @@ export class DomainTemplates {
       displayName: '{{displayName}}',
       description: '{{description}}',
       category: '{{category}}',
-      compliance: ['{{compliance}}'],
-      governance: ['{{governance}}'],
+      compliance: '{{compliance}}',
+      governance: '{{governance}}',
       resources: [
         {
           name: '{{resource}}',
@@ -524,8 +524,6 @@ export class DomainTemplates {
       return 'database'
     } else if (patterns.api) {
       return 'api'
-    } else if (patterns.flat) {
-      return 'flat'
     } else {
       return 'noun-verb'
     }
@@ -586,13 +584,17 @@ export class DomainTemplates {
     const total = commands.length
     if (hierarchicalCount > 0) {
       patterns.hierarchical = true
-    } else if (microserviceCount > total * 0.5) {
+    }
+    if (microserviceCount > 0) {
       patterns.microservice = true
-    } else if (databaseCount > total * 0.5) {
+    }
+    if (databaseCount > 0) {
       patterns.database = true
-    } else if (apiCount > total * 0.5) {
+    }
+    if (apiCount > 0) {
       patterns.api = true
-    } else if (flatCount > total * 0.5) {
+    }
+    if (flatCount > 0) {
       patterns.flat = true
     }
 

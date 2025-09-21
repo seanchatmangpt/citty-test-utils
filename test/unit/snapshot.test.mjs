@@ -6,9 +6,10 @@ import {
   resetSnapshotManager,
   matchSnapshot,
   snapshotUtils,
-} from '../../src/snapshot.js'
-import { runLocalCitty } from '../../src/local-runner.js'
-import { scenario, scenarios } from '../../src/scenario-dsl.js'
+} from '../../src/core/assertions/snapshot.js'
+import { runLocalCitty } from '../../src/core/runners/legacy-compatibility.js'
+import { scenario } from '../../src/core/scenarios/scenario-dsl.js'
+import { scenarios } from '../../src/core/scenarios/scenarios.js'
 import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 
@@ -29,13 +30,16 @@ describe('Snapshot Testing', () => {
     // Create snapshot manager with temp directory
     const config = new SnapshotConfig({
       snapshotDir: '__snapshots__',
-      updateSnapshots: false,
+      updateSnapshots: process.env.UPDATE_SNAPSHOTS === 'true',
       ciMode: false,
       ignoreWhitespace: true,
       ignoreTimestamps: true,
     })
 
     snapshotManager = new SnapshotManager(config)
+    
+    // Also configure the global snapshot manager for scenarios
+    getSnapshotManager(config)
   })
 
   afterEach(() => {
@@ -179,8 +183,15 @@ describe('Snapshot Testing', () => {
       // Try to match different data
       const result = snapshotManager.matchSnapshot('different data', testFile, 'mismatch-test')
 
-      expect(result.match).toBe(false)
-      expect(result.error).toContain('Snapshot mismatch')
+      if (process.env.UPDATE_SNAPSHOTS === 'true') {
+        // When updating snapshots, it should match (because it updates)
+        expect(result.match).toBe(true)
+        expect(result.updated).toBe(true)
+      } else {
+        // When not updating snapshots, it should detect mismatch
+        expect(result.match).toBe(false)
+        expect(result.error).toContain('Snapshot mismatch')
+      }
     })
 
     it('should update snapshot when configured', () => {
@@ -289,101 +300,29 @@ describe('Snapshot Testing', () => {
 
   describe('Integration with Local Runner', () => {
     it('should work with runLocalCitty and snapshot assertions', async () => {
-      // This test requires a test CLI to be available
-      // We'll create a simple test CLI for this test
-      const testCliPath = join(tempDir, 'simple-test-cli.mjs')
-      const testCliContent = `#!/usr/bin/env node
-// simple-test-cli.mjs - Simple Test CLI for citty-test-utils debugging
-
-const args = process.argv.slice(2);
-
-if (args.includes('--help')) {
-  console.log('Simple Test CLI v1.0.0\\n');
-  console.log('USAGE simple-test-cli <command>\\n');
-  console.log('COMMANDS\\n');
-  console.log('  help    Show this help message');
-  console.log('  version Show version information');
-  console.log('\\nUse simple-test-cli <command> for more information about a command.');
-} else if (args.includes('--version')) {
-  console.log('1.0.0');
-} else if (args.includes('error')) {
-  console.error('A simple error occurred.');
-  process.exit(1);
-} else {
-  console.log('Simple Test CLI v1.0.0');
-}`
-      writeFileSync(testCliPath, testCliContent, 'utf8')
-
-      // Test snapshot with help output
+      // Test snapshot with help output using the actual test CLI
       const result = await runLocalCitty(['--help'], {
-        cwd: tempDir,
         env: { TEST_CLI: 'true' },
       })
 
-      result.expectSuccess().expectSnapshotStdout('help-output')
+      result.expectSuccess().expectSnapshotStdout('local-help-output')
     })
 
     it('should work with version snapshot', async () => {
-      const testCliPath = join(tempDir, 'simple-test-cli.mjs')
-      const testCliContent = `#!/usr/bin/env node
-// simple-test-cli.mjs - Simple Test CLI for citty-test-utils debugging
-
-const args = process.argv.slice(2);
-
-if (args.includes('--help')) {
-  console.log('Simple Test CLI v1.0.0\\n');
-  console.log('USAGE simple-test-cli <command>\\n');
-  console.log('COMMANDS\\n');
-  console.log('  help    Show this help message');
-  console.log('  version Show version information');
-  console.log('\\nUse simple-test-cli <command> for more information about a command.');
-} else if (args.includes('--version')) {
-  console.log('1.0.0');
-} else if (args.includes('error')) {
-  console.error('A simple error occurred.');
-  process.exit(1);
-} else {
-  console.log('Simple Test CLI v1.0.0');
-}`
-      writeFileSync(testCliPath, testCliContent, 'utf8')
-
+      // Test snapshot with version output using the actual test CLI
       const result = await runLocalCitty(['--version'], {
-        cwd: tempDir,
         env: { TEST_CLI: 'true' },
       })
 
-      result.expectSuccess().expectSnapshotStdout('version-output')
+      result.expectSuccess().expectSnapshotStdout('local-version-output')
     })
   })
 
   describe('Integration with Scenario DSL', () => {
     it('should work with scenario snapshot expectations', async () => {
-      const testCliPath = join(tempDir, 'simple-test-cli.mjs')
-      const testCliContent = `#!/usr/bin/env node
-// simple-test-cli.mjs - Simple Test CLI for citty-test-utils debugging
-
-const args = process.argv.slice(2);
-
-if (args.includes('--help')) {
-  console.log('Simple Test CLI v1.0.0\\n');
-  console.log('USAGE simple-test-cli <command>\\n');
-  console.log('COMMANDS\\n');
-  console.log('  help    Show this help message');
-  console.log('  version Show version information');
-  console.log('\\nUse simple-test-cli <command> for more information about a command.');
-} else if (args.includes('--version')) {
-  console.log('1.0.0');
-} else if (args.includes('error')) {
-  console.error('A simple error occurred.');
-  process.exit(1);
-} else {
-  console.log('Simple Test CLI v1.0.0');
-}`
-      writeFileSync(testCliPath, testCliContent, 'utf8')
-
       const result = await scenario('Scenario snapshot test')
         .step('Get help')
-        .run('--help', { cwd: tempDir, env: { TEST_CLI: 'true' } })
+        .run('--help', { env: { TEST_CLI: 'true' } })
         .expectSuccess()
         .expectSnapshotStdout('scenario-help')
         .execute()
@@ -392,32 +331,9 @@ if (args.includes('--help')) {
     })
 
     it('should work with scenario snapshot steps', async () => {
-      const testCliPath = join(tempDir, 'simple-test-cli.mjs')
-      const testCliContent = `#!/usr/bin/env node
-// simple-test-cli.mjs - Simple Test CLI for citty-test-utils debugging
-
-const args = process.argv.slice(2);
-
-if (args.includes('--help')) {
-  console.log('Simple Test CLI v1.0.0\\n');
-  console.log('USAGE simple-test-cli <command>\\n');
-  console.log('COMMANDS\\n');
-  console.log('  help    Show this help message');
-  console.log('  version Show version information');
-  console.log('\\nUse simple-test-cli <command> for more information about a command.');
-} else if (args.includes('--version')) {
-  console.log('1.0.0');
-} else if (args.includes('error')) {
-  console.error('A simple error occurred.');
-  process.exit(1);
-} else {
-  console.log('Simple Test CLI v1.0.0');
-}`
-      writeFileSync(testCliPath, testCliContent, 'utf8')
-
       const result = await scenario('Scenario snapshot step test')
         .step('Get help')
-        .run('--help', { cwd: tempDir, env: { TEST_CLI: 'true' } })
+        .run('--help', { env: { TEST_CLI: 'true' } })
         .expectSuccess()
         .snapshot('scenario-step-help')
         .execute()
@@ -428,32 +344,8 @@ if (args.includes('--help')) {
 
   describe('Pre-built Snapshot Scenarios', () => {
     it('should work with snapshotHelp scenario', async () => {
-      const testCliPath = join(tempDir, 'simple-test-cli.mjs')
-      const testCliContent = `#!/usr/bin/env node
-// simple-test-cli.mjs - Simple Test CLI for citty-test-utils debugging
-
-const args = process.argv.slice(2);
-
-if (args.includes('--help')) {
-  console.log('Simple Test CLI v1.0.0\\n');
-  console.log('USAGE simple-test-cli <command>\\n');
-  console.log('COMMANDS\\n');
-  console.log('  help    Show this help message');
-  console.log('  version Show version information');
-  console.log('\\nUse simple-test-cli <command> for more information about a command.');
-} else if (args.includes('--version')) {
-  console.log('1.0.0');
-} else if (args.includes('error')) {
-  console.error('A simple error occurred.');
-  process.exit(1);
-} else {
-  console.log('Simple Test CLI v1.0.0');
-}`
-      writeFileSync(testCliPath, testCliContent, 'utf8')
-
       const result = await scenarios
         .snapshotHelp({
-          cwd: tempDir,
           env: { TEST_CLI: 'true' },
         })
         .execute()
@@ -462,32 +354,8 @@ if (args.includes('--help')) {
     })
 
     it('should work with snapshotVersion scenario', async () => {
-      const testCliPath = join(tempDir, 'simple-test-cli.mjs')
-      const testCliContent = `#!/usr/bin/env node
-// simple-test-cli.mjs - Simple Test CLI for citty-test-utils debugging
-
-const args = process.argv.slice(2);
-
-if (args.includes('--help')) {
-  console.log('Simple Test CLI v1.0.0\\n');
-  console.log('USAGE simple-test-cli <command>\\n');
-  console.log('COMMANDS\\n');
-  console.log('  help    Show this help message');
-  console.log('  version Show version information');
-  console.log('\\nUse simple-test-cli <command> for more information about a command.');
-} else if (args.includes('--version')) {
-  console.log('1.0.0');
-} else if (args.includes('error')) {
-  console.error('A simple error occurred.');
-  process.exit(1);
-} else {
-  console.log('Simple Test CLI v1.0.0');
-}`
-      writeFileSync(testCliPath, testCliContent, 'utf8')
-
       const result = await scenarios
         .snapshotVersion({
-          cwd: tempDir,
           env: { TEST_CLI: 'true' },
         })
         .execute()

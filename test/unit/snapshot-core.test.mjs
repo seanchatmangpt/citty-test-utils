@@ -6,7 +6,7 @@ import {
   resetSnapshotManager,
   matchSnapshot,
   snapshotUtils,
-} from '../../src/snapshot.js'
+} from '../../src/core/assertions/snapshot.js'
 import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 

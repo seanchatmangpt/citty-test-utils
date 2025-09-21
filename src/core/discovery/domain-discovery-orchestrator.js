@@ -23,12 +23,12 @@ export class DomainDiscoveryOrchestrator {
       enableCLIAnalysis: true,
       enableConfigLoading: true,
       enablePackageJsonAnalysis: true,
-      discoverySources: ['cli-analysis', 'config', 'package-json', 'plugins'],
+      discoverySources: [], // Disabled by default
       configPath: './citty-test-config.json',
       pluginDirectory: './plugins',
       cliPath: './cli.js',
       packageJsonPath: './package.json',
-      autoDiscover: true,
+      autoDiscover: false, // Disabled by default
       validateDomains: true,
       fallbackStrategy: 'generic',
       ...options,
@@ -125,11 +125,17 @@ export class DomainDiscoveryOrchestrator {
    */
   async discoverDomains(options = {}) {
     const {
-      sources = ['cli-analysis', 'config', 'package-json', 'plugins'],
+      sources = this.options.discoverySources,
       forceRefresh = false,
       validate = this.options.validateDomains,
       ...discoveryOptions
     } = options
+
+    // If discovery is disabled, return empty array
+    if (!this.options.autoDiscover && sources.length === 0) {
+      console.log('🔍 Domain discovery is disabled')
+      return []
+    }
 
     console.log('🔍 Starting domain discovery...')
 

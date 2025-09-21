@@ -60,7 +60,10 @@ export const configCommand = defineCommand({
       })
 
       // Ensure output directory exists
-      const outputDir = join(process.cwd(), output)
+      // Generate config in a temporary directory
+      const { tmpdir } = await import('node:os')
+      const tempDir = join(tmpdir(), `citty-test-${Date.now()}`)
+      const outputDir = join(tempDir, output)
       if (!existsSync(outputDir)) {
         await mkdir(outputDir, { recursive: true })
       }
@@ -122,6 +125,18 @@ export const configCommand = defineCommand({
       } else {
         console.log(`✅ Generated config template: ${name}.${format}`)
         console.log(`📁 Location: ${outputFile}`)
+        console.log(`⚠️  Note: This is a temporary directory that will be cleaned up automatically`)
+
+        // Schedule cleanup after a delay to allow inspection
+        setTimeout(async () => {
+          try {
+            const { rm } = await import('node:fs/promises')
+            await rm(tempDir, { recursive: true, force: true })
+            console.log(`🧹 Cleaned up temporary directory: ${tempDir}`)
+          } catch (error) {
+            console.warn(`⚠️  Could not clean up temporary directory: ${error.message}`)
+          }
+        }, 30000) // Clean up after 30 seconds
         console.log(`📄 Template: ${templateFile}`)
         console.log(`🎯 Status: ${result.status}`)
       }
