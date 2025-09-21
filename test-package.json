@@ -1,0 +1,12 @@
+{
+  "name": "test-cli",
+  "version": "1.0.0",
+  "scripts": {
+    "infra:server:create": "echo \"Creating server\"",
+    "infra:server:list": "echo \"Listing servers\"",
+    "infra:network:create": "echo \"Creating network\"",
+    "dev:project:create": "echo \"Creating project\"",
+    "dev:app:create": "echo \"Creating app\"",
+    "security:user:create": "echo \"Creating user\""
+  }
+}

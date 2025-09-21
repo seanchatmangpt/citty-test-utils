@@ -1,0 +1,45 @@
+#!/usr/bin/env node
+// {{ name }}.scenario.{{ format }} - {{ description }}
+
+import { scenario } from '{{ importPath }}/core/scenarios/scenario-dsl.js'
+import { runLocalCitty, runCitty } from '{{ importPath }}'
+
+export const {{ name }}Scenario = scenario('{{ title }}')
+  {% for step in steps %}
+  .step('{{ step.name }}', async (ctx) => {
+    {% if step.type === 'local' %}
+    const result = await runLocalCitty({{ step.args }}, {
+      cwd: '{{ step.cwd }}',
+      env: { TEST_CLI: 'true' },
+      timeout: {{ step.timeout }}
+    })
+    {% elif step.type === 'cleanroom' %}
+    const result = await runCitty({{ step.args }}, {
+      cwd: '/app',
+      env: { TEST_CLI: 'true' },
+      timeout: {{ step.timeout }}
+    })
+    {% endif %}
+
+    {% if step.expectations %}
+    {% for expectation in step.expectations %}
+    result.{{ expectation }}
+    {% endfor %}
+    {% else %}
+    result
+      .expectSuccess()
+      .expectOutput(/{{ step.expectedOutput }}/)
+      .expectNoStderr()
+    {% endif %}
+
+    return result
+  })
+  {% endfor %}
+
+// Export for easy testing
+export async function run{{ name | title }}Scenario(environment = 'local') {
+  return await {{ name }}Scenario.execute()
+}
+
+// Export scenario builder for customization
+export { {{ name }}Scenario as scenario }

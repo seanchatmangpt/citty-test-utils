@@ -1,0 +1,99 @@
+#!/usr/bin/env node
+// {{ name }}.cli.{{ format }} - {{ description }}
+
+import { defineCommand, runMain } from 'citty'
+
+const {{ name }}Cli = defineCommand({
+  meta: {
+    name: '{{ cliName }}',
+    version: '{{ version }}',
+    description: '{{ description }}',
+  },
+  args: {
+    {% for arg in args %}
+    {{ arg.name }}: {
+      type: '{{ arg.type }}',
+      description: '{{ arg.description }}',
+      {% if arg.default %}default: {{ arg.default }},{% endif %}
+      {% if arg.required %}required: true,{% endif %}
+    },
+    {% endfor %}
+  },
+  run: async (ctx) => {
+    const { {% for arg in args %}{{ arg.name }}, {% endfor %}json, verbose } = ctx.args
+
+    {% if verbose %}
+    if (verbose) {
+      console.error('Verbose mode enabled')
+    }
+    {% endif %}
+
+    {% if logic %}
+    {{ logic }}
+    {% else %}
+    // TODO: Implement {{ cliName }} logic
+    const result = {
+      message: '{{ cliName }} executed successfully',
+      timestamp: new Date().toISOString(),
+    }
+
+    if (json) {
+      console.log(JSON.stringify(result))
+    } else {
+      console.log(result.message)
+    }
+    {% endif %}
+  },
+  {% if subCommands %}
+  subCommands: {
+    {% for subCmd in subCommands %}
+    {{ subCmd.name }}: defineCommand({
+      meta: {
+        name: '{{ subCmd.name }}',
+        description: '{{ subCmd.description }}',
+      },
+      args: {
+        {% for arg in subCmd.args %}
+        {{ arg.name }}: {
+          type: '{{ arg.type }}',
+          description: '{{ arg.description }}',
+          {% if arg.default %}default: {{ arg.default }},{% endif %}
+          {% if arg.required %}required: true,{% endif %}
+        },
+        {% endfor %}
+      },
+      run: async (ctx) => {
+        const { {% for arg in subCmd.args %}{{ arg.name }}, {% endfor %}json, verbose } = ctx.args
+
+        {% if verbose %}
+        if (verbose) {
+          console.error('Verbose mode enabled for {{ subCmd.name }}')
+        }
+        {% endif %}
+
+        {% if subCmd.logic %}
+        {{ subCmd.logic }}
+        {% else %}
+        // TODO: Implement {{ subCmd.name }} logic
+        const result = {
+          message: '{{ subCmd.name }} executed successfully',
+          timestamp: new Date().toISOString(),
+        }
+
+        if (json) {
+          console.log(JSON.stringify(result))
+        } else {
+          console.log(result.message)
+        }
+        {% endif %}
+      },
+    }),
+    {% endfor %}
+  },
+  {% endif %}
+})
+
+// Only run the CLI when this script is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runMain({{ name }}Cli)
+}

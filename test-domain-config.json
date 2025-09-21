@@ -1,0 +1,111 @@
+{
+  "domains": {
+    "infra": {
+      "displayName": "Infrastructure",
+      "description": "Infrastructure management",
+      "category": "operations",
+      "resources": [
+        {
+          "name": "server",
+          "displayName": "Server",
+          "description": "Server instances",
+          "actions": [
+            "create",
+            "list",
+            "show",
+            "update",
+            "delete"
+          ],
+          "attributes": [
+            "name",
+            "type",
+            "status"
+          ],
+          "relationships": [
+            "network"
+          ]
+        },
+        {
+          "name": "network",
+          "displayName": "Network",
+          "description": "Network infrastructure",
+          "actions": [
+            "create",
+            "list",
+            "show",
+            "update",
+            "delete"
+          ],
+          "attributes": [
+            "name",
+            "cidr",
+            "status"
+          ],
+          "relationships": [
+            "server"
+          ]
+        }
+      ]
+    },
+    "dev": {
+      "displayName": "Development",
+      "description": "Development operations",
+      "category": "development",
+      "resources": [
+        {
+          "name": "project",
+          "displayName": "Project",
+          "description": "Development projects",
+          "actions": [
+            "create",
+            "list",
+            "show",
+            "update",
+            "delete"
+          ],
+          "attributes": [
+            "name",
+            "type",
+            "status"
+          ],
+          "relationships": [
+            "app"
+          ]
+        },
+        {
+          "name": "app",
+          "displayName": "Application",
+          "description": "Applications",
+          "actions": [
+            "create",
+            "list",
+            "show",
+            "update",
+            "delete"
+          ],
+          "attributes": [
+            "name",
+            "version",
+            "status"
+          ],
+          "relationships": [
+            "project"
+          ]
+        }
+      ]
+    }
+  },
+  "discovery": {
+    "enabled": true,
+    "sources": [
+      "cli-help",
+      "package-scripts",
+      "config-files"
+    ]
+  },
+  "validation": {
+    "strict": false,
+    "autoCreate": true,
+    "fallbackStrategy": "generic"
+  }
+}

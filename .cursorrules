@@ -1,5 +1,9 @@
 # Citty-Test-Utils - Cursor Rules
 
+ONLY WRITE JAVASCRIPT 
+
+DO NOT WRITE TYPESCRIPT CODE.
+
 ## Project Overview
 Citty-Test-Utils is a comprehensive testing framework for CLI applications built with Citty. It provides Docker cleanroom testing, fluent assertions, scenario DSL, and pre-built testing patterns for reliable CLI testing.
 

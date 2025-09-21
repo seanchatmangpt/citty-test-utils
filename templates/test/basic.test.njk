@@ -1,0 +1,80 @@
+#!/usr/bin/env node
+// {{ name }}.test.{{ format }} - {{ description }}
+
+import { runLocalCitty, runCitty, setupCleanroom, teardownCleanroom } from '{{ importPath }}'
+import { scenario } from '{{ importPath }}/core/scenarios/scenario-dsl.js'
+import { scenarios } from '{{ importPath }}/core/scenarios/scenarios.js'
+
+describe('{{ name }}', () => {
+  {% if environment === 'cleanroom' %}
+  beforeAll(async () => {
+    await setupCleanroom({ rootDir: '.', timeout: 60000 })
+  })
+
+  afterAll(async () => {
+    await teardownCleanroom()
+  })
+  {% endif %}
+
+  test('{{ testName }}', async () => {
+    {% if testType === 'local' %}
+    const result = await runLocalCitty({{ args }}, {
+      cwd: '{{ cwd }}',
+      env: { TEST_CLI: 'true' },
+      timeout: {{ timeout }}
+    })
+    {% elif testType === 'cleanroom' %}
+    const result = await runCitty({{ args }}, {
+      cwd: '/app',
+      env: { TEST_CLI: 'true' },
+      timeout: {{ timeout }}
+    })
+    {% elif testType === 'scenario' %}
+    const result = await scenarios.{{ scenarioType }}('{{ environment }}').execute()
+    {% endif %}
+
+    {% if expectations %}
+    {% for expectation in expectations %}
+    result.{{ expectation }}
+    {% endfor %}
+    {% else %}
+    result
+      .expectSuccess()
+      .expectOutput(/{{ expectedOutput }}/)
+      .expectNoStderr()
+    {% endif %}
+  })
+
+  {% if additionalTests %}
+  {% for test in additionalTests %}
+  test('{{ test.name }}', async () => {
+    {% if test.type === 'local' %}
+    const result = await runLocalCitty({{ test.args }}, {
+      cwd: '{{ test.cwd }}',
+      env: { TEST_CLI: 'true' },
+      timeout: {{ test.timeout }}
+    })
+    {% elif test.type === 'cleanroom' %}
+    const result = await runCitty({{ test.args }}, {
+      cwd: '/app',
+      env: { TEST_CLI: 'true' },
+      timeout: {{ test.timeout }}
+    })
+    {% elif test.type === 'scenario' %}
+    const result = await scenarios.{{ test.scenarioType }}('{{ test.environment }}').execute()
+    {% endif %}
+
+    {% if test.expectations %}
+    {% for expectation in test.expectations %}
+    result.{{ expectation }}
+    {% endfor %}
+    {% else %}
+    result
+      .expectSuccess()
+      .expectOutput(/{{ test.expectedOutput }}/)
+      .expectNoStderr()
+    {% endif %}
+  })
+  {% endfor %}
+  {% endif %}
+})

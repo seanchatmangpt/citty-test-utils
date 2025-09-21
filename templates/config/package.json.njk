@@ -1,0 +1,59 @@
+{
+  "name": "{{ name }}",
+  "version": "{{ version }}",
+  "description": "{{ description }}",
+  "type": "module",
+  "main": "{{ main }}",
+  "scripts": {
+    {% for script in scripts %}
+    "{{ script.name }}": "{{ script.command }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  },
+  "dependencies": {
+    {% for dep in dependencies %}
+    "{{ dep.name }}": "{{ dep.version }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  },
+  "devDependencies": {
+    {% for dep in devDependencies %}
+    "{{ dep.name }}": "{{ dep.version }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  },
+  {% if keywords %}
+  "keywords": [
+    {% for keyword in keywords %}
+    "{{ keyword }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ],
+  {% endif %}
+  {% if author %}
+  "author": "{{ author }}",
+  {% endif %}
+  {% if license %}
+  "license": "{{ license }}",
+  {% endif %}
+  {% if repository %}
+  "repository": {
+    "type": "git",
+    "url": "{{ repository }}"
+  },
+  {% endif %}
+  {% if engines %}
+  "engines": {
+    {% for engine in engines %}
+    "{{ engine.name }}": "{{ engine.version }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  },
+  {% endif %}
+  {% if cittyTestUtils %}
+  "cittyTestUtils": {
+    "testEnvironment": "{{ cittyTestUtils.testEnvironment }}",
+    "timeout": {{ cittyTestUtils.timeout }},
+    "scenarios": [
+      {% for scenario in cittyTestUtils.scenarios %}
+      "{{ scenario }}"{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+  {% endif %}
+}

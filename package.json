@@ -4,7 +4,7 @@
   "description": "Testing utilities for GitVan CLI with Docker cleanroom support, fluent assertions, and snapshot testing",
   "type": "module",
   "main": "index.js",
-  "types": "src/types.d.ts",
+  "types": "src/types/types.d.ts",
   "keywords": [
     "testing",
     "cli",
@@ -32,6 +32,8 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "nunjucks": "^3.2.4",
+    "proper-lockfile": "^4.1.2",
     "testcontainers": "^10.0.0"
   },
   "devDependencies": {
