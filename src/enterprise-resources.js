@@ -1,419 +1,326 @@
-/**
- * Enterprise Resource Management Utilities
- *
- * Provides CRUD operations for test resources, cross-domain operations,
- * and enterprise resource lifecycle management.
- */
+#!/usr/bin/env node
+// src/enterprise-resources.js - Enterprise Resource Manager
 
-import { enterpriseRunner } from './enterprise-runner.js'
-import { globalContextManager } from './enterprise-context.js'
+import { createDomainRegistry } from './domain-registry.js'
 
 /**
- * Enterprise Test Utilities implementation
+ * Enterprise Resource Manager
+ * 
+ * Manages enterprise resource lifecycle:
+ * - Resource creation and cleanup
+ * - Resource state management
+ * - Resource dependency tracking
+ * - Resource validation
  */
-export class EnterpriseTestUtils {
+
+export class EnterpriseResourceManager {
   constructor() {
-    this.contextManager = globalContextManager
+    this.domainRegistry = createDomainRegistry()
     this.resources = new Map()
+    this.lifecycles = new Map()
+    this.dependencies = new Map()
   }
 
   /**
-   * Create a resource
+   * Create resource
    */
-  async createResource(domain, resource, data) {
-    const id = this.generateResourceId(domain, resource)
+  async createResource(domain, resource, config = {}) {
+    const resourceId = this.generateResourceId(domain, resource)
+    const resourceInfo = this.domainRegistry.getResource(domain, resource)
+    
+    if (!resourceInfo) {
+      throw new Error(`Unknown resource ${resource} in domain ${domain}`)
+    }
 
-    const resourceObj = {
-      id,
+    const resourceData = {
+      id: resourceId,
       domain,
-      type: resource,
-      attributes: data,
-      relationships: [],
-      state: {
-        current: 'created',
-        previous: 'none',
-        transitions: [
-          {
-            from: 'none',
-            to: 'created',
-            condition: 'create',
-            timestamp: new Date(),
-          },
-        ],
-      },
-      metadata: {
-        createdBy: this.contextManager.getCurrentContext().user || 'system',
-        createdAt: new Date(),
-      },
+      resource,
+      config,
+      state: 'creating',
       createdAt: new Date(),
-      updatedAt: new Date(),
+      dependencies: [],
     }
 
-    this.resources.set(id, resourceObj)
-    return resourceObj
+    // Create resource
+    await this.executeResourceAction(domain, resource, 'create', config)
+    
+    // Update resource state
+    resourceData.state = 'created'
+    this.resources.set(resourceId, resourceData)
+    
+    return resourceData
   }
 
   /**
-   * List resources
+   * Create lifecycle
    */
-  async listResources(domain, resource, filter) {
-    const allResources = Array.from(this.resources.values())
-
-    return allResources.filter((r) => {
-      if (r.domain !== domain || r.type !== resource) {
-        return false
-      }
-
-      if (filter) {
-        for (const [key, value] of Object.entries(filter)) {
-          if (r.attributes[key] !== value) {
-            return false
-          }
-        }
-      }
-
-      return true
-    })
-  }
-
-  /**
-   * Get a resource
-   */
-  async getResource(domain, resource, id) {
-    const resourceObj = this.resources.get(id)
-    if (!resourceObj) {
-      throw new Error(`Resource ${domain}.${resource} ${id} not found`)
+  createLifecycle(domain, resource) {
+    const lifecycleId = this.generateLifecycleId(domain, resource)
+    const lifecycle = {
+      id: lifecycleId,
+      domain,
+      resource,
+      resources: [],
+      state: 'initializing',
+      createdAt: new Date(),
     }
-    return resourceObj
+    
+    this.lifecycles.set(lifecycleId, lifecycle)
+    return lifecycle
   }
 
   /**
-   * Update a resource
+   * Create lifecycle resources
    */
-  async updateResource(domain, resource, id, data) {
-    const resourceObj = this.resources.get(id)
-    if (!resourceObj) {
-      throw new Error(`Resource ${domain}.${resource} ${id} not found`)
-    }
-
-    const previousState = resourceObj.state.current
-    resourceObj.attributes = { ...resourceObj.attributes, ...data }
-    resourceObj.state.previous = previousState
-    resourceObj.state.current = 'updated'
-    resourceObj.state.transitions.push({
-      from: previousState,
-      to: 'updated',
-      condition: 'update',
-      timestamp: new Date(),
-    })
-    resourceObj.updatedAt = new Date()
-
-    this.resources.set(id, resourceObj)
-    return resourceObj
-  }
-
-  /**
-   * Delete a resource
-   */
-  async deleteResource(domain, resource, id) {
-    const resourceObj = this.resources.get(id)
-    if (!resourceObj) {
-      throw new Error(`Resource ${domain}.${resource} ${id} not found`)
-    }
-
-    this.resources.delete(id)
-  }
-
-  /**
-   * Deploy application with cross-domain resources
-   */
-  async deployApplication(app, config) {
-    const startTime = Date.now()
+  async createLifecycleResources(lifecycle) {
     const resources = []
-
-    try {
-      // Create infrastructure resources
-      if (config.infra) {
-        for (let i = 0; i < config.infra.servers; i++) {
-          const server = await this.createResource('infra', 'server', {
-            name: `${app}-server-${i + 1}`,
-            type: config.infra.type,
-            region: config.infra.region,
-          })
-          resources.push(server)
-        }
-      }
-
-      // Create security resources
-      if (config.security) {
-        for (const user of config.security.users) {
-          const userResource = await this.createResource('security', 'user', {
-            name: user,
-            role: 'developer',
-          })
-          resources.push(userResource)
-        }
-
-        for (const policy of config.security.policies) {
-          const policyResource = await this.createResource('security', 'policy', {
-            name: policy,
-            type: 'rbac',
-          })
-          resources.push(policyResource)
-        }
-      }
-
-      // Create monitoring resources
-      if (config.monitor) {
-        for (const alert of config.monitor.alerts) {
-          const alertResource = await this.createResource('monitor', 'alert', {
-            name: alert,
-            type: 'metric',
-          })
-          resources.push(alertResource)
-        }
-      }
-
-      return {
-        success: true,
-        resources,
-        duration: Date.now() - startTime,
-        metadata: {
-          app,
-          config,
-        },
-      }
-    } catch (error) {
-      return {
-        success: false,
-        resources,
-        duration: Date.now() - startTime,
-        metadata: {
-          app,
-          config,
-          error: error.message,
-        },
-      }
-    }
-  }
-
-  /**
-   * Validate compliance
-   */
-  async validateCompliance(standard, scope) {
-    const startTime = Date.now()
-    const violations = []
-
-    try {
-      // Validate each domain
-      for (const domain of scope.domains) {
-        try {
-          const result = await enterpriseRunner.executeDomain(
-            domain,
-            'compliance',
-            'validate',
-            ['--standard', standard],
-            {}
-          )
-
-          if (result.exitCode !== 0) {
-            violations.push({
-              requirement: `${domain}-validation`,
-              description: `Compliance validation failed for domain ${domain}`,
-              severity: 'high',
-              evidence: [result.stderr],
-              remediation: [`Fix compliance issues in domain ${domain}`],
-            })
+    
+    // Create primary resource
+    const primaryResource = await this.createResource(
+      lifecycle.domain,
+      lifecycle.resource,
+      { lifecycle: lifecycle.id }
+    )
+    resources.push(primaryResource)
+    
+    // Create dependent resources
+    const resourceInfo = this.domainRegistry.getResource(lifecycle.domain, lifecycle.resource)
+    if (resourceInfo.relationships) {
+      for (const relationship of resourceInfo.relationships) {
+        const dependentResource = await this.createResource(
+          lifecycle.domain,
+          relationship,
+          { 
+            lifecycle: lifecycle.id,
+            dependsOn: primaryResource.id 
           }
-        } catch (error) {
-          violations.push({
-            requirement: `${domain}-validation`,
-            description: `Compliance validation error for domain ${domain}`,
-            severity: 'critical',
-            evidence: [error.message],
-            remediation: [`Resolve compliance validation error in domain ${domain}`],
-          })
-        }
+        )
+        resources.push(dependentResource)
       }
+    }
+    
+    lifecycle.resources = resources
+    lifecycle.state = 'ready'
+    
+    return lifecycle
+  }
 
-      const score = Math.max(0, 100 - violations.length * 10)
-      const success = violations.length === 0
+  /**
+   * Setup resource
+   */
+  async setupResource(resource) {
+    // Setup resource environment
+    await this.executeResourceAction(
+      resource.domain,
+      resource.resource,
+      'configure',
+      resource.config
+    )
+    
+    // Update resource state
+    resource.state = 'configured'
+  }
 
-      return {
-        success,
-        score,
-        violations,
-        duration: Date.now() - startTime,
-        metadata: {
-          standard,
-          scope,
-        },
-      }
+  /**
+   * Cleanup resource
+   */
+  async cleanupResource(resourceId) {
+    const resource = this.resources.get(resourceId)
+    if (!resource) {
+      return
+    }
+    
+    try {
+      // Cleanup resource
+      await this.executeResourceAction(
+        resource.domain,
+        resource.resource,
+        'delete',
+        { id: resourceId }
+      )
+      
+      // Remove resource
+      this.resources.delete(resourceId)
+      
     } catch (error) {
-      return {
-        success: false,
-        score: 0,
-        violations: [
-          {
-            requirement: 'compliance-execution',
-            description: 'Compliance validation execution failed',
-            severity: 'critical',
-            evidence: [error.message],
-            remediation: ['Resolve compliance validation execution error'],
-          },
-        ],
-        duration: Date.now() - startTime,
-        metadata: {
-          standard,
-          scope,
-          error: error.message,
-        },
-      }
+      console.warn(`Failed to cleanup resource ${resourceId}: ${error.message}`)
     }
   }
 
   /**
-   * Set enterprise context
+   * Cleanup lifecycle resources
    */
-  async setContext(context) {
-    this.contextManager.setContext(context)
+  async cleanupLifecycleResources(lifecycle) {
+    // Cleanup resources in reverse order (dependencies first)
+    const resources = [...lifecycle.resources].reverse()
+    
+    for (const resource of resources) {
+      await this.cleanupResource(resource.id)
+    }
+    
+    // Remove lifecycle
+    this.lifecycles.delete(lifecycle.id)
   }
 
   /**
-   * Get current context
+   * Validate resource state
    */
-  async getContext() {
-    return this.contextManager.getCurrentContext()
+  async validateResourceState(resource) {
+    try {
+      // Check resource state
+      const result = await this.executeResourceAction(
+        resource.domain,
+        resource.resource,
+        'show',
+        { id: resource.id }
+      )
+      
+      // Validate resource state
+      if (!result.success) {
+        throw new Error(`Resource ${resource.id} is not in expected state`)
+      }
+      
+      return true
+      
+    } catch (error) {
+      throw new Error(`Resource validation failed: ${error.message}`)
+    }
   }
 
   /**
-   * Clear context
+   * Execute resource action
    */
-  async clearContext() {
-    this.contextManager.clearContext()
-  }
-
-  /**
-   * Create workspace
-   */
-  async createWorkspace(name, config) {
-    return this.contextManager.createWorkspace(name, config)
-  }
-
-  /**
-   * Switch workspace
-   */
-  async switchWorkspace(name) {
-    this.contextManager.switchWorkspace(name)
-  }
-
-  /**
-   * List workspaces
-   */
-  async listWorkspaces() {
-    return this.contextManager.listWorkspaces()
-  }
-
-  /**
-   * Delete workspace
-   */
-  async deleteWorkspace(name) {
-    this.contextManager.deleteWorkspace(name)
+  async executeResourceAction(domain, resource, action, config) {
+    // This would integrate with the actual CLI execution
+    // For now, we'll simulate the execution
+    
+    const actionInfo = this.domainRegistry.getAction(domain, action)
+    if (!actionInfo) {
+      throw new Error(`Unknown action ${action} in domain ${domain}`)
+    }
+    
+    // Simulate resource action execution
+    return {
+      success: true,
+      result: {
+        domain,
+        resource,
+        action,
+        config,
+        timestamp: new Date(),
+      },
+    }
   }
 
   /**
    * Generate resource ID
    */
   generateResourceId(domain, resource) {
-    const timestamp = Date.now()
-    const random = Math.random().toString(36).substr(2, 9)
-    return `${domain}-${resource}-${timestamp}-${random}`
+    return `${domain}-${resource}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }
 
   /**
-   * Get all resources
+   * Generate lifecycle ID
    */
-  getAllResources() {
+  generateLifecycleId(domain, resource) {
+    return `lifecycle-${domain}-${resource}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  }
+
+  /**
+   * Get resource
+   */
+  getResource(resourceId) {
+    return this.resources.get(resourceId)
+  }
+
+  /**
+   * List resources
+   */
+  listResources() {
     return Array.from(this.resources.values())
+  }
+
+  /**
+   * Get lifecycle
+   */
+  getLifecycle(lifecycleId) {
+    return this.lifecycles.get(lifecycleId)
+  }
+
+  /**
+   * List lifecycles
+   */
+  listLifecycles() {
+    return Array.from(this.lifecycles.values())
   }
 
   /**
    * Clear all resources
    */
-  clearAllResources() {
-    this.resources.clear()
+  async clearAllResources() {
+    // Cleanup all resources
+    for (const resourceId of this.resources.keys()) {
+      await this.cleanupResource(resourceId)
+    }
+    
+    // Clear all lifecycles
+    this.lifecycles.clear()
   }
 
   /**
-   * Export resources
+   * Get resource statistics
    */
-  exportResources() {
-    return Object.fromEntries(this.resources)
-  }
-
-  /**
-   * Import resources
-   */
-  importResources(resources) {
-    this.resources.clear()
-    for (const [id, resource] of Object.entries(resources)) {
-      this.resources.set(id, resource)
+  getResourceStatistics() {
+    const resources = this.listResources()
+    const lifecycles = this.listLifecycles()
+    
+    return {
+      totalResources: resources.length,
+      totalLifecycles: lifecycles.length,
+      resourcesByDomain: this.groupResourcesByDomain(resources),
+      resourcesByState: this.groupResourcesByState(resources),
     }
   }
+
+  /**
+   * Group resources by domain
+   */
+  groupResourcesByDomain(resources) {
+    const grouped = {}
+    
+    resources.forEach(resource => {
+      if (!grouped[resource.domain]) {
+        grouped[resource.domain] = []
+      }
+      grouped[resource.domain].push(resource)
+    })
+    
+    return grouped
+  }
+
+  /**
+   * Group resources by state
+   */
+  groupResourcesByState(resources) {
+    const grouped = {}
+    
+    resources.forEach(resource => {
+      if (!grouped[resource.state]) {
+        grouped[resource.state] = []
+      }
+      grouped[resource.state].push(resource)
+    })
+    
+    return grouped
+  }
 }
 
 /**
- * Global enterprise test utilities instance
+ * Factory function for creating enterprise resource manager
  */
-export const enterpriseTestUtils = new EnterpriseTestUtils()
-
-/**
- * Convenience functions for enterprise test utilities
- */
-export const testUtils = {
-  /**
-   * Resource CRUD operations
-   */
-  createResource: (domain, resource, data) =>
-    enterpriseTestUtils.createResource(domain, resource, data),
-
-  listResources: (domain, resource, filter) =>
-    enterpriseTestUtils.listResources(domain, resource, filter),
-
-  getResource: (domain, resource, id) => enterpriseTestUtils.getResource(domain, resource, id),
-
-  updateResource: (domain, resource, id, data) =>
-    enterpriseTestUtils.updateResource(domain, resource, id, data),
-
-  deleteResource: (domain, resource, id) =>
-    enterpriseTestUtils.deleteResource(domain, resource, id),
-
-  /**
-   * Cross-domain operations
-   */
-  deployApplication: (app, config) => enterpriseTestUtils.deployApplication(app, config),
-
-  validateCompliance: (standard, scope) => enterpriseTestUtils.validateCompliance(standard, scope),
-
-  /**
-   * Context management
-   */
-  setContext: (context) => enterpriseTestUtils.setContext(context),
-  getContext: () => enterpriseTestUtils.getContext(),
-  clearContext: () => enterpriseTestUtils.clearContext(),
-
-  /**
-   * Workspace management
-   */
-  createWorkspace: (name, config) => enterpriseTestUtils.createWorkspace(name, config),
-
-  switchWorkspace: (name) => enterpriseTestUtils.switchWorkspace(name),
-  listWorkspaces: () => enterpriseTestUtils.listWorkspaces(),
-  deleteWorkspace: (name) => enterpriseTestUtils.deleteWorkspace(name),
+export function createEnterpriseResourceManager() {
+  return new EnterpriseResourceManager()
 }
 
-export default {
-  EnterpriseTestUtils,
-  enterpriseTestUtils,
-  testUtils,
-}
+export default EnterpriseResourceManager

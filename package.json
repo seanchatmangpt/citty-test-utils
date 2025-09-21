@@ -50,7 +50,12 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
-    "demo": "node demo.mjs"
+    "test:enterprise": "vitest run test/enterprise",
+    "test:compliance": "vitest run test/compliance",
+    "test:performance": "vitest run test/performance",
+    "test:enterprise-runner": "vitest run test/enterprise/enterprise-test-runner.test.mjs",
+    "demo": "node demo.mjs",
+    "demo:enterprise": "node demo-enterprise.js"
   },
   "files": [
     "index.js",
