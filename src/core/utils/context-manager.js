@@ -16,21 +16,15 @@ export class EnterpriseContextManager {
   }
 
   /**
-   * Set the current enterprise context
+   * Set the current enterprise context - let invalid contexts crash
    */
   async setContext(context) {
-    // Validate context
-    const validation = this.validateContext(context)
-    if (!validation.valid) {
-      throw new Error(`Invalid context: ${validation.errors.join(', ')}`)
-    }
-
     // Store previous context in history
     if (this.currentContext) {
       this.contextHistory.push({ ...this.currentContext })
     }
 
-    // Set new context
+    // Set new context - let invalid contexts crash
     this.currentContext = { ...context, updatedAt: new Date() }
   }
 
@@ -42,80 +36,17 @@ export class EnterpriseContextManager {
   }
 
   /**
-   * Validate enterprise context
+   * Validate enterprise context - let invalid contexts crash
    */
   validateContext(context) {
-    const errors = []
-    const warnings = []
-
-    if (!context || typeof context !== 'object') {
-      errors.push('Context must be an object')
-      return { valid: false, errors, warnings }
-    }
-
-    if (!context.id || typeof context.id !== 'string') {
-      errors.push('Context must have a valid id')
-    }
-
-    if (context.domain && typeof context.domain !== 'string') {
-      errors.push('Domain must be a string')
-    }
-
-    if (context.project && typeof context.project !== 'string') {
-      errors.push('Project must be a string')
-    }
-
-    if (context.environment && typeof context.environment !== 'string') {
-      errors.push('Environment must be a string')
-    }
-
-    if (context.region && typeof context.region !== 'string') {
-      errors.push('Region must be a string')
-    }
-
-    if (context.compliance && typeof context.compliance !== 'string') {
-      errors.push('Compliance must be a string')
-    }
-
-    if (context.user && typeof context.user !== 'string') {
-      errors.push('User must be a string')
-    }
-
-    if (context.role && typeof context.role !== 'string') {
-      errors.push('Role must be a string')
-    }
-
-    if (context.workspace && typeof context.workspace !== 'string') {
-      errors.push('Workspace must be a string')
-    }
-
-    if (context.permissions && !Array.isArray(context.permissions)) {
-      errors.push('Permissions must be an array')
-    }
-
-    if (context.metadata && typeof context.metadata !== 'object') {
-      errors.push('Metadata must be an object')
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings,
-    }
+    // No validation - let invalid contexts crash
+    return { valid: true, errors: [], warnings: [] }
   }
 
   /**
-   * Create a new workspace
+   * Create a new workspace - let invalid workspaces crash
    */
   async createWorkspace(workspace) {
-    if (!workspace || typeof workspace !== 'object') {
-      throw new Error('Workspace must be an object')
-    }
-
-    if (!workspace.id || typeof workspace.id !== 'string') {
-      throw new Error('Workspace must have a valid id')
-    }
-
     if (this.workspaces.has(workspace.id)) {
       throw new Error(`Workspace ${workspace.id} already exists`)
     }

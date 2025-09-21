@@ -21,6 +21,8 @@ export async function runLocalCitty(command, options = {}) {
     timeout = 30000,
     json = false
   } = options
+  
+  const startTime = Date.now()
 
   // Check if we're in vitest environment and use mock responses
   const isVitestEnv = process.env.VITEST === 'true' || process.env.VITEST_MODE === 'RUN'
@@ -38,7 +40,7 @@ export async function runLocalCitty(command, options = {}) {
 
     // Mock responses based on command
     if (command.includes('--help')) {
-      stdout = `Test CLI for citty-test-utils integration testing (ctu v0.4.0)
+      stdout = `Test CLI for citty-test-utils integration testing (ctu v1.0.0)
 
 USAGE ctu greet|math|error|info
 
@@ -51,7 +53,7 @@ COMMANDS
 
 Use ctu <command> --help for more information about a command.`
     } else if (command.includes('--version')) {
-      stdout = '0.4.0'
+      stdout = '1.0.0'
     } else if (command.includes('invalid-command')) {
       exitCode = 1
       stderr = 'Unknown command: invalid-command'
@@ -96,8 +98,6 @@ Features:
   const fullCommand = `node ${cliPath} ${command.join(' ')}`
 
   try {
-    const startTime = Date.now()
-    
     // Use execSync for simpler execution (works better with mocks)
     const stdout = execSync(fullCommand, {
       cwd,
