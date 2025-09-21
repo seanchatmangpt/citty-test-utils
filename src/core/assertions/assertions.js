@@ -5,7 +5,7 @@ export function wrapExpectation(result) {
   const actualCommand = result.command || 'node src/cli.mjs'
 
   return {
-    result,
+    ...result, // Spread the result properties directly
     expectExit(code) {
       if (result.exitCode !== code) {
         throw new Error(

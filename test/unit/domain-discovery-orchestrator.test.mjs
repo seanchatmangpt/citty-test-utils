@@ -21,7 +21,7 @@ describe('Domain Discovery Orchestrator Unit Tests', () => {
   describe('Initialization', () => {
     it('should initialize with default options', () => {
       const defaultOrchestrator = new DomainDiscoveryOrchestrator()
-      
+
       expect(defaultOrchestrator.options.rootDir).toBe('.')
       expect(defaultOrchestrator.options.timeout).toBe(30000)
       expect(defaultOrchestrator.options.enablePlugins).toBe(true)
@@ -41,7 +41,7 @@ describe('Domain Discovery Orchestrator Unit Tests', () => {
       }
 
       const customOrchestrator = new DomainDiscoveryOrchestrator(customOptions)
-      
+
       expect(customOrchestrator.options.rootDir).toBe('/custom/path')
       expect(customOrchestrator.options.timeout).toBe(60000)
       expect(customOrchestrator.options.enablePlugins).toBe(false)
@@ -62,10 +62,10 @@ describe('Domain Discovery Orchestrator Unit Tests', () => {
 
     it('should load built-in plugins', () => {
       const plugins = orchestrator.pluginSystem.getEnabledPlugins()
-      
+
       expect(plugins).toHaveLength(2) // Built-in plugins
-      expect(plugins.map(p => p.name)).toContain('citty')
-      expect(plugins.map(p => p.name)).toContain('gitvan')
+      expect(plugins.map((p) => p.name)).toContain('citty')
+      expect(plugins.map((p) => p.name)).toContain('gitvan')
     })
   })
 
@@ -99,8 +99,8 @@ COMMANDS:
       })
 
       expect(domains).toHaveLength(2)
-      expect(domains.map(d => d.name)).toContain('infra')
-      expect(domains.map(d => d.name)).toContain('dev')
+      expect(domains.map((d) => d.name)).toContain('infra')
+      expect(domains.map((d) => d.name)).toContain('dev')
     })
 
     it('should discover domains from config', async () => {
@@ -202,12 +202,8 @@ COMMANDS:
       const domains = await orchestrator.discoverDomains({
         cliAnalysis: {
           domains: ['infra'],
-          resources: [
-            { name: 'server', domain: 'infra', actions: ['create'] },
-          ],
-          actions: [
-            { name: 'create', domain: 'infra', resource: 'server' },
-          ],
+          resources: [{ name: 'server', domain: 'infra', actions: ['create'] }],
+          actions: [{ name: 'create', domain: 'infra', resource: 'server' }],
         },
         config: {
           domains: [
@@ -241,8 +237,8 @@ COMMANDS:
       })
 
       expect(domains).toHaveLength(2)
-      expect(domains.map(d => d.name)).toContain('infra')
-      expect(domains.map(d => d.name)).toContain('test')
+      expect(domains.map((d) => d.name)).toContain('infra')
+      expect(domains.map((d) => d.name)).toContain('test')
     })
 
     it('should handle empty discovery sources', async () => {
@@ -269,16 +265,12 @@ COMMANDS:
     it('should register domain from CLI analysis', async () => {
       const cliAnalysis = {
         domains: ['test'],
-        resources: [
-          { name: 'resource', domain: 'test', actions: ['create'] },
-        ],
-        actions: [
-          { name: 'create', domain: 'test', resource: 'resource' },
-        ],
+        resources: [{ name: 'resource', domain: 'test', actions: ['create'] }],
+        actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
       const result = await orchestrator.registerDomain('test', cliAnalysis)
-      
+
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe('test')
       expect(result.domain.resources).toHaveLength(1)
@@ -313,7 +305,7 @@ COMMANDS:
       }
 
       const result = await orchestrator.registerDomain('test', config)
-      
+
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe('test')
       expect(result.domain.displayName).toBe('Test')
@@ -332,7 +324,7 @@ COMMANDS:
       }
 
       const result = await orchestrator.registerDomain('test', template, data)
-      
+
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe('test')
       expect(result.domain.displayName).toBe('Test')
@@ -340,7 +332,7 @@ COMMANDS:
 
     it('should handle registration errors', async () => {
       const result = await orchestrator.registerDomain('test', 'invalid-source')
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
@@ -353,7 +345,7 @@ COMMANDS:
       }
 
       const result = await orchestrator.registerDomain('test', invalidDomain)
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
@@ -363,17 +355,13 @@ COMMANDS:
     it('should get domain by name', async () => {
       const cliAnalysis = {
         domains: ['test'],
-        resources: [
-          { name: 'resource', domain: 'test', actions: ['create'] },
-        ],
-        actions: [
-          { name: 'create', domain: 'test', resource: 'resource' },
-        ],
+        resources: [{ name: 'resource', domain: 'test', actions: ['create'] }],
+        actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
       await orchestrator.registerDomain('test', cliAnalysis)
       const domain = orchestrator.getDomain('test')
-      
+
       expect(domain).toBeDefined()
       expect(domain.name).toBe('test')
     })
@@ -393,18 +381,16 @@ COMMANDS:
 
       await orchestrator.registerDomain('test', cliAnalysis)
       const resources = orchestrator.getDomainResources('test')
-      
+
       expect(resources).toHaveLength(2)
-      expect(resources.map(r => r.name)).toContain('resource1')
-      expect(resources.map(r => r.name)).toContain('resource2')
+      expect(resources.map((r) => r.name)).toContain('resource1')
+      expect(resources.map((r) => r.name)).toContain('resource2')
     })
 
     it('should get domain actions', async () => {
       const cliAnalysis = {
         domains: ['test'],
-        resources: [
-          { name: 'resource', domain: 'test', actions: ['create', 'list'] },
-        ],
+        resources: [{ name: 'resource', domain: 'test', actions: ['create', 'list'] }],
         actions: [
           { name: 'create', domain: 'test', resource: 'resource' },
           { name: 'list', domain: 'test', resource: 'resource' },
@@ -413,26 +399,22 @@ COMMANDS:
 
       await orchestrator.registerDomain('test', cliAnalysis)
       const actions = orchestrator.getDomainActions('test')
-      
+
       expect(actions).toHaveLength(2)
-      expect(actions.map(a => a.name)).toContain('create')
-      expect(actions.map(a => a.name)).toContain('list')
+      expect(actions.map((a) => a.name)).toContain('create')
+      expect(actions.map((a) => a.name)).toContain('list')
     })
 
     it('should validate command', async () => {
       const cliAnalysis = {
         domains: ['test'],
-        resources: [
-          { name: 'resource', domain: 'test', actions: ['create'] },
-        ],
-        actions: [
-          { name: 'create', domain: 'test', resource: 'resource' },
-        ],
+        resources: [{ name: 'resource', domain: 'test', actions: ['create'] }],
+        actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
       await orchestrator.registerDomain('test', cliAnalysis)
       const validation = orchestrator.validateCommand('test resource create')
-      
+
       expect(validation.valid).toBe(true)
       expect(validation.domain).toBe('test')
       expect(validation.resource).toBe('resource')
@@ -441,25 +423,25 @@ COMMANDS:
 
     it('should return undefined for non-existent domain', () => {
       const domain = orchestrator.getDomain('non-existent')
-      
+
       expect(domain).toBeUndefined()
     })
 
     it('should return empty array for non-existent domain resources', () => {
       const resources = orchestrator.getDomainResources('non-existent')
-      
+
       expect(resources).toEqual([])
     })
 
     it('should return empty array for non-existent domain actions', () => {
       const actions = orchestrator.getDomainActions('non-existent')
-      
+
       expect(actions).toEqual([])
     })
 
     it('should return invalid validation for non-existent command', () => {
       const validation = orchestrator.validateCommand('non-existent command')
-      
+
       expect(validation.valid).toBe(false)
       expect(validation.error).toBeDefined()
     })
@@ -479,7 +461,7 @@ COMMANDS:
       }
 
       const domain = await orchestrator.createDomainFromTemplate(template, data)
-      
+
       expect(domain.name).toBe('test')
       expect(domain.displayName).toBe('Test')
       expect(domain.resources).toHaveLength(1)
@@ -488,28 +470,24 @@ COMMANDS:
 
     it('should suggest template for CLI', async () => {
       const cliStructure = {
-        commands: [
-          'infra server create',
-          'infra server list',
-          'dev project create',
-        ],
+        commands: ['infra server create', 'infra server list', 'dev project create'],
       }
 
       const suggestedTemplate = await orchestrator.suggestTemplateForCLI(cliStructure)
-      
+
       expect(suggestedTemplate).toBe('hierarchical')
     })
 
     it('should handle template creation errors', async () => {
       const result = await orchestrator.createDomainFromTemplate('non-existent', {})
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
 
     it('should handle template suggestion errors', async () => {
       const result = await orchestrator.suggestTemplateForCLI({ commands: [] })
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
@@ -519,17 +497,13 @@ COMMANDS:
     it('should get orchestrator statistics', async () => {
       const cliAnalysis = {
         domains: ['test'],
-        resources: [
-          { name: 'resource', domain: 'test', actions: ['create'] },
-        ],
-        actions: [
-          { name: 'create', domain: 'test', resource: 'resource' },
-        ],
+        resources: [{ name: 'resource', domain: 'test', actions: ['create'] }],
+        actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
       await orchestrator.registerDomain('test', cliAnalysis)
       const stats = orchestrator.getOrchestratorStats()
-      
+
       expect(stats.domains).toBe(1)
       expect(stats.resources).toBe(1)
       expect(stats.actions).toBe(1)
@@ -539,7 +513,7 @@ COMMANDS:
 
     it('should get component statistics', async () => {
       const stats = orchestrator.getComponentStats()
-      
+
       expect(stats.cliAnalyzer).toBeDefined()
       expect(stats.domainLoader).toBeDefined()
       expect(stats.pluginSystem).toBeDefined()
@@ -552,17 +526,13 @@ COMMANDS:
     it('should get performance metrics', async () => {
       const cliAnalysis = {
         domains: ['test'],
-        resources: [
-          { name: 'resource', domain: 'test', actions: ['create'] },
-        ],
-        actions: [
-          { name: 'create', domain: 'test', resource: 'resource' },
-        ],
+        resources: [{ name: 'resource', domain: 'test', actions: ['create'] }],
+        actions: [{ name: 'create', domain: 'test', resource: 'resource' }],
       }
 
       await orchestrator.registerDomain('test', cliAnalysis)
       const metrics = orchestrator.getPerformanceMetrics()
-      
+
       expect(metrics.discoveryTime).toBeGreaterThan(0)
       expect(metrics.registrationTime).toBeGreaterThan(0)
       expect(metrics.validationTime).toBeGreaterThan(0)
@@ -585,21 +555,21 @@ COMMANDS:
 
     it('should handle registration errors gracefully', async () => {
       const result = await orchestrator.registerDomain('test', 'invalid-source')
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
 
     it('should handle validation errors gracefully', async () => {
       const validation = orchestrator.validateCommand('invalid command')
-      
+
       expect(validation.valid).toBe(false)
       expect(validation.error).toBeDefined()
     })
 
     it('should handle template errors gracefully', async () => {
       const result = await orchestrator.createDomainFromTemplate('non-existent', {})
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
@@ -608,21 +578,21 @@ COMMANDS:
   describe('Edge Cases', () => {
     it('should handle empty domain names', async () => {
       const result = await orchestrator.registerDomain('', {})
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
 
     it('should handle null domain names', async () => {
       const result = await orchestrator.registerDomain(null, {})
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
 
     it('should handle undefined domain names', async () => {
       const result = await orchestrator.registerDomain(undefined, {})
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
@@ -630,16 +600,12 @@ COMMANDS:
     it('should handle special characters in domain names', async () => {
       const cliAnalysis = {
         domains: ['test-domain'],
-        resources: [
-          { name: 'resource', domain: 'test-domain', actions: ['create'] },
-        ],
-        actions: [
-          { name: 'create', domain: 'test-domain', resource: 'resource' },
-        ],
+        resources: [{ name: 'resource', domain: 'test-domain', actions: ['create'] }],
+        actions: [{ name: 'create', domain: 'test-domain', resource: 'resource' }],
       }
 
       const result = await orchestrator.registerDomain('test-domain', cliAnalysis)
-      
+
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe('test-domain')
     })
@@ -648,16 +614,12 @@ COMMANDS:
       const longName = 'a'.repeat(1000)
       const cliAnalysis = {
         domains: [longName],
-        resources: [
-          { name: 'resource', domain: longName, actions: ['create'] },
-        ],
-        actions: [
-          { name: 'create', domain: longName, resource: 'resource' },
-        ],
+        resources: [{ name: 'resource', domain: longName, actions: ['create'] }],
+        actions: [{ name: 'create', domain: longName, resource: 'resource' }],
       }
 
       const result = await orchestrator.registerDomain(longName, cliAnalysis)
-      
+
       expect(result.success).toBe(true)
       expect(result.domain.name).toBe(longName)
     })

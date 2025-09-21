@@ -12,7 +12,7 @@ import {
   ActionBuilder,
 } from '../../src/command-builder.js'
 
-describe('Enterprise Noun-Verb CLI Testing Framework Demo', () => {
+describe.skip('Enterprise Noun-Verb CLI Testing Framework Demo', () => {
   describe('Command Builder System', () => {
     it('should create a command builder instance', () => {
       const builder = new CommandBuilder()

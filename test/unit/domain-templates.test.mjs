@@ -40,14 +40,14 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       templates.registerTemplate('custom', customTemplate)
-      
+
       expect(templates.getTemplate('custom')).toBeDefined()
       expect(templates.listTemplates()).toContain('custom')
     })
 
     it('should list all available templates', () => {
       const templateList = templates.listTemplates()
-      
+
       expect(templateList).toContain('noun-verb')
       expect(templateList).toContain('hierarchical')
       expect(templateList).toContain('flat')
@@ -58,7 +58,7 @@ describe('Domain Templates Unit Tests', () => {
 
     it('should get template metadata', () => {
       const metadata = templates.getTemplateMetadata('noun-verb')
-      
+
       expect(metadata.name).toBe('noun-verb')
       expect(metadata.description).toBeDefined()
       expect(metadata.category).toBeDefined()
@@ -70,12 +70,12 @@ describe('Domain Templates Unit Tests', () => {
 
     it('should list all template metadata', () => {
       const allMetadata = templates.listTemplateMetadata()
-      
+
       expect(allMetadata).toHaveLength(6) // Built-in templates
-      expect(allMetadata.every(m => m.name)).toBe(true)
-      expect(allMetadata.every(m => m.description)).toBe(true)
-      expect(allMetadata.every(m => m.resources > 0)).toBe(true)
-      expect(allMetadata.every(m => m.actions > 0)).toBe(true)
+      expect(allMetadata.every((m) => m.name)).toBe(true)
+      expect(allMetadata.every((m) => m.description)).toBe(true)
+      expect(allMetadata.every((m) => m.resources > 0)).toBe(true)
+      expect(allMetadata.every((m) => m.actions > 0)).toBe(true)
     })
   })
 
@@ -92,7 +92,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('noun-verb', data)
-      
+
       expect(domain.name).toBe('test')
       expect(domain.displayName).toBe('Test')
       expect(domain.description).toBe('Test domain')
@@ -120,7 +120,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('hierarchical', data)
-      
+
       expect(domain.name).toBe('infra')
       expect(domain.displayName).toBe('Infrastructure')
       expect(domain.resources).toHaveLength(2)
@@ -140,7 +140,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('flat', data)
-      
+
       expect(domain.name).toBe('utils')
       expect(domain.displayName).toBe('Utilities')
       expect(domain.resources).toHaveLength(1)
@@ -159,17 +159,17 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('microservice', data)
-      
+
       expect(domain.name).toBe('microservices')
       expect(domain.displayName).toBe('Microservices')
       expect(domain.category).toBe('microservice')
       expect(domain.resources).toHaveLength(3)
-      expect(domain.resources.map(r => r.name)).toContain('service')
-      expect(domain.resources.map(r => r.name)).toContain('config')
-      expect(domain.resources.map(r => r.name)).toContain('secret')
+      expect(domain.resources.map((r) => r.name)).toContain('service')
+      expect(domain.resources.map((r) => r.name)).toContain('config')
+      expect(domain.resources.map((r) => r.name)).toContain('secret')
       expect(domain.actions).toHaveLength(9)
-      expect(domain.actions.map(a => a.name)).toContain('deploy')
-      expect(domain.actions.map(a => a.name)).toContain('scale')
+      expect(domain.actions.map((a) => a.name)).toContain('deploy')
+      expect(domain.actions.map((a) => a.name)).toContain('scale')
     })
 
     it('should create domain from database template', () => {
@@ -181,17 +181,17 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('database', data)
-      
+
       expect(domain.name).toBe('database')
       expect(domain.displayName).toBe('Database')
       expect(domain.category).toBe('database')
       expect(domain.resources).toHaveLength(3)
-      expect(domain.resources.map(r => r.name)).toContain('database')
-      expect(domain.resources.map(r => r.name)).toContain('user')
-      expect(domain.resources.map(r => r.name)).toContain('backup')
+      expect(domain.resources.map((r) => r.name)).toContain('database')
+      expect(domain.resources.map((r) => r.name)).toContain('user')
+      expect(domain.resources.map((r) => r.name)).toContain('backup')
       expect(domain.actions).toHaveLength(8)
-      expect(domain.actions.map(a => a.name)).toContain('backup')
-      expect(domain.actions.map(a => a.name)).toContain('restore')
+      expect(domain.actions.map((a) => a.name)).toContain('backup')
+      expect(domain.actions.map((a) => a.name)).toContain('restore')
     })
 
     it('should create domain from API template', () => {
@@ -203,16 +203,16 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('api', data)
-      
+
       expect(domain.name).toBe('api')
       expect(domain.displayName).toBe('API')
       expect(domain.category).toBe('api')
       expect(domain.resources).toHaveLength(2)
-      expect(domain.resources.map(r => r.name)).toContain('endpoint')
-      expect(domain.resources.map(r => r.name)).toContain('auth')
+      expect(domain.resources.map((r) => r.name)).toContain('endpoint')
+      expect(domain.resources.map((r) => r.name)).toContain('auth')
       expect(domain.actions).toHaveLength(7)
-      expect(domain.actions.map(a => a.name)).toContain('test')
-      expect(domain.actions.map(a => a.name)).toContain('validate')
+      expect(domain.actions.map((a) => a.name)).toContain('test')
+      expect(domain.actions.map((a) => a.name)).toContain('validate')
     })
 
     it('should handle missing template variables with defaults', () => {
@@ -227,7 +227,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('noun-verb', data)
-      
+
       expect(domain.name).toBe('test')
       expect(domain.category).toBe('general') // Default value
       expect(domain.compliance).toBe('SOC2') // Default value
@@ -254,78 +254,57 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const suggestedTemplate = templates.suggestTemplate(cliStructure)
-      
+
       expect(suggestedTemplate).toBe('hierarchical')
     })
 
     it('should suggest microservice template for service keywords', () => {
       const cliStructure = {
-        commands: [
-          'service create',
-          'service deploy',
-          'service scale',
-          'config update',
-        ],
+        commands: ['service create', 'service deploy', 'service scale', 'config update'],
       }
 
       const suggestedTemplate = templates.suggestTemplate(cliStructure)
-      
+
       expect(suggestedTemplate).toBe('microservice')
     })
 
     it('should suggest database template for database keywords', () => {
       const cliStructure = {
-        commands: [
-          'database create',
-          'database backup',
-          'database restore',
-          'user create',
-        ],
+        commands: ['database create', 'database backup', 'database restore', 'user create'],
       }
 
       const suggestedTemplate = templates.suggestTemplate(cliStructure)
-      
+
       expect(suggestedTemplate).toBe('database')
     })
 
     it('should suggest API template for API keywords', () => {
       const cliStructure = {
-        commands: [
-          'endpoint create',
-          'api test',
-          'auth validate',
-        ],
+        commands: ['endpoint create', 'api test', 'auth validate'],
       }
 
       const suggestedTemplate = templates.suggestTemplate(cliStructure)
-      
+
       expect(suggestedTemplate).toBe('api')
     })
 
     it('should suggest flat template for single commands', () => {
       const cliStructure = {
-        commands: [
-          'clean',
-          'build',
-          'test',
-        ],
+        commands: ['clean', 'build', 'test'],
       }
 
       const suggestedTemplate = templates.suggestTemplate(cliStructure)
-      
+
       expect(suggestedTemplate).toBe('flat')
     })
 
     it('should suggest noun-verb as default', () => {
       const cliStructure = {
-        commands: [
-          'unknown command',
-          'mystery action',
-        ],
+        commands: ['unknown command', 'mystery action'],
       }
 
       const suggestedTemplate = templates.suggestTemplate(cliStructure)
-      
+
       expect(suggestedTemplate).toBe('noun-verb')
     })
 
@@ -335,7 +314,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const suggestedTemplate = templates.suggestTemplate(cliStructure)
-      
+
       expect(suggestedTemplate).toBe('noun-verb')
     })
   })
@@ -350,7 +329,7 @@ describe('Domain Templates Unit Tests', () => {
       ]
 
       const patterns = templates.analyzeCommandPatterns(commands)
-      
+
       expect(patterns.hierarchical).toBe(true)
       expect(patterns.microservice).toBe(false)
       expect(patterns.database).toBe(false)
@@ -359,15 +338,10 @@ describe('Domain Templates Unit Tests', () => {
     })
 
     it('should analyze microservice patterns', () => {
-      const commands = [
-        'service create',
-        'service deploy',
-        'service scale',
-        'config update',
-      ]
+      const commands = ['service create', 'service deploy', 'service scale', 'config update']
 
       const patterns = templates.analyzeCommandPatterns(commands)
-      
+
       expect(patterns.hierarchical).toBe(false)
       expect(patterns.microservice).toBe(true)
       expect(patterns.database).toBe(false)
@@ -376,15 +350,10 @@ describe('Domain Templates Unit Tests', () => {
     })
 
     it('should analyze database patterns', () => {
-      const commands = [
-        'database create',
-        'database backup',
-        'database restore',
-        'user create',
-      ]
+      const commands = ['database create', 'database backup', 'database restore', 'user create']
 
       const patterns = templates.analyzeCommandPatterns(commands)
-      
+
       expect(patterns.hierarchical).toBe(false)
       expect(patterns.microservice).toBe(false)
       expect(patterns.database).toBe(true)
@@ -393,14 +362,10 @@ describe('Domain Templates Unit Tests', () => {
     })
 
     it('should analyze API patterns', () => {
-      const commands = [
-        'endpoint create',
-        'api test',
-        'auth validate',
-      ]
+      const commands = ['endpoint create', 'api test', 'auth validate']
 
       const patterns = templates.analyzeCommandPatterns(commands)
-      
+
       expect(patterns.hierarchical).toBe(false)
       expect(patterns.microservice).toBe(false)
       expect(patterns.database).toBe(false)
@@ -409,14 +374,10 @@ describe('Domain Templates Unit Tests', () => {
     })
 
     it('should analyze flat patterns', () => {
-      const commands = [
-        'clean',
-        'build',
-        'test',
-      ]
+      const commands = ['clean', 'build', 'test']
 
       const patterns = templates.analyzeCommandPatterns(commands)
-      
+
       expect(patterns.hierarchical).toBe(false)
       expect(patterns.microservice).toBe(false)
       expect(patterns.database).toBe(false)
@@ -434,7 +395,7 @@ describe('Domain Templates Unit Tests', () => {
       ]
 
       const patterns = templates.analyzeCommandPatterns(commands)
-      
+
       expect(patterns.hierarchical).toBe(true)
       expect(patterns.microservice).toBe(true)
       expect(patterns.database).toBe(true)
@@ -465,7 +426,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const validation = templates.validateTemplate(validTemplate)
-      
+
       expect(validation.valid).toBe(true)
       expect(validation.errors).toHaveLength(0)
     })
@@ -490,7 +451,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const validation = templates.validateTemplate(invalidTemplate)
-      
+
       expect(validation.valid).toBe(false)
       expect(validation.errors).toContain('Template must have a name')
     })
@@ -510,7 +471,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const validation = templates.validateTemplate(invalidTemplate)
-      
+
       expect(validation.valid).toBe(false)
       expect(validation.errors).toContain('Template must have resources array')
     })
@@ -527,7 +488,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const validation = templates.validateTemplate(invalidTemplate)
-      
+
       expect(validation.valid).toBe(false)
       expect(validation.errors).toContain('Template must have actions array')
     })
@@ -552,7 +513,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const validation = templates.validateTemplate(invalidTemplate)
-      
+
       expect(validation.valid).toBe(false)
       expect(validation.errors).toContain('Resource at index 0 must have a name')
     })
@@ -577,7 +538,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const validation = templates.validateTemplate(invalidTemplate)
-      
+
       expect(validation.valid).toBe(false)
       expect(validation.errors).toContain("Resource 'resource' must have actions array")
     })
@@ -602,7 +563,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const validation = templates.validateTemplate(invalidTemplate)
-      
+
       expect(validation.valid).toBe(false)
       expect(validation.errors).toContain('Action at index 0 must have a name')
     })
@@ -620,7 +581,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('noun-verb', data)
-      
+
       expect(domain.resources).toHaveLength(1)
       expect(domain.resources[0].name).toBe('resource')
     })
@@ -636,7 +597,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('noun-verb', data)
-      
+
       expect(domain.actions).toHaveLength(5) // Default actions
       expect(domain.actions[0].name).toBe('create')
     })
@@ -653,7 +614,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('noun-verb', data)
-      
+
       expect(domain.name).toBe('test-domain')
       expect(domain.displayName).toBe('Test Domain')
       expect(domain.description).toBe('Test domain with special chars: !@#$%')
@@ -676,7 +637,7 @@ describe('Domain Templates Unit Tests', () => {
       }
 
       const domain = templates.createDomainFromTemplate('noun-verb', data)
-      
+
       expect(domain.name).toBe('test')
       expect(domain.resources[0].name).toBe('resource')
     })

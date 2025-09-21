@@ -22,13 +22,13 @@ describe('Domain Loader Unit Tests', () => {
   afterEach(async () => {
     try {
       if (existsSync(testConfigPath)) {
-        await import('node:fs').then(fs => fs.promises.unlink(testConfigPath))
+        await import('node:fs').then((fs) => fs.promises.unlink(testConfigPath))
       }
       if (existsSync(testPackageJsonPath)) {
-        await import('node:fs').then(fs => fs.promises.unlink(testPackageJsonPath))
+        await import('node:fs').then((fs) => fs.promises.unlink(testPackageJsonPath))
       }
       if (existsSync(testCLIPath)) {
-        await import('node:fs').then(fs => fs.promises.unlink(testCLIPath))
+        await import('node:fs').then((fs) => fs.promises.unlink(testCLIPath))
       }
     } catch (error) {
       // Ignore cleanup errors
@@ -49,7 +49,7 @@ describe('Domain Loader Unit Tests', () => {
       }
 
       loader.registerSource('test-source', testSource)
-      
+
       // Source should be registered
       expect(loader.sourceRegistry.has('test-source')).toBe(true)
     })
@@ -70,7 +70,7 @@ describe('Domain Loader Unit Tests', () => {
       loader.registerSource('source2', source2)
 
       const sortedSources = loader.getSortedSources(['source1', 'source2'])
-      
+
       expect(sortedSources[0].name).toBe('source2') // Higher priority first
       expect(sortedSources[1].name).toBe('source1')
     })
@@ -93,7 +93,7 @@ describe('Domain Loader Unit Tests', () => {
       loader.registerSource('disabled', disabledSource)
 
       const sortedSources = loader.getSortedSources(['enabled', 'disabled'])
-      
+
       expect(sortedSources).toHaveLength(1)
       expect(sortedSources[0].name).toBe('enabled')
     })
@@ -101,7 +101,9 @@ describe('Domain Loader Unit Tests', () => {
 
   describe('CLI Loading', () => {
     it('should load domains from CLI analysis', async () => {
-      await writeFile(testCLIPath, `#!/usr/bin/env node
+      await writeFile(
+        testCLIPath,
+        `#!/usr/bin/env node
 console.log(\`COMMANDS:
   infra server create <name> [options]    Create a new server
   infra server list [options]             List servers
@@ -111,7 +113,9 @@ console.log(\`COMMANDS:
 if (process.argv.includes('--help')) {
   process.exit(0)
 }
-`, 'utf8')
+`,
+        'utf8'
+      )
 
       const result = await loader.loadFromCLI({
         cliPath: testCLIPath,
@@ -149,17 +153,25 @@ if (process.argv.includes('--help')) {
 
   describe('Configuration Loading', () => {
     it('should load domains from configuration file', async () => {
-      await writeFile(testConfigPath, JSON.stringify({
-        domains: {
-          infra: {
-            resources: ['server', 'network'],
+      await writeFile(
+        testConfigPath,
+        JSON.stringify(
+          {
+            domains: {
+              infra: {
+                resources: ['server', 'network'],
+              },
+              dev: {
+                resources: ['project', 'app'],
+              },
+            },
+            actions: ['create', 'list', 'show'],
           },
-          dev: {
-            resources: ['project', 'app'],
-          },
-        },
-        actions: ['create', 'list', 'show'],
-      }, null, 2), 'utf8')
+          null,
+          2
+        ),
+        'utf8'
+      )
 
       const result = await loader.loadFromConfig({
         configPath: testConfigPath,
@@ -204,16 +216,24 @@ if (process.argv.includes('--help')) {
 
   describe('Package.json Loading', () => {
     it('should load domains from package.json scripts', async () => {
-      await writeFile(testPackageJsonPath, JSON.stringify({
-        name: 'test-cli',
-        scripts: {
-          'infra:server:create': 'echo "Creating server"',
-          'infra:server:list': 'echo "Listing servers"',
-          'infra:network:create': 'echo "Creating network"',
-          'dev:project:create': 'echo "Creating project"',
-          'dev:app:create': 'echo "Creating app"',
-        },
-      }, null, 2), 'utf8')
+      await writeFile(
+        testPackageJsonPath,
+        JSON.stringify(
+          {
+            name: 'test-cli',
+            scripts: {
+              'infra:server:create': 'echo "Creating server"',
+              'infra:server:list': 'echo "Listing servers"',
+              'infra:network:create': 'echo "Creating network"',
+              'dev:project:create': 'echo "Creating project"',
+              'dev:app:create': 'echo "Creating app"',
+            },
+          },
+          null,
+          2
+        ),
+        'utf8'
+      )
 
       const result = await loader.loadFromPackageJson({
         packageJsonPath: testPackageJsonPath,
@@ -226,9 +246,17 @@ if (process.argv.includes('--help')) {
     })
 
     it('should handle package.json without scripts', async () => {
-      await writeFile(testPackageJsonPath, JSON.stringify({
-        name: 'test-cli',
-      }, null, 2), 'utf8')
+      await writeFile(
+        testPackageJsonPath,
+        JSON.stringify(
+          {
+            name: 'test-cli',
+          },
+          null,
+          2
+        ),
+        'utf8'
+      )
 
       const result = await loader.loadFromPackageJson({
         packageJsonPath: testPackageJsonPath,
@@ -297,8 +325,10 @@ if (process.argv.includes('--help')) {
       const pluginFile = resolve(pluginDir, 'test.plugin.js')
 
       // Create plugin directory and file
-      await import('node:fs').then(fs => fs.promises.mkdir(pluginDir, { recursive: true }))
-      await writeFile(pluginFile, `export default async () => [
+      await import('node:fs').then((fs) => fs.promises.mkdir(pluginDir, { recursive: true }))
+      await writeFile(
+        pluginFile,
+        `export default async () => [
         {
           name: 'plugin-domain',
           resources: [
@@ -308,7 +338,9 @@ if (process.argv.includes('--help')) {
             },
           ],
         },
-      ]`, 'utf8')
+      ]`,
+        'utf8'
+      )
 
       try {
         const result = await loader.loadFromPlugins({
@@ -318,7 +350,9 @@ if (process.argv.includes('--help')) {
         expect(result.domains).toContain('plugin-domain')
       } finally {
         // Clean up
-        await import('node:fs').then(fs => fs.promises.rm(pluginDir, { recursive: true, force: true }))
+        await import('node:fs').then((fs) =>
+          fs.promises.rm(pluginDir, { recursive: true, force: true })
+        )
       }
     })
 
@@ -336,7 +370,7 @@ if (process.argv.includes('--help')) {
       const pluginFile = resolve(pluginDir, 'error.plugin.js')
 
       // Create plugin directory and file with syntax error
-      await import('node:fs').then(fs => fs.promises.mkdir(pluginDir, { recursive: true }))
+      await import('node:fs').then((fs) => fs.promises.mkdir(pluginDir, { recursive: true }))
       await writeFile(pluginFile, 'invalid javascript syntax', 'utf8')
 
       try {
@@ -347,7 +381,9 @@ if (process.argv.includes('--help')) {
         expect(result.domains).toHaveLength(0)
       } finally {
         // Clean up
-        await import('node:fs').then(fs => fs.promises.rm(pluginDir, { recursive: true, force: true }))
+        await import('node:fs').then((fs) =>
+          fs.promises.rm(pluginDir, { recursive: true, force: true })
+        )
       }
     })
   })
@@ -358,8 +394,10 @@ if (process.argv.includes('--help')) {
       const domainFile = resolve(domainDir, 'test.domain.js')
 
       // Create domain directory and file
-      await import('node:fs').then(fs => fs.promises.mkdir(domainDir, { recursive: true }))
-      await writeFile(domainFile, `export default {
+      await import('node:fs').then((fs) => fs.promises.mkdir(domainDir, { recursive: true }))
+      await writeFile(
+        domainFile,
+        `export default {
         name: 'directory-domain',
         resources: [
           {
@@ -367,7 +405,9 @@ if (process.argv.includes('--help')) {
             actions: ['create', 'list'],
           },
         ],
-      }`, 'utf8')
+      }`,
+        'utf8'
+      )
 
       try {
         const result = await loader.loadFromDirectory({
@@ -377,7 +417,9 @@ if (process.argv.includes('--help')) {
         expect(result.domains).toContain('directory-domain')
       } finally {
         // Clean up
-        await import('node:fs').then(fs => fs.promises.rm(domainDir, { recursive: true, force: true }))
+        await import('node:fs').then((fs) =>
+          fs.promises.rm(domainDir, { recursive: true, force: true })
+        )
       }
     })
 
@@ -396,18 +438,20 @@ if (process.argv.includes('--help')) {
       const domainFile2 = resolve(domainDir, 'test.config.json')
 
       // Create domain directory and files
-      await import('node:fs').then(fs => fs.promises.mkdir(domainDir, { recursive: true }))
+      await import('node:fs').then((fs) => fs.promises.mkdir(domainDir, { recursive: true }))
       await writeFile(domainFile1, `export default { name: 'domain1' }`, 'utf8')
       await writeFile(domainFile2, JSON.stringify({ name: 'domain2' }), 'utf8')
 
       try {
         const files = await loader.findDomainFiles(domainDir, '*.domain.js', false)
-        
+
         expect(files).toHaveLength(1)
         expect(files[0]).toBe(domainFile1)
       } finally {
         // Clean up
-        await import('node:fs').then(fs => fs.promises.rm(domainDir, { recursive: true, force: true }))
+        await import('node:fs').then((fs) =>
+          fs.promises.rm(domainDir, { recursive: true, force: true })
+        )
       }
     })
   })
@@ -580,7 +624,7 @@ if (process.argv.includes('--help')) {
       })
 
       expect(loader.getCacheStats().size).toBeGreaterThan(0)
-      
+
       loader.clearCache()
       expect(loader.getCacheStats().size).toBe(0)
     })
@@ -597,7 +641,11 @@ if (process.argv.includes('--help')) {
           },
           actions: ['create', 'list', 'show'],
           commands: {
-            'domain1 resource1 create': { domain: 'domain1', resource: 'resource1', action: 'create' },
+            'domain1 resource1 create': {
+              domain: 'domain1',
+              resource: 'resource1',
+              action: 'create',
+            },
           },
         }),
         validator: () => true,

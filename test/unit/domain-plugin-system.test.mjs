@@ -2,7 +2,10 @@
 // test/unit/domain-plugin-system.test.mjs - Domain Plugin System Unit Tests
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { DomainPluginSystem, builtInPlugins } from '../../src/core/discovery/domain-plugin-system.js'
+import {
+  DomainPluginSystem,
+  builtInPlugins,
+} from '../../src/core/discovery/domain-plugin-system.js'
 import { writeFile, existsSync } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
@@ -20,7 +23,9 @@ describe('Domain Plugin System Unit Tests', () => {
   afterEach(async () => {
     try {
       if (existsSync(testPluginDir)) {
-        await import('node:fs').then(fs => fs.promises.rm(testPluginDir, { recursive: true, force: true }))
+        await import('node:fs').then((fs) =>
+          fs.promises.rm(testPluginDir, { recursive: true, force: true })
+        )
       }
     } catch (error) {
       // Ignore cleanup errors
@@ -53,7 +58,7 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerPlugin('test-plugin', plugin)
-      
+
       expect(pluginSystem.getPlugins()).toHaveLength(1)
       expect(pluginSystem.getEnabledPlugins()).toHaveLength(1)
       expect(pluginSystem.getPlugins()[0].name).toBe('test-plugin')
@@ -86,7 +91,7 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerPlugin('hook-plugin', plugin)
-      
+
       expect(pluginSystem.getPlugins()).toHaveLength(1)
       expect(pluginSystem.hooks.has('before-domain-create')).toBe(true)
       expect(pluginSystem.hooks.has('after-domain-create')).toBe(true)
@@ -112,7 +117,7 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerPlugin('extension-plugin', plugin)
-      
+
       expect(pluginSystem.getPlugins()).toHaveLength(1)
       expect(pluginSystem.domainExtensions.has('infra')).toBe(true)
     })
@@ -127,7 +132,7 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerPlugin('disabled-plugin', plugin)
-      
+
       expect(pluginSystem.getPlugins()).toHaveLength(1)
       expect(pluginSystem.getEnabledPlugins()).toHaveLength(0)
     })
@@ -152,15 +157,15 @@ describe('Domain Plugin System Unit Tests', () => {
 
     it('should get all plugins', () => {
       const plugins = pluginSystem.getPlugins()
-      
+
       expect(plugins).toHaveLength(2)
-      expect(plugins.map(p => p.name)).toContain('plugin-1')
-      expect(plugins.map(p => p.name)).toContain('plugin-2')
+      expect(plugins.map((p) => p.name)).toContain('plugin-1')
+      expect(plugins.map((p) => p.name)).toContain('plugin-2')
     })
 
     it('should get only enabled plugins', () => {
       const enabledPlugins = pluginSystem.getEnabledPlugins()
-      
+
       expect(enabledPlugins).toHaveLength(1)
       expect(enabledPlugins[0].name).toBe('plugin-1')
     })
@@ -168,7 +173,7 @@ describe('Domain Plugin System Unit Tests', () => {
     it('should enable/disable plugins', () => {
       pluginSystem.setPluginEnabled('plugin-2', true)
       expect(pluginSystem.getEnabledPlugins()).toHaveLength(2)
-      
+
       pluginSystem.setPluginEnabled('plugin-1', false)
       expect(pluginSystem.getEnabledPlugins()).toHaveLength(1)
       expect(pluginSystem.getEnabledPlugins()[0].name).toBe('plugin-2')
@@ -176,14 +181,14 @@ describe('Domain Plugin System Unit Tests', () => {
 
     it('should unregister plugins', () => {
       pluginSystem.unregisterPlugin('plugin-1')
-      
+
       expect(pluginSystem.getPlugins()).toHaveLength(1)
       expect(pluginSystem.getPlugins()[0].name).toBe('plugin-2')
     })
 
     it('should get plugin statistics', () => {
       const stats = pluginSystem.getPluginStats()
-      
+
       expect(stats.total).toBe(2)
       expect(stats.enabled).toBe(1)
       expect(stats.disabled).toBe(1)
@@ -201,7 +206,7 @@ describe('Domain Plugin System Unit Tests', () => {
       pluginSystem.registerHook('test-hook', hook2)
 
       const results = await pluginSystem.executeHooks('test-hook', 'arg1', 'arg2')
-      
+
       expect(hook1).toHaveBeenCalledWith('arg1', 'arg2')
       expect(hook2).toHaveBeenCalledWith('arg1', 'arg2')
       expect(results).toEqual(['result1', 'result2'])
@@ -217,7 +222,7 @@ describe('Domain Plugin System Unit Tests', () => {
       pluginSystem.registerHook('error-hook', badHook)
 
       const results = await pluginSystem.executeHooks('error-hook', 'arg')
-      
+
       expect(goodHook).toHaveBeenCalledWith('arg')
       expect(badHook).toHaveBeenCalledWith('arg')
       expect(results).toEqual(['good'])
@@ -225,7 +230,7 @@ describe('Domain Plugin System Unit Tests', () => {
 
     it('should handle non-existent hooks', async () => {
       const results = await pluginSystem.executeHooks('non-existent-hook', 'arg')
-      
+
       expect(results).toEqual([])
     })
   })
@@ -255,7 +260,7 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerDomainExtension('test-domain', extension)
-      
+
       const extensions = pluginSystem.getDomainExtensions('test-domain')
       expect(extensions).toHaveLength(1)
       expect(extensions[0]).toEqual(extension)
@@ -308,9 +313,9 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerDomainExtension('test', extension)
-      
+
       const extendedDomain = pluginSystem.applyDomainExtensions(domain)
-      
+
       expect(extendedDomain.resources).toHaveLength(2)
       expect(extendedDomain.resources[0].name).toBe('existing-resource')
       expect(extendedDomain.resources[1].name).toBe('new-resource')
@@ -335,9 +340,9 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerDomainExtension('test', extension)
-      
+
       const extendedDomain = pluginSystem.applyDomainExtensions(domain)
-      
+
       expect(extendedDomain.metadata.extended).toBe(true)
       expect(extendedDomain.customProperty).toBe('custom-value')
     })
@@ -377,9 +382,9 @@ describe('Domain Plugin System Unit Tests', () => {
 
       pluginSystem.registerDomainExtension('test', extension1)
       pluginSystem.registerDomainExtension('test', extension2)
-      
+
       const extendedDomain = pluginSystem.applyDomainExtensions(domain)
-      
+
       expect(extendedDomain.resources).toHaveLength(2)
       expect(extendedDomain.resources[0].name).toBe('resource1')
       expect(extendedDomain.resources[1].name).toBe('resource2')
@@ -389,8 +394,10 @@ describe('Domain Plugin System Unit Tests', () => {
   describe('Plugin Loading', () => {
     it('should load plugins from directory', async () => {
       // Create plugin directory and file
-      await import('node:fs').then(fs => fs.promises.mkdir(testPluginDir, { recursive: true }))
-      await writeFile(testPluginFile, `export default {
+      await import('node:fs').then((fs) => fs.promises.mkdir(testPluginDir, { recursive: true }))
+      await writeFile(
+        testPluginFile,
+        `export default {
         name: 'loaded-plugin',
         version: '1.0.0',
         description: 'Loaded plugin',
@@ -411,7 +418,9 @@ describe('Domain Plugin System Unit Tests', () => {
             ],
           },
         },
-      }`, 'utf8')
+      }`,
+        'utf8'
+      )
 
       const loadedPlugins = await pluginSystem.loadPlugins({
         directory: testPluginDir,
@@ -428,18 +437,26 @@ describe('Domain Plugin System Unit Tests', () => {
       const subPluginFile = resolve(subDir, 'sub.plugin.js')
 
       // Create plugin directory structure
-      await import('node:fs').then(fs => fs.promises.mkdir(testPluginDir, { recursive: true }))
-      await import('node:fs').then(fs => fs.promises.mkdir(subDir, { recursive: true }))
-      
-      await writeFile(testPluginFile, `export default {
+      await import('node:fs').then((fs) => fs.promises.mkdir(testPluginDir, { recursive: true }))
+      await import('node:fs').then((fs) => fs.promises.mkdir(subDir, { recursive: true }))
+
+      await writeFile(
+        testPluginFile,
+        `export default {
         name: 'main-plugin',
         domains: { main: { name: 'main' } },
-      }`, 'utf8')
-      
-      await writeFile(subPluginFile, `export default {
+      }`,
+        'utf8'
+      )
+
+      await writeFile(
+        subPluginFile,
+        `export default {
         name: 'sub-plugin',
         domains: { sub: { name: 'sub' } },
-      }`, 'utf8')
+      }`,
+        'utf8'
+      )
 
       const loadedPlugins = await pluginSystem.loadPlugins({
         directory: testPluginDir,
@@ -453,7 +470,7 @@ describe('Domain Plugin System Unit Tests', () => {
 
     it('should handle plugin loading errors gracefully', async () => {
       // Create plugin directory and file with syntax error
-      await import('node:fs').then(fs => fs.promises.mkdir(testPluginDir, { recursive: true }))
+      await import('node:fs').then((fs) => fs.promises.mkdir(testPluginDir, { recursive: true }))
       await writeFile(testPluginFile, 'invalid javascript syntax', 'utf8')
 
       const loadedPlugins = await pluginSystem.loadPlugins({
@@ -474,18 +491,18 @@ describe('Domain Plugin System Unit Tests', () => {
 
     it('should find plugin files matching pattern', async () => {
       // Create plugin directory and files
-      await import('node:fs').then(fs => fs.promises.mkdir(testPluginDir, { recursive: true }))
-      
+      await import('node:fs').then((fs) => fs.promises.mkdir(testPluginDir, { recursive: true }))
+
       const pluginFile1 = resolve(testPluginDir, 'test.plugin.js')
       const pluginFile2 = resolve(testPluginDir, 'test.config.json')
       const pluginFile3 = resolve(testPluginDir, 'other.plugin.js')
-      
+
       await writeFile(pluginFile1, `export default { name: 'plugin1' }`, 'utf8')
       await writeFile(pluginFile2, JSON.stringify({ name: 'config' }), 'utf8')
       await writeFile(pluginFile3, `export default { name: 'plugin3' }`, 'utf8')
 
       const files = await pluginSystem.findPluginFiles(testPluginDir, 'test.plugin.js', false)
-      
+
       expect(files).toHaveLength(1)
       expect(files[0]).toBe(pluginFile1)
     })
@@ -500,7 +517,7 @@ describe('Domain Plugin System Unit Tests', () => {
 
     it('should load built-in plugins correctly', () => {
       const infraPlugin = builtInPlugins.infrastructure
-      
+
       expect(infraPlugin.name).toBe('infrastructure')
       expect(infraPlugin.version).toBe('1.0.0')
       expect(infraPlugin.description).toBe('Infrastructure management domain')
@@ -512,19 +529,19 @@ describe('Domain Plugin System Unit Tests', () => {
     it('should have proper domain structure in built-in plugins', () => {
       const devPlugin = builtInPlugins.development
       const devDomain = devPlugin.domains.dev
-      
+
       expect(devDomain.name).toBe('dev')
       expect(devDomain.displayName).toBe('Development')
       expect(devDomain.description).toBe('Development and testing operations')
       expect(devDomain.category).toBe('development')
       expect(devDomain.compliance).toContain('SOC2')
       expect(devDomain.governance).toContain('RBAC')
-      
+
       expect(devDomain.resources).toHaveLength(5)
       expect(devDomain.resources[0].name).toBe('project')
       expect(devDomain.resources[0].actions).toContain('create')
       expect(devDomain.resources[0].actions).toContain('list')
-      
+
       expect(devDomain.actions).toHaveLength(8)
       expect(devDomain.actions[0].name).toBe('create')
       expect(devDomain.actions[0].category).toBe('CRUD')
@@ -538,7 +555,7 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerPlugin('empty-plugin', emptyPlugin)
-      
+
       expect(pluginSystem.getPlugins()).toHaveLength(1)
       expect(pluginSystem.getPlugins()[0].name).toBe('empty-plugin')
     })
@@ -552,7 +569,7 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerPlugin('no-domain-plugin', noDomainPlugin)
-      
+
       expect(pluginSystem.getPlugins()).toHaveLength(1)
       expect(pluginSystem.hooks.has('test-hook')).toBe(true)
     })
@@ -570,7 +587,7 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerPlugin('no-resource-plugin', noResourcePlugin)
-      
+
       expect(pluginSystem.getPlugins()).toHaveLength(1)
       expect(pluginSystem.domainExtensions.has('empty')).toBe(true)
     })
@@ -587,9 +604,9 @@ describe('Domain Plugin System Unit Tests', () => {
       }
 
       pluginSystem.registerDomainExtension('test', emptyExtension)
-      
+
       const extendedDomain = pluginSystem.applyDomainExtensions(domain)
-      
+
       expect(extendedDomain.metadata.empty).toBe(true)
     })
   })

@@ -2,7 +2,10 @@
 // src/commands/runner/execute.js - Runner execute verb command
 
 import { defineCommand } from 'citty'
-import { runLocalCitty, runCitty, setupCleanroom, teardownCleanroom } from '../../../index.js'
+import { spawn, exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execAsync = promisify(exec)
 
 export const executeCommand = defineCommand({
   meta: {
@@ -42,46 +45,52 @@ export const executeCommand = defineCommand({
       let result
 
       if (environment === 'cleanroom') {
-        // Setup cleanroom
-        await setupCleanroom({ rootDir: cwd, timeout: 60000 })
-
-        try {
-          // Run command in cleanroom
-          const cleanroomResult = await runCitty([command], {
-            cwd: '/app',
-            timeout,
-            env: { TEST_CLI: 'true' },
-          })
-
-          result = {
-            environment: 'cleanroom',
-            command,
-            exitCode: cleanroomResult.result.exitCode,
-            stdout: cleanroomResult.result.stdout,
-            stderr: cleanroomResult.result.stderr,
-            success: cleanroomResult.result.exitCode === 0,
-            timestamp: new Date().toISOString(),
-          }
-        } finally {
-          // Always cleanup
-          await teardownCleanroom()
-        }
-      } else {
-        // Run command locally
-        const localResult = await runLocalCitty([command], {
-          cwd,
+        // For cleanroom, we need to use runCitty but with a different approach
+        // Since runCitty is designed for CLI commands, we'll use it to run the command
+        // through the CLI's runner execute functionality
+        const cleanroomResult = await runCitty(['runner', 'execute', command, '--environment', 'local'], {
+          cwd: '/app',
           timeout,
           env: { TEST_CLI: 'true' },
         })
 
         result = {
-          environment: 'local',
+          environment: 'cleanroom',
           command,
-          exitCode: localResult.result.exitCode,
-          stdout: localResult.result.stdout,
-          stderr: localResult.result.stderr,
-          success: localResult.result.exitCode === 0,
+          exitCode: cleanroomResult.exitCode,
+          stdout: cleanroomResult.stdout,
+          stderr: cleanroomResult.stderr,
+          success: cleanroomResult.exitCode === 0,
           timestamp: new Date().toISOString(),
+        }
+      } else {
+        // Run command locally using exec
+        try {
+          const { stdout, stderr } = await execAsync(command, {
+            cwd,
+            timeout,
+            env: { ...process.env, TEST_CLI: 'true' },
+          })
+
+          result = {
+            environment: 'local',
+            command,
+            exitCode: 0,
+            stdout: stdout.trim(),
+            stderr: stderr.trim(),
+            success: true,
+            timestamp: new Date().toISOString(),
+          }
+        } catch (error) {
+          result = {
+            environment: 'local',
+            command,
+            exitCode: error.code || 1,
+            stdout: error.stdout || '',
+            stderr: error.stderr || error.message,
+            success: false,
+            timestamp: new Date().toISOString(),
+          }
         }
       }
 

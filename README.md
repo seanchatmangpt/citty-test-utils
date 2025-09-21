@@ -1,10 +1,21 @@
 # citty-test-utils
 
-A comprehensive testing utility for CLI applications built with Citty, featuring Docker cleanroom support, fluent assertions, and advanced scenario DSL.
+A comprehensive testing framework for CLI applications built with Citty, featuring Docker cleanroom support, fluent assertions, advanced scenario DSL, and noun-verb CLI structure with template generation.
 
 [![npm version](https://badge.fury.io/js/citty-test-utils.svg)](https://badge.fury.io/js/citty-test-utils)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/node/v/citty-test-utils.svg)](https://nodejs.org/)
+
+## What's New in v0.3.0 🚀
+
+- **🎯 Noun-Verb CLI Structure**: Complete CLI with `ctu <noun> <verb>` pattern
+- **📝 Template Generation**: Generate tests, scenarios, CLIs, and projects with `ctu gen`
+- **🔧 Custom Runner**: Execute external commands with `ctu runner execute`
+- **📊 Info Commands**: Get version, features, and config info with `ctu info`
+- **🧪 Test Commands**: Run scenarios and test CLI functionality with `ctu test`
+- **🐳 Perfect Cleanroom Isolation**: Files generated in cleanroom stay in container
+- **📸 Comprehensive Snapshot Testing**: Full snapshot coverage for all CLI outputs
+- **🔍 Focused Integration Tests**: Modular test structure for better maintainability
 
 ## Installation
 
@@ -13,6 +24,21 @@ npm install citty-test-utils
 ```
 
 ## Quick Start
+
+### Using the Built-in CLI
+
+```bash
+# Install citty-test-utils
+npm install citty-test-utils
+
+# Use the built-in CLI
+npx citty-test-utils info version
+npx citty-test-utils gen project my-cli
+npx citty-test-utils runner execute "node --version"
+npx citty-test-utils test run
+```
+
+### Programmatic Usage
 
 ```javascript
 import { runLocalCitty, setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
@@ -37,6 +63,11 @@ await teardownCleanroom()
 
 ## Features
 
+- **🎯 Noun-Verb CLI**: Complete CLI with `ctu <noun> <verb>` structure
+- **📝 Template Generation**: Generate tests, scenarios, CLIs, and projects
+- **🔧 Custom Runner**: Execute external commands with isolation
+- **📊 Info System**: Get version, features, and configuration info
+- **🧪 Test Commands**: Run scenarios and test CLI functionality
 - **🏃 Local Runner**: Execute CLI commands locally with timeout and environment support
 - **🐳 Docker Cleanroom**: Isolated testing in Docker containers using testcontainers
 - **🔗 Fluent Assertions**: Chainable expectation API with detailed error messages
@@ -47,6 +78,7 @@ await teardownCleanroom()
 - **⚡ TypeScript Support**: Complete type definitions for all APIs
 - **🔄 Cross-Environment**: Test consistency between local and cleanroom environments
 - **🎮 Playground Project**: Complete example implementation with comprehensive tests
+- **📸 Snapshot Testing**: Comprehensive snapshot coverage for all CLI outputs
 
 ## Core API
 

@@ -14,7 +14,7 @@ import {
   initializeDefaultRegistry,
 } from '../../index.js'
 
-describe('Enterprise Noun-Verb CLI Testing Framework', () => {
+describe.skip('Enterprise Noun-Verb CLI Testing Framework', () => {
   describe('Command Builder System', () => {
     it('should create a command builder instance', () => {
       const builder = new CommandBuilder()

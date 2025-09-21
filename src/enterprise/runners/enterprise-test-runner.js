@@ -10,6 +10,9 @@ import { DomainDiscoveryOrchestrator } from '../../core/discovery/domain-discove
 // Shared context manager instance
 const sharedContextManager = new EnterpriseContextManager()
 
+// Check environment variable at module level
+const shouldDisableDomainDiscovery = process.env.CITTY_DISABLE_DOMAIN_DISCOVERY === 'true'
+
 export class EnterpriseTestRunner {
   constructor(options = {}) {
     this.options = {
@@ -21,29 +24,29 @@ export class EnterpriseTestRunner {
       jsonOutputFile: resolve(process.cwd(), 'enterprise-test-results.json'),
       enterpriseReportFile: resolve(process.cwd(), 'enterprise-test-report.json'),
       // Domain discovery options
-      autoDiscoverDomains: true,
+      autoDiscoverDomains: !shouldDisableDomainDiscovery,
       domainDiscoverySources: ['cli-analysis', 'config', 'package-json', 'plugins'],
       validateDomains: true,
       fallbackStrategy: 'generic',
       ...options,
     }
     this.contextManager = sharedContextManager
-    this.domainOrchestrator = new DomainDiscoveryOrchestrator({
-      configPath: options.configPath || './citty-test-config.json',
-      cliPath: options.cliPath || './cli.js',
-      packageJsonPath: options.packageJsonPath || './package.json',
-      pluginDirectory: options.pluginDirectory || './plugins',
-      autoDiscover: this.options.autoDiscoverDomains,
-      validateDomains: this.options.validateDomains,
-      fallbackStrategy: this.options.fallbackStrategy,
-    })
+    // this.domainOrchestrator = new DomainDiscoveryOrchestrator({
+    //   configPath: options.configPath || './citty-test-config.json',
+    //   cliPath: options.cliPath || './cli.js',
+    //   packageJsonPath: options.packageJsonPath || './package.json',
+    //   pluginDirectory: options.pluginDirectory || './plugins',
+    //   autoDiscover: this.options.autoDiscoverDomains,
+    //   validateDomains: this.options.validateDomains,
+    //   fallbackStrategy: this.options.fallbackStrategy,
+    // })
     this.performanceMetrics = new Map()
     this.auditLog = []
 
     // Initialize domain discovery if enabled
-    if (this.options.autoDiscoverDomains) {
-      this.initializeDomainDiscovery()
-    }
+    // if (this.options.autoDiscoverDomains && process.env.CITTY_DISABLE_DOMAIN_DISCOVERY !== 'true') {
+    //   this.initializeDomainDiscovery()
+    // }
   }
 
   buildVitestUserConfig(overrides = {}) {
@@ -446,6 +449,27 @@ export class EnterpriseTestRunner {
    */
   getDomainActions(name) {
     return this.domainOrchestrator.getDomainActions(name)
+  }
+
+  /**
+   * Validate command
+   */
+  validateCommand(domain, resource, action) {
+    return this.domainOrchestrator.validateCommand(domain, resource, action)
+  }
+
+  /**
+   * Get command metadata
+   */
+  getCommandMetadata(domain, resource, action) {
+    // Return basic metadata for the command
+    return {
+      domain,
+      resource,
+      action,
+      valid: this.validateCommand(domain, resource, action),
+      description: `${action} ${resource} in ${domain} domain`,
+    }
   }
 
   reset() {

@@ -205,11 +205,8 @@ export class CLIAnalyzer {
             resources.get(part1).add(part2)
           }
         } else {
-          // Single word - could be domain or command
-          const singleMatch = trimmed.match(/^\s*(\w+)/)
-          if (singleMatch) {
-            domains.add(singleMatch[1])
-          }
+          // Skip single word parsing to avoid false positives
+          // Single words in help output are often CLI names or other metadata
         }
       }
     }
@@ -397,11 +394,11 @@ export class CLIAnalyzer {
 
       const domains = config.domains ? Object.keys(config.domains) : []
       const resources = {}
-      
+
       if (config.domains) {
         Object.entries(config.domains).forEach(([domainName, domainConfig]) => {
           if (domainConfig.resources) {
-            resources[domainName] = domainConfig.resources.map(r => r.name)
+            resources[domainName] = domainConfig.resources.map((r) => r.name)
           }
         })
       }

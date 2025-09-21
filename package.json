@@ -1,9 +1,13 @@
 {
   "name": "citty-test-utils",
-  "version": "0.2.4",
-  "description": "Testing utilities for GitVan CLI with Docker cleanroom support, fluent assertions, and snapshot testing",
+  "version": "0.3.1",
+  "description": "Comprehensive testing framework for CLI applications with Docker cleanroom support, fluent assertions, scenario DSL, and noun-verb CLI structure",
   "type": "module",
   "main": "index.js",
+  "bin": {
+    "ctu": "./src/cli.mjs",
+    "citty-test-utils": "./src/cli.mjs"
+  },
   "types": "src/types/types.d.ts",
   "keywords": [
     "testing",
@@ -15,7 +19,11 @@
     "cleanroom",
     "assertions",
     "snapshot",
-    "snapshot-testing"
+    "snapshot-testing",
+    "noun-verb",
+    "scenario-dsl",
+    "template-generation",
+    "file-generation"
   ],
   "author": "GitVan Team",
   "license": "MIT",

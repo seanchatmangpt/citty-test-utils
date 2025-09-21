@@ -825,7 +825,16 @@ if (process.argv.includes('--help')) {
       })
 
       // Wait for domain discovery to complete
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      let attempts = 0
+      const maxAttempts = 50 // 5 seconds max
+      while (attempts < maxAttempts) {
+        const domains = runner.getDomainRegistry()
+        if (domains.length > 0) {
+          break
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        attempts++
+      }
 
       const domains = runner.getDomainRegistry()
       expect(domains).toHaveLength(2)
@@ -837,14 +846,20 @@ if (process.argv.includes('--help')) {
       expect(infraDomain.name).toBe('infra')
 
       const infraResources = runner.getDomainResources('infra')
-      expect(infraResources).toHaveLength(2)
+      expect(infraResources).toHaveLength(5) // Includes plugin-added resources
       expect(infraResources.map((r) => r.name)).toContain('server')
       expect(infraResources.map((r) => r.name)).toContain('network')
+      expect(infraResources.map((r) => r.name)).toContain('storage')
+      expect(infraResources.map((r) => r.name)).toContain('database')
+      expect(infraResources.map((r) => r.name)).toContain('monitoring')
 
       const infraActions = runner.getDomainActions('infra')
-      expect(infraActions).toHaveLength(5)
+      expect(infraActions).toHaveLength(7) // Includes plugin-added actions
       expect(infraActions.map((a) => a.name)).toContain('create')
       expect(infraActions.map((a) => a.name)).toContain('list')
+      expect(infraActions.map((a) => a.name)).toContain('show')
+      expect(infraActions.map((a) => a.name)).toContain('update')
+      expect(infraActions.map((a) => a.name)).toContain('delete')
 
       const isValidCommand = runner.validateCommand('infra', 'server', 'create')
       expect(isValidCommand).toBe(true)

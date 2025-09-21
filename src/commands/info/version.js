@@ -15,7 +15,7 @@ export const versionCommand = defineCommand({
       console.error('Showing version information')
     }
 
-    const version = '1.0.0'
+    const version = '0.3.1'
     const result = {
       version,
       name: 'ctu',

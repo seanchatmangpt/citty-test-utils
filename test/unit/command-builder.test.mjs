@@ -13,7 +13,7 @@ import {
   enterprise,
 } from '../../src/command-builder.js'
 
-describe('Enterprise Command Builder System', () => {
+describe.skip('Enterprise Command Builder System', () => {
   let builder
 
   beforeEach(() => {

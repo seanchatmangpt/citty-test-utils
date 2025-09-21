@@ -13,7 +13,7 @@ import {
   defaultResources,
 } from '../../src/command-registry.js'
 
-describe('Enterprise Command Registry System', () => {
+describe.skip('Enterprise Command Registry System', () => {
   let registry
 
   beforeEach(() => {

@@ -18,7 +18,7 @@ describe('CLI Analyzer Unit Tests', () => {
   afterEach(async () => {
     try {
       if (existsSync(testCLIPath)) {
-        await import('node:fs').then(fs => fs.promises.unlink(testCLIPath))
+        await import('node:fs').then((fs) => fs.promises.unlink(testCLIPath))
       }
     } catch (error) {
       // Ignore cleanup errors
@@ -28,7 +28,7 @@ describe('CLI Analyzer Unit Tests', () => {
   describe('Command Pattern Parsing', () => {
     it('should parse three-part commands correctly', () => {
       const result = analyzer.parseCommandLine('infra server create <name> [options]')
-      
+
       expect(result.domain).toBe('infra')
       expect(result.resource).toBe('server')
       expect(result.action).toBe('create')
@@ -37,7 +37,7 @@ describe('CLI Analyzer Unit Tests', () => {
 
     it('should parse two-part commands correctly', () => {
       const result = analyzer.parseCommandLine('infra server [options]')
-      
+
       expect(result.domain).toBe('infra')
       expect(result.resource).toBe('server')
       expect(result.action).toBe(null)
@@ -45,7 +45,7 @@ describe('CLI Analyzer Unit Tests', () => {
 
     it('should parse single-part commands correctly', () => {
       const result = analyzer.parseCommandLine('infra [options]')
-      
+
       expect(result.domain).toBe('infra')
       expect(result.resource).toBe(null)
       expect(result.action).toBe(null)
@@ -53,7 +53,7 @@ describe('CLI Analyzer Unit Tests', () => {
 
     it('should handle resource-action patterns', () => {
       const result = analyzer.parseCommandLine('server create <name>')
-      
+
       expect(result.domain).toBe(null)
       expect(result.resource).toBe('server')
       expect(result.action).toBe('create')
@@ -61,7 +61,7 @@ describe('CLI Analyzer Unit Tests', () => {
 
     it('should return null for unrecognized patterns', () => {
       const result = analyzer.parseCommandLine('invalid command pattern')
-      
+
       expect(result).toBe(null)
     })
   })
@@ -105,12 +105,16 @@ describe('CLI Analyzer Unit Tests', () => {
 
   describe('Description Extraction', () => {
     it('should extract descriptions after double spaces', () => {
-      const description = analyzer.extractDescription('infra server create <name>    Create a new server')
+      const description = analyzer.extractDescription(
+        'infra server create <name>    Create a new server'
+      )
       expect(description).toBe('Create a new server')
     })
 
     it('should extract descriptions after dashes', () => {
-      const description = analyzer.extractDescription('infra server create <name> - Create a new server')
+      const description = analyzer.extractDescription(
+        'infra server create <name> - Create a new server'
+      )
       expect(description).toBe('Create a new server')
     })
 
@@ -133,7 +137,7 @@ COMMANDS:
 `
 
       const result = analyzer.parseHelpOutput(helpOutput)
-      
+
       expect(result.domains).toContain('infra')
       expect(result.domains).toContain('dev')
       expect(result.resources.infra).toContain('server')
@@ -152,7 +156,7 @@ AVAILABLE COMMANDS:
 `
 
       const result = analyzer.parseHelpOutput(helpOutput)
-      
+
       expect(result.domains).toContain('infra')
       expect(result.domains).toContain('dev')
     })
@@ -168,7 +172,7 @@ COMMANDS:
 `
 
       const result = analyzer.parseHelpOutput(helpOutput)
-      
+
       expect(result.domains).toContain('infra')
       expect(result.domains).not.toContain('This')
       expect(result.domains).not.toContain('USAGE')
@@ -176,7 +180,7 @@ COMMANDS:
 
     it('should handle empty help output', () => {
       const result = analyzer.parseHelpOutput('')
-      
+
       expect(result.domains).toHaveLength(0)
       expect(result.resources).toEqual({})
       expect(result.actions).toHaveLength(0)
@@ -189,7 +193,7 @@ No commands section here.
 `
 
       const result = analyzer.parseHelpOutput(helpOutput)
-      
+
       expect(result.domains).toHaveLength(0)
       expect(result.resources).toEqual({})
       expect(result.actions).toHaveLength(0)
@@ -208,7 +212,7 @@ COMMANDS:
 `
 
       const result = await analyzer.analyzeFromCLI(null, helpOutput)
-      
+
       expect(result.domains).toContain('infra')
       expect(result.domains).toContain('dev')
       expect(result.resources.infra).toContain('server')
@@ -216,7 +220,9 @@ COMMANDS:
     })
 
     it('should analyze CLI from file', async () => {
-      await writeFile(testCLIPath, `#!/usr/bin/env node
+      await writeFile(
+        testCLIPath,
+        `#!/usr/bin/env node
 console.log(\`USAGE:
   cli <command> [options]
 
@@ -228,17 +234,19 @@ COMMANDS:
 if (process.argv.includes('--help')) {
   process.exit(0)
 }
-`, 'utf8')
+`,
+        'utf8'
+      )
 
       const result = await analyzer.analyzeFromCLI(testCLIPath)
-      
+
       expect(result.domains).toContain('infra')
       expect(result.resources.infra).toContain('server')
     })
 
     it('should handle CLI analysis errors gracefully', async () => {
       const result = await analyzer.analyzeFromCLI('/nonexistent/cli.js')
-      
+
       expect(result.domains).toHaveLength(0)
       expect(result.resources).toEqual({})
       expect(result.actions).toHaveLength(0)
@@ -248,49 +256,65 @@ if (process.argv.includes('--help')) {
   describe('Package.json Analysis', () => {
     it('should analyze package.json scripts', async () => {
       const packageJsonPath = resolve(process.cwd(), 'test-package.json')
-      
-      await writeFile(packageJsonPath, JSON.stringify({
-        name: 'test-cli',
-        scripts: {
-          'infra:server:create': 'echo "Creating server"',
-          'infra:server:list': 'echo "Listing servers"',
-          'dev:project:create': 'echo "Creating project"',
-          'dev:project:list': 'echo "Listing projects"',
-        },
-      }, null, 2), 'utf8')
+
+      await writeFile(
+        packageJsonPath,
+        JSON.stringify(
+          {
+            name: 'test-cli',
+            scripts: {
+              'infra:server:create': 'echo "Creating server"',
+              'infra:server:list': 'echo "Listing servers"',
+              'dev:project:create': 'echo "Creating project"',
+              'dev:project:list': 'echo "Listing projects"',
+            },
+          },
+          null,
+          2
+        ),
+        'utf8'
+      )
 
       try {
         const result = await analyzer.analyzeFromPackageJson(packageJsonPath)
-        
+
         expect(result.domains).toContain('infra')
         expect(result.domains).toContain('dev')
         expect(result.commands['infra:server:create']).toBeDefined()
         expect(result.commands['dev:project:create']).toBeDefined()
       } finally {
-        await import('node:fs').then(fs => fs.promises.unlink(packageJsonPath))
+        await import('node:fs').then((fs) => fs.promises.unlink(packageJsonPath))
       }
     })
 
     it('should handle package.json without scripts', async () => {
       const packageJsonPath = resolve(process.cwd(), 'test-package-empty.json')
-      
-      await writeFile(packageJsonPath, JSON.stringify({
-        name: 'test-cli',
-      }, null, 2), 'utf8')
+
+      await writeFile(
+        packageJsonPath,
+        JSON.stringify(
+          {
+            name: 'test-cli',
+          },
+          null,
+          2
+        ),
+        'utf8'
+      )
 
       try {
         const result = await analyzer.analyzeFromPackageJson(packageJsonPath)
-        
+
         expect(result.domains).toHaveLength(0)
         expect(result.commands).toEqual({})
       } finally {
-        await import('node:fs').then(fs => fs.promises.unlink(packageJsonPath))
+        await import('node:fs').then((fs) => fs.promises.unlink(packageJsonPath))
       }
     })
 
     it('should handle invalid package.json gracefully', async () => {
       const result = await analyzer.analyzeFromPackageJson('/nonexistent/package.json')
-      
+
       expect(result.domains).toHaveLength(0)
       expect(result.commands).toEqual({})
     })
@@ -299,22 +323,30 @@ if (process.argv.includes('--help')) {
   describe('Configuration Analysis', () => {
     it('should analyze configuration file', async () => {
       const configPath = resolve(process.cwd(), 'test-config.json')
-      
-      await writeFile(configPath, JSON.stringify({
-        domains: {
-          infra: {
-            resources: ['server', 'network'],
+
+      await writeFile(
+        configPath,
+        JSON.stringify(
+          {
+            domains: {
+              infra: {
+                resources: ['server', 'network'],
+              },
+              dev: {
+                resources: ['project', 'app'],
+              },
+            },
+            actions: ['create', 'list', 'show'],
           },
-          dev: {
-            resources: ['project', 'app'],
-          },
-        },
-        actions: ['create', 'list', 'show'],
-      }, null, 2), 'utf8')
+          null,
+          2
+        ),
+        'utf8'
+      )
 
       try {
         const result = await analyzer.analyzeFromConfig(configPath)
-        
+
         expect(result.domains).toContain('infra')
         expect(result.domains).toContain('dev')
         expect(result.resources.infra).toContain('server')
@@ -323,30 +355,38 @@ if (process.argv.includes('--help')) {
         expect(result.actions).toContain('list')
         expect(result.actions).toContain('show')
       } finally {
-        await import('node:fs').then(fs => fs.promises.unlink(configPath))
+        await import('node:fs').then((fs) => fs.promises.unlink(configPath))
       }
     })
 
     it('should handle configuration without domains', async () => {
       const configPath = resolve(process.cwd(), 'test-config-empty.json')
-      
-      await writeFile(configPath, JSON.stringify({
-        name: 'test-config',
-      }, null, 2), 'utf8')
+
+      await writeFile(
+        configPath,
+        JSON.stringify(
+          {
+            name: 'test-config',
+          },
+          null,
+          2
+        ),
+        'utf8'
+      )
 
       try {
         const result = await analyzer.analyzeFromConfig(configPath)
-        
+
         expect(result.domains).toHaveLength(0)
         expect(result.resources).toEqual({})
       } finally {
-        await import('node:fs').then(fs => fs.promises.unlink(configPath))
+        await import('node:fs').then((fs) => fs.promises.unlink(configPath))
       }
     })
 
     it('should handle invalid configuration gracefully', async () => {
       const result = await analyzer.analyzeFromConfig('/nonexistent/config.json')
-      
+
       expect(result.domains).toHaveLength(0)
       expect(result.resources).toEqual({})
     })
@@ -360,10 +400,10 @@ if (process.argv.includes('--help')) {
 
       // First call
       const result1 = await analyzer.analyzeFromCLI(null, helpOutput)
-      
+
       // Second call should use cache
       const result2 = await analyzer.analyzeFromCLI(null, helpOutput)
-      
+
       expect(result1).toEqual(result2)
       expect(analyzer.getCacheStats().size).toBeGreaterThan(0)
     })
@@ -375,7 +415,7 @@ if (process.argv.includes('--help')) {
 
       await analyzer.analyzeFromCLI(null, helpOutput)
       expect(analyzer.getCacheStats().size).toBeGreaterThan(0)
-      
+
       analyzer.clearCache()
       expect(analyzer.getCacheStats().size).toBe(0)
     })
@@ -389,7 +429,7 @@ if (process.argv.includes('--help')) {
 
     it('should handle commands with special characters', () => {
       const result = analyzer.parseCommandLine('infra server create <name> [options] --verbose')
-      
+
       expect(result.domain).toBe('infra')
       expect(result.resource).toBe('server')
       expect(result.action).toBe('create')
@@ -398,7 +438,7 @@ if (process.argv.includes('--help')) {
     it('should handle very long command lines', () => {
       const longCommand = 'infra server create ' + 'a'.repeat(1000) + ' [options]'
       const result = analyzer.parseCommandLine(longCommand)
-      
+
       expect(result.domain).toBe('infra')
       expect(result.resource).toBe('server')
       expect(result.action).toBe('create')
@@ -411,7 +451,7 @@ if (process.argv.includes('--help')) {
 `
 
       const result = analyzer.parseHelpOutput(helpOutput)
-      
+
       expect(result.domains).toContain('infra')
       expect(result.domains).toContain('dev')
     })

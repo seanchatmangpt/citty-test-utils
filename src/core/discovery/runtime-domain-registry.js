@@ -231,7 +231,7 @@ export class RuntimeDomainRegistry extends DomainRegistry {
       return false
     }
 
-    const resourceInfo = domainInfo.resources.find(r => r.name === resource)
+    const resourceInfo = domainInfo.resources.find((r) => r.name === resource)
     if (!resourceInfo) {
       return false
     }

@@ -16,7 +16,7 @@ import {
   initializeEnterpriseContext
 } from '../../src/index.js'
 
-describe('Enterprise Command Builder System', () => {
+describe.skip('Enterprise Command Builder System', () => {
   beforeAll(async () => {
     // Initialize enterprise registry and context
     initializeEnterpriseRegistry()

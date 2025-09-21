@@ -52,7 +52,13 @@ export async function runCitty(
 
     const { exitCode, output, stderr } = await singleton.container.exec(
       ['node', cliPath, ...args],
-      { workdir: cwd }
+      {
+        workdir: cwd,
+        env: {
+          ...env,
+          CITTY_DISABLE_DOMAIN_DISCOVERY: 'true',
+        },
+      }
     )
 
     const result = {

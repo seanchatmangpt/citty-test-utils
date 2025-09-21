@@ -16,7 +16,7 @@ export function runLocalCitty(
     if (useTestCli) {
       // Use the test CLI for integration testing
       projectRoot = cwd
-      // Check for src/cli.mjs first, then test-cli.mjs, then simple-test-cli.mjs
+      // Check for src/cli.mjs first (new noun-verb CLI), then test-cli.mjs, then simple-test-cli.mjs
       const srcCliPath = join(projectRoot, 'src', 'cli.mjs')
       const testCliPath = join(projectRoot, 'test-cli.mjs')
       const simpleCliPath = join(projectRoot, 'simple-test-cli.mjs')
@@ -68,6 +68,7 @@ export function runLocalCitty(
       // Override test mode for CLI testing - these must come last to override everything
       NODE_ENV: 'development',
       GITVAN_TEST_MODE: 'false',
+      CITTY_DISABLE_DOMAIN_DISCOVERY: 'true',
     }
 
     // Check if we're in a test environment and use spawn instead of exec
@@ -75,7 +76,7 @@ export function runLocalCitty(
 
     if (isTestEnv) {
       // Use spawn for test environment to avoid vitest interference
-      const child = spawn('node', [cliPath.split('/').pop(), ...args], {
+      const child = spawn('node', [cliPath.replace(projectRoot + '/', ''), ...args], {
         cwd: projectRoot,
         env: envVars,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -83,6 +84,7 @@ export function runLocalCitty(
 
       let stdout = ''
       let stderr = ''
+      let timeoutId = null
 
       child.stdout.on('data', (data) => {
         stdout += data.toString()
@@ -93,8 +95,13 @@ export function runLocalCitty(
       })
 
       child.on('close', (code) => {
+        // Clear timeout if process completes successfully
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
+
         const result = {
-          exitCode: code || 0,
+          exitCode: code,
           stdout: (stdout || '').trim(),
           stderr: (stderr || '').trim(),
           args,
@@ -113,12 +120,16 @@ export function runLocalCitty(
       })
 
       child.on('error', (error) => {
+        // Clear timeout if process errors
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
         reject(error)
       })
 
       // Set timeout
       if (timeout > 0) {
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           child.kill()
           reject(new Error(`Command timed out after ${timeout}ms`))
         }, timeout)
