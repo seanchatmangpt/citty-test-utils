@@ -127,9 +127,7 @@ describe('Gen Command Cleanroom Validation', () => {
     it('should generate scenario file in cleanroom and NOT create file in main project', async () => {
       const fileName = `cleanroom-scenario-${testTimestamp}`
 
-      const result = await runCitty(['gen', 'scenario', fileName], {
-        env: { TEST_CLI: 'true' },
-      })
+      const result = await runCitty(['gen', 'scenario', fileName])
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Generated scenario template')
@@ -164,9 +162,7 @@ describe('Gen Command Cleanroom Validation', () => {
     it('should generate CLI file in cleanroom and NOT create file in main project', async () => {
       const fileName = `cleanroom-cli-${testTimestamp}`
 
-      const result = await runCitty(['gen', 'cli', fileName], {
-        env: { TEST_CLI: 'true' },
-      })
+      const result = await runCitty(['gen', 'cli', fileName])
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Generated CLI template')

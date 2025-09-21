@@ -13,18 +13,18 @@ export function isCleanroomEnvironment() {
   if (process.env.CITTY_DISABLE_DOMAIN_DISCOVERY === 'true') {
     return true
   }
-  
+
   // Check if we're in a container by looking at common container indicators
   if (process.env.CONTAINER === 'true') {
     return true
   }
-  
+
   // Check if we're in a Docker container by looking at cgroup
   try {
     if (existsSync('/.dockerenv')) {
       return true
     }
-    
+
     // Check cgroup for Docker indicators
     const cgroup = readFileSync('/proc/1/cgroup', 'utf8')
     if (cgroup.includes('docker') || cgroup.includes('containerd')) {
@@ -33,7 +33,7 @@ export function isCleanroomEnvironment() {
   } catch (error) {
     // Ignore errors, not in container
   }
-  
+
   return false
 }
 
@@ -58,11 +58,11 @@ export function getTempDirectory(fallback = null) {
   if (isCleanroomEnvironment()) {
     return '/tmp'
   }
-  
+
   if (fallback) {
     return fallback
   }
-  
+
   // Use Node.js temp directory for local environment
   return tmpdir()
 }
@@ -84,7 +84,7 @@ export function getOutputDirectory(output = '.') {
     }
     return output
   }
-  
+
   // In local environment, use the specified output or current directory
   return output === '.' ? process.cwd() : output
 }
@@ -106,21 +106,17 @@ export function createSafeTempDirName(prefix = 'citty-test') {
  * @returns {Object} Environment-specific paths
  */
 export function getEnvironmentPaths(options = {}) {
-  const {
-    output = '.',
-    tempPrefix = 'citty-test',
-    filename = 'generated-file'
-  } = options
-  
+  const { output = '.', tempPrefix = 'citty-test', filename = 'generated-file' } = options
+
   const isCleanroom = isCleanroomEnvironment()
   const workingDir = getWorkingDirectory()
   const tempDir = getTempDirectory()
   const outputDir = getOutputDirectory(output)
-  
+
   // Create safe temporary directory name
   const tempDirName = createSafeTempDirName(tempPrefix)
   const fullTempDir = `${tempDir}/${tempDirName}`
-  
+
   return {
     isCleanroom,
     workingDir,
@@ -132,6 +128,6 @@ export function getEnvironmentPaths(options = {}) {
     tempPath: `${fullTempDir}/${filename}`,
     outputPath: `${outputDir}/${filename}`,
     // Environment info
-    environment: isCleanroom ? 'cleanroom' : 'local'
+    environment: isCleanroom ? 'cleanroom' : 'local',
   }
 }

@@ -48,11 +48,14 @@ export const executeCommand = defineCommand({
         // For cleanroom, we need to use runCitty but with a different approach
         // Since runCitty is designed for CLI commands, we'll use it to run the command
         // through the CLI's runner execute functionality
-        const cleanroomResult = await runCitty(['runner', 'execute', command, '--environment', 'local'], {
-          cwd: '/app',
-          timeout,
-          env: { TEST_CLI: 'true' },
-        })
+        const cleanroomResult = await runCitty(
+          ['runner', 'execute', command, '--environment', 'local'],
+          {
+            cwd: '/app',
+            timeout,
+            env: { TEST_CLI: 'true' },
+          }
+        )
 
         result = {
           environment: 'cleanroom',
@@ -69,7 +72,7 @@ export const executeCommand = defineCommand({
           const { stdout, stderr } = await execAsync(command, {
             cwd,
             timeout,
-            env: { ...process.env, TEST_CLI: 'true' },
+            env: { ...process.env },
           })
 
           result = {

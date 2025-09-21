@@ -62,7 +62,7 @@ describe('Citty Integration Tests', () => {
     })
 
     it('should test runner execute command', async () => {
-      const result = await runLocalCitty(['runner', 'execute', 'node --version'], {
+      const result = await runLocalCitty(['runner', 'execute', '"node --version"'], {
         cwd: process.cwd(),
         env: {}, // Use main CLI, not test CLI
       })

@@ -1,0 +1,83 @@
+{
+  "timestamp": "2025-09-21T21:29:28.633Z",
+  "summary": {
+    "totalCommands": 0,
+    "commandsWithGaps": 0,
+    "totalTestFiles": 52,
+    "overallCoverage": 0
+  },
+  "commandTree": {
+    "commands": {},
+    "options": [],
+    "subcommands": [],
+    "examples": []
+  },
+  "discoveredCommands": {},
+  "coverageGaps": [],
+  "testFiles": [
+    "test/bdd/gitvan-cli-bdd.test.mjs",
+    "test/bdd/snapshot-bdd.test.mjs",
+    "test/cleanroom-comprehensive.test.mjs",
+    "test/domain-discovery/domain-discovery-system.test.mjs",
+    "test/enterprise/enterprise-comprehensive.test.mjs",
+    "test/enterprise/enterprise-test-runner.test.mjs",
+    "test/enterprise-framework.test.mjs",
+    "test/enterprise-simple.test.mjs",
+    "test/integration/citty-integration.test.mjs",
+    "test/integration/cleanroom-concurrency-validation.test.mjs",
+    "test/integration/cleanroom-container-validation.test.mjs",
+    "test/integration/cleanroom-simple-validation.test.mjs",
+    "test/integration/cleanroom-validation.test.mjs",
+    "test/integration/coverage-analyzer.test.mjs",
+    "test/integration/error-handling.test.mjs",
+    "test/integration/full-integration.test.mjs",
+    "test/integration/gen-cleanroom-validation.test.mjs",
+    "test/integration/gen-commands.test.mjs",
+    "test/integration/info-commands.test.mjs",
+    "test/integration/main-cli.test.mjs",
+    "test/integration/noun-verb-cli-snapshots.test.mjs",
+    "test/integration/runner-commands.test.mjs",
+    "test/integration/snapshot-integration.test.mjs",
+    "test/integration/test-commands.test.mjs",
+    "test/readme/cleanroom-complete.test.mjs",
+    "test/readme/cleanroom-concurrency-validation.test.mjs",
+    "test/readme/cleanroom-gen-focus.test.mjs",
+    "test/readme/cleanroom.test.mjs",
+    "test/readme/cli-commands.test.mjs",
+    "test/readme/end-to-end.test.mjs",
+    "test/readme/examples.test.mjs",
+    "test/readme/installation.test.mjs",
+    "test/readme/typescript-support.test.mjs",
+    "test/simple.test.mjs",
+    "test/unit/assertions.test.mjs",
+    "test/unit/cli-analyzer.test.mjs",
+    "test/unit/command-builder.test.mjs",
+    "test/unit/command-registry.test.mjs",
+    "test/unit/domain-discovery-orchestrator.test.mjs",
+    "test/unit/domain-loader.test.mjs",
+    "test/unit/domain-plugin-system.test.mjs",
+    "test/unit/domain-templates.test.mjs",
+    "test/unit/enterprise-command-builder-simple.test.mjs",
+    "test/unit/enterprise-command-builder.test.mjs",
+    "test/unit/enterprise-context.test.mjs",
+    "test/unit/enterprise-demo.test.mjs",
+    "test/unit/enterprise-framework.test.mjs",
+    "test/unit/local-runner.test.mjs",
+    "test/unit/scenario-dsl.test.mjs",
+    "test/unit/snapshot-core.test.mjs",
+    "test/unit/snapshot.test.mjs",
+    "test/working-test-suite.test.mjs"
+  ],
+  "recommendations": [
+    {
+      "priority": "general",
+      "message": "Consider adding integration tests for complex command workflows",
+      "commands": []
+    },
+    {
+      "priority": "general",
+      "message": "Add error handling tests for all commands",
+      "commands": []
+    }
+  ]
+}

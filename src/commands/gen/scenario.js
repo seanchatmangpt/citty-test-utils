@@ -89,12 +89,12 @@ export const scenarioCommand = defineCommand({
       })
 
       // Generate scenario in environment-appropriate directory
-      const paths = getEnvironmentPaths({ 
-        output, 
+      const paths = getEnvironmentPaths({
+        output,
         tempPrefix: 'citty-scenario',
-        filename: `${name}.scenario.${format}` 
+        filename: `${name}.scenario.${format}`,
       })
-      
+
       const outputDir = paths.fullTempDir
       if (!existsSync(outputDir)) {
         await mkdir(outputDir, { recursive: true })
@@ -148,18 +148,17 @@ export const scenarioCommand = defineCommand({
       } else {
         console.log(`✅ Generated scenario template: ${name}.${format}`)
         console.log(`📁 Location: ${outputFile}`)
-        console.log(`⚠️  Note: This is a temporary directory that will be cleaned up automatically`)
+        console.log(`🌍 Environment: ${paths.environment}`)
 
-        // Schedule cleanup after a delay to allow inspection
-        setTimeout(async () => {
-          try {
-            const { rm } = await import('node:fs/promises')
-            await rm(tempDir, { recursive: true, force: true })
-            console.log(`🧹 Cleaned up temporary directory: ${tempDir}`)
-          } catch (error) {
-            console.warn(`⚠️  Could not clean up temporary directory: ${error.message}`)
-          }
-        }, 30000) // Clean up after 30 seconds
+        if (paths.isCleanroom) {
+          console.log(`🐳 Note: File created in cleanroom container at ${outputFile}`)
+          console.log(`⚠️  File will be cleaned up when container is destroyed`)
+        } else {
+          console.log(
+            `⚠️  Note: This is a temporary directory that will be cleaned up automatically`
+          )
+          console.log(`🧹 Cleanup scheduled for: ${paths.fullTempDir}`)
+        }
         console.log(`📄 Template: ${templateFile}`)
         console.log(`🎯 Status: ${result.status}`)
       }

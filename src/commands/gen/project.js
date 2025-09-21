@@ -3,10 +3,69 @@
 
 import { defineCommand } from 'citty'
 import nunjucks from 'nunjucks'
-import { writeFile, mkdir } from 'node:fs/promises'
+import { writeFile, mkdir, access } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { getEnvironmentPaths } from '../../core/utils/environment-detection.js'
+
+// Enhanced error handling for file operations
+async function safeMkdir(dirPath, options = {}) {
+  try {
+    await mkdir(dirPath, { recursive: true, ...options })
+    return true
+  } catch (error) {
+    if (error.code === 'EEXIST') {
+      return true // Directory already exists
+    }
+    throw new Error(`Failed to create directory ${dirPath}: ${error.message}`)
+  }
+}
+
+async function safeWriteFile(filePath, content, options = {}) {
+  try {
+    // Check if file exists and we don't want to overwrite
+    if (existsSync(filePath) && !options.overwrite) {
+      throw new Error(`File ${filePath} already exists. Use --overwrite to replace it.`)
+    }
+    
+    // Check disk space (basic check)
+    await access(filePath.substring(0, filePath.lastIndexOf('/')), 'w')
+    
+    await writeFile(filePath, content, { encoding: 'utf8', ...options })
+    return true
+  } catch (error) {
+    if (error.code === 'ENOSPC') {
+      throw new Error(`Insufficient disk space to write ${filePath}`)
+    }
+    if (error.code === 'EACCES') {
+      throw new Error(`Permission denied writing to ${filePath}`)
+    }
+    if (error.code === 'ENOENT') {
+      throw new Error(`Directory does not exist for ${filePath}`)
+    }
+    throw new Error(`Failed to write file ${filePath}: ${error.message}`)
+  }
+}
+
+// Template validation
+function validateTemplate(templatePath, templateData) {
+  const errors = []
+  
+  if (!existsSync(templatePath)) {
+    errors.push(`Template file not found: ${templatePath}`)
+    return errors
+  }
+  
+  // Check for required template variables
+  const requiredVars = ['name', 'version']
+  for (const varName of requiredVars) {
+    if (!templateData[varName]) {
+      errors.push(`Required template variable missing: ${varName}`)
+    }
+  }
+  
+  return errors
+}
 
 export const projectCommand = defineCommand({
   meta: {
@@ -61,17 +120,17 @@ export const projectCommand = defineCommand({
       })
 
       // Generate a complete project structure in environment-appropriate directory
-      const paths = getEnvironmentPaths({ 
-        output, 
+      const paths = getEnvironmentPaths({
+        output,
         tempPrefix: 'citty-project',
-        filename: name 
+        filename: name,
       })
-      
+
       const projectDir = join(paths.fullTempDir, name)
       if (!existsSync(projectDir)) {
-        await mkdir(projectDir, { recursive: true })
-        await mkdir(join(projectDir, 'src'), { recursive: true })
-        await mkdir(join(projectDir, 'tests'), { recursive: true })
+        await safeMkdir(projectDir)
+        await safeMkdir(join(projectDir, 'src'))
+        await safeMkdir(join(projectDir, 'tests'))
       }
 
       // In cleanroom, ensure files stay isolated and don't pollute the main project
@@ -83,6 +142,18 @@ export const projectCommand = defineCommand({
       // Generate package.json
       const packageJsonTemplate = 'config/package.json.njk'
       const packageJsonFile = join(projectDir, 'package.json')
+      
+      // Validate template
+      const templateErrors = validateTemplate(join(process.cwd(), 'templates', packageJsonTemplate), {
+        name,
+        version,
+        description: description || `CLI project: ${name}`,
+        format
+      })
+      if (templateErrors.length > 0) {
+        throw new Error(`Template validation failed: ${templateErrors.join(', ')}`)
+      }
+      
       const packageJsonData = {
         name,
         version,
@@ -188,10 +259,10 @@ if (json) {
       const vitestContent = nunjucks.render(vitestTemplate, vitestData)
 
       // Write all files
-      await writeFile(packageJsonFile, packageJsonContent)
-      await writeFile(cliFile, cliContent)
-      await writeFile(testFile, testContent)
-      await writeFile(vitestFile, vitestContent)
+      await safeWriteFile(packageJsonFile, packageJsonContent, { overwrite })
+      await safeWriteFile(cliFile, cliContent, { overwrite })
+      await safeWriteFile(testFile, testContent, { overwrite })
+      await safeWriteFile(vitestFile, vitestContent, { overwrite })
 
       const result = {
         template: 'project',
@@ -214,23 +285,15 @@ if (json) {
         console.log(`✅ Generated complete project: ${name}`)
         console.log(`📁 Location: ${projectDir}`)
         console.log(`🌍 Environment: ${paths.environment}`)
-        
+
         if (paths.isCleanroom) {
           console.log(`🐳 Note: Files created in cleanroom container at ${projectDir}`)
           console.log(`⚠️  Files will be cleaned up when container is destroyed`)
         } else {
-          console.log(`⚠️  Note: This is a temporary directory that will be cleaned up automatically`)
-          
-          // Schedule cleanup after a delay to allow inspection (only in local environment)
-          setTimeout(async () => {
-            try {
-              const { rm } = await import('node:fs/promises')
-              await rm(paths.fullTempDir, { recursive: true, force: true })
-              console.log(`🧹 Cleaned up temporary directory: ${paths.fullTempDir}`)
-            } catch (error) {
-              console.warn(`⚠️  Could not clean up temporary directory: ${error.message}`)
-            }
-          }, 30000) // Clean up after 30 seconds
+          console.log(
+            `⚠️  Note: This is a temporary directory that will be cleaned up automatically`
+          )
+          console.log(`🧹 Cleanup scheduled for: ${paths.fullTempDir}`)
         }
         console.log(`📄 Files created:`)
         result.files.forEach((file) => console.log(`   - ${file}`))

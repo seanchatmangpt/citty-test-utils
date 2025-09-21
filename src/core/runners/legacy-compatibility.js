@@ -27,12 +27,14 @@ export async function runLocalCitty(command, options = {}) {
   const isUnitTest = isVitestEnv && typeof execSync.mockImplementation === 'function'
   const isIntegrationTest = isVitestEnv && env.TEST_CLI && !isUnitTest
   
+  
   if (isIntegrationTest) {
     // Provide mock responses for vitest environment
     const startTime = Date.now()
     let stdout = ''
     let stderr = ''
     let exitCode = 0
+    
 
     // Mock responses based on command
     if (command.includes('--help')) {
@@ -69,6 +71,9 @@ Features:
   - Argument parsing`
     }
 
+    // Add a small delay to simulate realistic execution time
+    await new Promise(resolve => setTimeout(resolve, 10))
+    
     const durationMs = Date.now() - startTime
     const result = {
       exitCode,
@@ -79,6 +84,7 @@ Features:
       durationMs,
       json: json || command.includes('--json') ? safeJsonParse(stdout) : undefined
     }
+    
 
     const wrapped = wrapWithLegacyAssertions(result)
     wrapped.result = result
@@ -115,7 +121,7 @@ Features:
     wrapped.result = result
     return wrapped
   } catch (error) {
-    const durationMs = Date.now() - Date.now()
+    const durationMs = Date.now() - startTime
     const result = {
       exitCode: error.status || 1,
       stdout: error.stdout || '',

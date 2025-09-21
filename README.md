@@ -79,6 +79,7 @@ await teardownCleanroom()
 - **🔄 Cross-Environment**: Test consistency between local and cleanroom environments
 - **🎮 Playground Project**: Complete example implementation with comprehensive tests
 - **📸 Snapshot Testing**: Comprehensive snapshot coverage for all CLI outputs
+- **📚 Comprehensive Guides**: [Cleanroom TDD Guide](docs/guides/cleanroom-tdd-guide.md) for advanced testing patterns
 
 ## Core API
 
@@ -269,6 +270,17 @@ await scenarios.errorCase(['invalid-command'], /Unknown command/, 'local').execu
 - `idempotent(args, env?)` - Test idempotent operations
 - `concurrent(runs[], env?)` - Test concurrent execution
 - `errorCase(args, msgOrRe, env?)` - Test error conditions
+
+## Cleanroom TDD Guide
+
+For comprehensive guidance on Test-Driven Development with Docker cleanroom testing, see our detailed [Cleanroom TDD Guide](docs/guides/cleanroom-tdd-guide.md).
+
+The guide covers:
+- **🔒 Complete Isolation**: Tests run in Docker containers
+- **🚫 No Project Pollution**: Generated files stay in containers  
+- **⚡ Fast Iteration**: Quick feedback loop with isolated testing
+- **📝 Template Generation**: Generate tests, scenarios, and CLIs safely
+- **🔄 Reproducible Results**: Consistent testing environment
 
 ## Complete Example
 
