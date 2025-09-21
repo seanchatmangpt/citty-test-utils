@@ -1,11 +1,6 @@
 import { GenericContainer } from 'testcontainers'
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
-import {
-  withErrorRecovery,
-  performHealthCheck,
-  cleanupResources,
-} from '../error-recovery/error-recovery.js'
 
 const execAsync = promisify(exec)
 let singleton
@@ -205,12 +200,12 @@ export async function runCitty(
     throw new Error(`Working directory validation failed: ${cwdErrors.join(', ')}`)
   }
 
-  // Perform health check
-  const isHealthy = await performHealthCheck()
-  if (!isHealthy) {
-    console.warn('System health check failed, attempting cleanup...')
-    await cleanupResources()
-  }
+  // Skip health check for now
+  // const isHealthy = await performHealthCheck()
+  // if (!isHealthy) {
+  //   console.warn('System health check failed, attempting cleanup...')
+  //   await cleanupResources()
+  // }
 
   // Verify container is still healthy
   const containerHealthy = await verifyContainerHealth(singleton.container)
@@ -218,73 +213,68 @@ export async function runCitty(
     throw new Error('Container is no longer healthy. Please restart cleanroom.')
   }
 
-  // Execute with error recovery
-  return await withErrorRecovery(
-    async () => {
-      const startTime = Date.now()
+  // Execute command directly
+  const startTime = Date.now()
 
-      try {
-        // Check if we should use the test CLI
-        const useTestCli = env.TEST_CLI === 'true'
-        const cliPath = useTestCli ? 'src/cli.mjs' : 'src/cli.mjs' // Use src/cli.mjs
+  try {
+    // Check if we should use the test CLI
+    const useTestCli = env.TEST_CLI === 'true'
+    const cliPath = useTestCli ? 'src/cli.mjs' : 'src/cli.mjs' // Use src/cli.mjs
 
-        // Create timeout promise
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error(`Command timed out after ${timeout}ms`)), timeout)
-        })
+    // Create timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Command timed out after ${timeout}ms`)), timeout)
+    })
 
-        // Execute command with timeout
-        const execPromise = singleton.container.exec(['node', cliPath, ...args], {
-          workdir: cwd,
-          env: {
-            ...env,
-            CITTY_DISABLE_DOMAIN_DISCOVERY: 'true',
-          },
-        })
+    // Execute command with timeout
+    const execPromise = singleton.container.exec(['node', cliPath, ...args], {
+      workdir: cwd,
+      env: {
+        ...env,
+        CITTY_DISABLE_DOMAIN_DISCOVERY: 'true',
+      },
+    })
 
-        const { exitCode, output, stderr } = await Promise.race([execPromise, timeoutPromise])
-        const durationMs = Date.now() - startTime
+    const { exitCode, output, stderr } = await Promise.race([execPromise, timeoutPromise])
+    const durationMs = Date.now() - startTime
 
-        const result = {
-          exitCode,
-          stdout: output.trim(),
-          stderr: stderr.trim(),
-          args,
-          cwd,
-          durationMs,
-          json: json
-            ? safeJsonParse(output)
-            : args.includes('--json')
-            ? safeJsonParse(output)
-            : undefined,
-        }
+    const result = {
+      exitCode,
+      stdout: output.trim(),
+      stderr: stderr.trim(),
+      args,
+      cwd,
+      durationMs,
+      json: json
+        ? safeJsonParse(output)
+        : args.includes('--json')
+        ? safeJsonParse(output)
+        : undefined,
+    }
 
-        // Wrap in expectations layer
-        const { wrapExpectation } = await import('../assertions/assertions.js')
-        return wrapExpectation(result)
-      } catch (error) {
-        const durationMs = Date.now() - startTime
-        const categorized = categorizeError(error, { operation: 'exec', args, cwd })
+    // Wrap in expectations layer
+    const { wrapExpectation } = await import('../assertions/assertions.js')
+    return wrapExpectation(result)
+  } catch (error) {
+    const durationMs = Date.now() - startTime
+    const categorized = categorizeError(error, { operation: 'exec', args, cwd })
 
-        // Handle container execution errors with proper categorization
-        const errorResult = {
-          exitCode: 1,
-          stdout: '',
-          stderr: categorized.message,
-          args,
-          cwd,
-          durationMs,
-          json: undefined,
-          errorType: categorized.type,
-          suggestion: categorized.suggestion,
-        }
+    // Handle container execution errors with proper categorization
+    const errorResult = {
+      exitCode: 1,
+      stdout: '',
+      stderr: categorized.message,
+      args,
+      cwd,
+      durationMs,
+      json: undefined,
+      errorType: categorized.type,
+      suggestion: categorized.suggestion,
+    }
 
-        const { wrapExpectation } = await import('../assertions/assertions.js')
-        return wrapExpectation(errorResult)
-      }
-    },
-    { operation: 'cleanroom', args, cwd, timeout, env }
-  )
+    const { wrapExpectation } = await import('../assertions/assertions.js')
+    return wrapExpectation(errorResult)
+  }
 }
 
 export async function teardownCleanroom() {
