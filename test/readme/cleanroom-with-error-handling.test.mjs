@@ -3,7 +3,7 @@ import {
   setupCleanroom,
   runCitty,
   teardownCleanroom,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 import { CleanroomTestErrorHandler } from './error-handling-utilities.mjs'
 
 describe('Cleanroom Tests with Proper Error Handling', () => {

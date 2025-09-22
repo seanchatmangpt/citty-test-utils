@@ -7,7 +7,7 @@ import {
   scenario,
   scenarios,
   testUtils,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 
 describe('README Examples', () => {
   beforeAll(async () => {

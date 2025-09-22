@@ -7,7 +7,7 @@ import {
   matchSnapshot,
   snapshotUtils,
 } from '../../src/core/assertions/snapshot.js'
-import { runLocalCitty } from '../../src/core/runners/legacy-compatibility.js'
+import { runLocalCitty } from '../../index.js'
 import { scenario } from '../../src/core/scenarios/scenario-dsl.js'
 import { scenarios } from '../../src/core/scenarios/scenarios.js'
 import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'node:fs'

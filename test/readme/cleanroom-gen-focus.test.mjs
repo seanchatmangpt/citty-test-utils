@@ -3,7 +3,7 @@ import {
   setupCleanroom,
   runCitty,
   teardownCleanroom,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 
 describe('README Cleanroom Examples - Gen Command Focus', () => {
   let cleanroomSetup = false
@@ -222,7 +222,7 @@ describe('README Cleanroom Examples - Gen Command Focus', () => {
       }
 
       // From README: Cross-environment testing
-      const { runLocalCitty } = await import('../../src/core/runners/legacy-compatibility.js')
+      const { runLocalCitty } = await import('../../index.js')
 
       const localResult = await runLocalCitty(['--version'], {
         cwd: './playground',

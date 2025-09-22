@@ -1,23 +1,14 @@
 // tests/integration/citty-integration.test.mjs
-// Integration tests using the new noun-verb CLI structure
+// Integration tests using the new noun-verb CLI structure with maximum concurrency
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { runLocalCitty, runCitty, setupCleanroom, teardownCleanroom } from '../../index.js'
+import { describe, it, expect } from 'vitest'
+import { runLocalCitty, runCitty } from '../../index.js'
+import { getSharedCleanroom, isCleanroomAvailable } from '../setup/shared-cleanroom.mjs'
 
-describe('Citty Integration Tests', () => {
-  beforeAll(async () => {
-    // Setup cleanroom for integration tests
-    await setupCleanroom({ rootDir: '.', timeout: 60000 })
-  }, 120000)
-
-  afterAll(async () => {
-    // Cleanup cleanroom
-    await teardownCleanroom()
-  }, 60000)
-
-  describe('Local Runner Integration', () => {
-    it.skip('should test basic citty CLI commands locally', async () => {
-      // Test basic help - SKIPPED: Domain discovery interfering with stdout
+describe.concurrent('Citty Integration Tests', () => {
+  describe.concurrent('Local Runner Integration', () => {
+    it('should test basic citty CLI commands locally', async () => {
+      // Test basic help
       const helpResult = await runLocalCitty(['--help'], {
         cwd: process.cwd(),
         env: { TEST_CLI: 'true' },
@@ -96,10 +87,39 @@ describe('Citty Integration Tests', () => {
       expect(result.stdout).toContain('USAGE')
       expect(result.stdout).toContain('ctu <noun> <verb>')
     })
+
+    it('should execute multiple local commands concurrently', async () => {
+      const commands = [
+        { args: ['--help'], expected: 'USAGE' },
+        { args: ['--show-version'], expected: '0.4.0' },
+        { args: ['info', 'version'], expected: 'Version: 0.4.0' },
+        {
+          args: ['gen', 'project', 'concurrent-test', '--description', 'Concurrent test'],
+          expected: 'Generated complete project',
+        },
+      ]
+
+      const promises = commands.map((cmd) =>
+        runLocalCitty(cmd.args, { cwd: process.cwd(), env: {} })
+      )
+
+      const results = await Promise.all(promises)
+
+      results.forEach((result, i) => {
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain(commands[i].expected)
+      })
+    })
   })
 
-  describe('Cleanroom Runner Integration', () => {
+  describe.concurrent('Cleanroom Runner Integration', () => {
     it('should test basic citty CLI commands in cleanroom', async () => {
+      if (!isCleanroomAvailable()) {
+        console.log('⏭️ Skipping test - cleanroom not available')
+        return
+      }
+
+      await getSharedCleanroom()
       const helpResult = await runCitty(['--help'], {
         cwd: '/app',
         env: {}, // Use main CLI, not test CLI
@@ -111,6 +131,12 @@ describe('Citty Integration Tests', () => {
     })
 
     it('should test version command in cleanroom', async () => {
+      if (!isCleanroomAvailable()) {
+        console.log('⏭️ Skipping test - cleanroom not available')
+        return
+      }
+
+      await getSharedCleanroom()
       const versionResult = await runCitty(['--show-version'], {
         cwd: '/app',
         env: {}, // Use main CLI, not test CLI
@@ -121,6 +147,12 @@ describe('Citty Integration Tests', () => {
     })
 
     it('should test info version command in cleanroom', async () => {
+      if (!isCleanroomAvailable()) {
+        console.log('⏭️ Skipping test - cleanroom not available')
+        return
+      }
+
+      await getSharedCleanroom()
       const result = await runCitty(['info', 'version'], {
         cwd: '/app',
         env: {}, // Use main CLI, not test CLI
@@ -131,6 +163,12 @@ describe('Citty Integration Tests', () => {
     })
 
     it('should test gen project command in cleanroom', async () => {
+      if (!isCleanroomAvailable()) {
+        console.log('⏭️ Skipping test - cleanroom not available')
+        return
+      }
+
+      await getSharedCleanroom()
       const result = await runCitty(
         ['gen', 'project', 'cleanroom-test', '--description', 'Cleanroom test project'],
         {
@@ -142,9 +180,36 @@ describe('Citty Integration Tests', () => {
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Generated complete project: cleanroom-test')
     })
+
+    it('should execute multiple cleanroom commands concurrently', async () => {
+      if (!isCleanroomAvailable()) {
+        console.log('⏭️ Skipping test - cleanroom not available')
+        return
+      }
+
+      await getSharedCleanroom()
+      const commands = [
+        { args: ['--help'], expected: 'USAGE' },
+        { args: ['--show-version'], expected: '0.4.0' },
+        { args: ['info', 'version'], expected: 'Version: 0.4.0' },
+        {
+          args: ['gen', 'project', 'concurrent-cleanroom-test'],
+          expected: 'Generated complete project',
+        },
+      ]
+
+      const promises = commands.map((cmd) => runCitty(cmd.args, { cwd: '/app', env: {} }))
+
+      const results = await Promise.all(promises)
+
+      results.forEach((result, i) => {
+        expect(result.exitCode).toBe(0)
+        expect(result.stdout).toContain(commands[i].expected)
+      })
+    })
   })
 
-  describe('Fluent Assertions Integration', () => {
+  describe.concurrent('Fluent Assertions Integration', () => {
     it('should work with local runner assertions', async () => {
       const result = await runLocalCitty(['info', 'version'], {
         cwd: process.cwd(),
@@ -158,6 +223,12 @@ describe('Citty Integration Tests', () => {
     })
 
     it('should work with cleanroom runner assertions', async () => {
+      if (!isCleanroomAvailable()) {
+        console.log('⏭️ Skipping test - cleanroom not available')
+        return
+      }
+
+      await getSharedCleanroom()
       const result = await runCitty(['info', 'version'], {
         cwd: '/app',
         env: { TEST_CLI: 'true' },
@@ -184,11 +255,26 @@ describe('Citty Integration Tests', () => {
         }
       })
     })
+
+    it('should handle multiple assertion types concurrently', async () => {
+      const assertions = [
+        runLocalCitty(['--help'], { cwd: process.cwd(), env: {} }).then((r) =>
+          r.expectSuccess().expectOutput('USAGE')
+        ),
+        runLocalCitty(['--show-version'], { cwd: process.cwd(), env: {} }).then((r) =>
+          r.expectSuccess().expectOutput('0.4.0')
+        ),
+        runLocalCitty(['info', 'version'], { cwd: process.cwd(), env: {} }).then((r) =>
+          r.expectSuccess().expectOutput('Version: 0.4.0')
+        ),
+      ]
+
+      await Promise.all(assertions)
+    })
   })
 
-  describe('Error Handling Integration', () => {
-    it.skip('should handle invalid commands gracefully', async () => {
-      // SKIPPED: Domain discovery interfering with stdout
+  describe.concurrent('Error Handling Integration', () => {
+    it('should handle invalid commands gracefully', async () => {
       const result = await runLocalCitty(['invalid', 'command'], {
         cwd: process.cwd(),
         env: { TEST_CLI: 'true' },
@@ -202,6 +288,12 @@ describe('Citty Integration Tests', () => {
     })
 
     it('should handle invalid commands in cleanroom', async () => {
+      if (!isCleanroomAvailable()) {
+        console.log('⏭️ Skipping test - cleanroom not available')
+        return
+      }
+
+      await getSharedCleanroom()
       const result = await runCitty(['invalid', 'command'], {
         cwd: '/app',
         env: { TEST_CLI: 'true' },
@@ -212,6 +304,24 @@ describe('Citty Integration Tests', () => {
       expect(result.stdout).toContain('USAGE')
       expect(result.stdout).toContain('ctu')
       expect(result.stderr).toContain('Unknown command')
+    })
+
+    it('should handle multiple error scenarios concurrently', async () => {
+      const errorCommands = [
+        ['invalid', 'command'],
+        ['nonexistent', 'subcommand'],
+        ['--invalid-flag'],
+      ]
+
+      const promises = errorCommands.map((cmd) =>
+        runLocalCitty(cmd, { cwd: process.cwd(), env: { TEST_CLI: 'true' } })
+      )
+
+      const results = await Promise.all(promises)
+
+      results.forEach((result) => {
+        expect(result.exitCode).not.toBe(0)
+      })
     })
   })
 })

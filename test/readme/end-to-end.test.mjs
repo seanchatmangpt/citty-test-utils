@@ -7,7 +7,7 @@ import {
   setupCleanroom,
   runCitty,
   teardownCleanroom,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 
 describe('End-to-End README Examples', () => {
   let cleanroomSetup = false
@@ -274,7 +274,7 @@ describe('End-to-End README Examples', () => {
   describe('7. Utility Functions Examples', () => {
     it('should demonstrate waitFor utility from README', async () => {
       // From README: Utility functions section
-      const { testUtils } = await import('../../src/core/runners/legacy-compatibility.js')
+      const { testUtils } = await import('../../index.js')
 
       let conditionMet = false
       setTimeout(() => {
@@ -292,7 +292,7 @@ describe('End-to-End README Examples', () => {
 
     it('should demonstrate retry utility from README', async () => {
       // From README: Retry utility section
-      const { testUtils } = await import('../../src/core/runners/legacy-compatibility.js')
+      const { testUtils } = await import('../../index.js')
 
       let attempts = 0
       const flakyOperation = async () => {
@@ -315,7 +315,7 @@ describe('End-to-End README Examples', () => {
 
     it('should demonstrate temp file utilities from README', async () => {
       // From README: Temp file utilities section
-      const { testUtils } = await import('../../src/core/runners/legacy-compatibility.js')
+      const { testUtils } = await import('../../index.js')
 
       const tempFile = await testUtils.createTempFile('test content', '.txt')
       expect(tempFile).toContain('test')
@@ -358,7 +358,7 @@ describe('End-to-End README Examples', () => {
     it('should demonstrate complete example from README', async () => {
       // From README: Complete example section
       const { scenario, scenarios, testUtils } = await import(
-        '../../src/core/runners/legacy-compatibility.js'
+        '../../index.js'
       )
 
       // Test local runner

@@ -1,5 +1,5 @@
 // Core Citty Testing Functions
-export * from './src/core/runners/legacy-compatibility.js'
+export * from './src/core/runners/local-runner.js'
 
 // Fluent Assertions
 export * from './src/core/assertions/assertions.js'
@@ -13,3 +13,6 @@ export * from './src/core/utils/context-manager.js'
 
 // Snapshot Testing
 export * from './src/core/assertions/snapshot.js'
+
+// CLI Coverage Analysis
+export * from './src/core/coverage/cli-coverage-analyzer.js'

@@ -6,6 +6,7 @@ import { testCommand } from './commands/test.js'
 import { genCommand } from './commands/gen.js'
 import { runnerCommand } from './commands/runner.js'
 import { infoCommand } from './commands/info.js'
+import { analysisCommand } from './commands/analysis.js'
 
 const cittyTestUtils = defineCommand({
   meta: {
@@ -59,6 +60,7 @@ const cittyTestUtils = defineCommand({
           { name: 'gen', description: 'Generate test files and templates' },
           { name: 'runner', description: 'Custom runner functionality' },
           { name: 'info', description: 'Show CLI information' },
+          { name: 'analysis', description: 'Analyze CLI test coverage and generate reports' },
         ],
       }
 
@@ -82,6 +84,9 @@ const cittyTestUtils = defineCommand({
         console.log('  ctu gen project my-cli')
         console.log('  ctu runner execute --command "node --version"')
         console.log('  ctu info version')
+        console.log('  ctu analysis analyze --verbose')
+        console.log('  ctu analysis stats')
+        console.log('  ctu analysis export --format json --output coverage.json')
         console.log('')
         console.log('Use ctu <noun> --help for more information about a noun.')
       }
@@ -93,6 +98,7 @@ const cittyTestUtils = defineCommand({
     gen: genCommand,
     runner: runnerCommand,
     info: infoCommand,
+    analysis: analysisCommand,
   },
 })
 

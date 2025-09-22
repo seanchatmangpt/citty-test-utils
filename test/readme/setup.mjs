@@ -1,5 +1,5 @@
 // Global setup for README tests
-import { setupCleanroom } from '../../src/core/runners/legacy-compatibility.js'
+import { setupCleanroom } from '../../index.js'
 
 export default async function setup() {
   console.log('🚀 Setting up README tests...')

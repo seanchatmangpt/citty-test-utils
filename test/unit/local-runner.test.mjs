@@ -7,11 +7,11 @@ vi.mock('node:child_process', () => ({
   spawn: vi.fn(),
 }))
 
-import { runLocalCitty } from '../../src/core/runners/legacy-compatibility.js'
+import { runLocalCitty } from '../../src/core/runners/local-runner.js'
 import { execSync, spawn } from 'node:child_process'
 
-describe('Local Runner Unit Tests', () => {
-  describe('runLocalCitty', () => {
+describe.concurrent('Local Runner Unit Tests', () => {
+  describe.concurrent('runLocalCitty', () => {
     beforeEach(() => {
       vi.clearAllMocks()
     })
@@ -98,6 +98,26 @@ describe('Local Runner Unit Tests', () => {
           }),
         })
       )
+    })
+
+    it('should execute multiple commands concurrently', async () => {
+      // Mock execSync for concurrent execution
+      execSync.mockReturnValue('Mock output')
+
+      const commands = [['--help'], ['--version'], ['--help'], ['--version']]
+
+      const promises = commands.map((cmd) => runLocalCitty(cmd, { env: { TEST_CLI: 'true' } }))
+
+      const results = await Promise.all(promises)
+
+      // All should succeed
+      results.forEach((result) => {
+        expect(result.result.exitCode).toBe(0)
+        expect(result.result.stdout).toBe('Mock output')
+      })
+
+      // Should have been called multiple times
+      expect(execSync).toHaveBeenCalledTimes(4)
     })
   })
 })

@@ -3,7 +3,7 @@ import {
   setupCleanroom,
   runCitty,
   teardownCleanroom,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 
 describe('README Cleanroom Examples - Complete Coverage', () => {
   let cleanroomSetup = false
@@ -314,7 +314,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Cross-environment testing
-      const { runLocalCitty } = await import('../../src/core/runners/legacy-compatibility.js')
+      const { runLocalCitty } = await import('../../index.js')
 
       const localResult = await runLocalCitty(['--version'], {
         cwd: './playground',
@@ -341,7 +341,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // Test gen commands work consistently across environments
-      const { runLocalCitty } = await import('../../src/core/runners/legacy-compatibility.js')
+      const { runLocalCitty } = await import('../../index.js')
 
       const localResult = await runLocalCitty(['gen', '--help'], {
         cwd: './playground',

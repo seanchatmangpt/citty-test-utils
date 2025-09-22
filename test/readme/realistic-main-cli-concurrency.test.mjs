@@ -3,7 +3,7 @@ import {
   setupCleanroom,
   runCitty,
   teardownCleanroom,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 
 describe('Realistic Main CLI Concurrency Validation', () => {
   let cleanroomSetup = false

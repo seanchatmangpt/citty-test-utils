@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { scenario, testUtils } from '../../src/core/scenarios/scenario-dsl.js'
 
-describe('Scenario DSL Unit Tests', () => {
-  describe('scenario', () => {
+describe.concurrent('Scenario DSL Unit Tests', () => {
+  describe.concurrent('scenario', () => {
     it('should create a scenario builder', () => {
       const testScenario = scenario('Test Scenario')
       expect(testScenario).toBeDefined()
@@ -53,6 +53,29 @@ describe('Scenario DSL Unit Tests', () => {
       expect(results.results).toHaveLength(2)
     })
 
+    it('should execute steps concurrently when enabled', async () => {
+      const mockRunner = vi.fn().mockResolvedValue({
+        result: { exitCode: 0, stdout: 'success', stderr: '' },
+        expectSuccess: vi.fn().mockReturnThis(),
+        expectOutput: vi.fn().mockReturnThis(),
+      })
+
+      const testScenario = scenario('Concurrent Test Scenario')
+        .concurrent()
+        .step('First step')
+        .run(['--help'])
+        .expect((result) => result.expectSuccess())
+        .step('Second step')
+        .run(['--version'])
+        .expect((result) => result.expectSuccess())
+
+      const results = await testScenario.execute(mockRunner)
+
+      expect(mockRunner).toHaveBeenCalledTimes(2)
+      expect(results.results).toHaveLength(2)
+      expect(results.concurrent).toBe(true)
+    })
+
     it('should throw error for step without command', async () => {
       const mockRunner = vi.fn()
 
@@ -76,10 +99,33 @@ describe('Scenario DSL Unit Tests', () => {
         'Step "Step without expectations" has no expectations'
       )
     })
+
+    it('should handle multiple concurrent scenarios', async () => {
+      const mockRunner = vi.fn().mockResolvedValue({
+        result: { exitCode: 0, stdout: 'success', stderr: '' },
+        expectSuccess: vi.fn().mockReturnThis(),
+      })
+
+      const scenarios = Array.from({ length: 5 }, (_, i) =>
+        scenario(`Concurrent Scenario ${i}`)
+          .concurrent()
+          .step(`Step ${i}`)
+          .run(['--help'])
+          .expectSuccess()
+      )
+
+      const results = await Promise.all(scenarios.map((scenario) => scenario.execute(mockRunner)))
+
+      expect(results).toHaveLength(5)
+      results.forEach((result) => {
+        expect(result.success).toBe(true)
+        expect(result.concurrent).toBe(true)
+      })
+    })
   })
 
-  describe('testUtils', () => {
-    describe('waitFor', () => {
+  describe.concurrent('testUtils', () => {
+    describe.concurrent('waitFor', () => {
       it('should resolve when condition is met', async () => {
         let attempts = 0
         const condition = () => {
@@ -111,9 +157,25 @@ describe('Scenario DSL Unit Tests', () => {
         const result = await testUtils.waitFor(condition, 1000, 10)
         expect(result).toBe(true)
       })
+
+      it('should handle multiple concurrent waitFor calls', async () => {
+        const conditions = Array.from({ length: 3 }, (_, i) => {
+          let attempts = 0
+          return () => {
+            attempts++
+            return attempts >= i + 1
+          }
+        })
+
+        const promises = conditions.map((condition) => testUtils.waitFor(condition, 1000, 10))
+
+        const results = await Promise.all(promises)
+        expect(results).toHaveLength(3)
+        results.forEach((result) => expect(result).toBe(true))
+      })
     })
 
-    describe('retry', () => {
+    describe.concurrent('retry', () => {
       it('should succeed on first attempt', async () => {
         const mockFn = vi.fn().mockResolvedValue('success')
 
@@ -142,9 +204,30 @@ describe('Scenario DSL Unit Tests', () => {
         await expect(testUtils.retry(mockFn, 2, 10)).rejects.toThrow('Persistent failure')
         expect(mockFn).toHaveBeenCalledTimes(2)
       })
+
+      it('should handle multiple concurrent retry operations', async () => {
+        const mockFns = Array.from({ length: 3 }, (_, i) => {
+          let attempts = 0
+          return vi.fn().mockImplementation(() => {
+            attempts++
+            if (attempts < 2) {
+              throw new Error(`Attempt ${attempts} failed`)
+            }
+            return `success-${i}`
+          })
+        })
+
+        const promises = mockFns.map((mockFn) => testUtils.retry(mockFn, 3, 10))
+
+        const results = await Promise.all(promises)
+        expect(results).toHaveLength(3)
+        results.forEach((result, i) => {
+          expect(result).toBe(`success-${i}`)
+        })
+      })
     })
 
-    describe('createTempFile', () => {
+    describe.concurrent('createTempFile', () => {
       let tempFiles = []
 
       afterEach(async () => {
@@ -172,9 +255,29 @@ describe('Scenario DSL Unit Tests', () => {
 
         expect(tempFile).toContain('.txt')
       })
+
+      it('should create multiple temporary files concurrently', async () => {
+        const contents = ['content1', 'content2', 'content3']
+        const extensions = ['.txt', '.json', '.md']
+
+        const promises = contents.map((content, i) =>
+          testUtils.createTempFile(content, extensions[i])
+        )
+
+        const tempFiles = await Promise.all(promises)
+
+        expect(tempFiles).toHaveLength(3)
+        tempFiles.forEach((file, i) => {
+          expect(file).toContain('citty-test-')
+          expect(file).toContain(extensions[i])
+        })
+
+        // Clean up
+        await testUtils.cleanupTempFiles(tempFiles)
+      })
     })
 
-    describe('cleanupTempFiles', () => {
+    describe.concurrent('cleanupTempFiles', () => {
       it('should clean up temporary files', async () => {
         const tempFile = await testUtils.createTempFile('test content', '.txt')
 
@@ -187,6 +290,25 @@ describe('Scenario DSL Unit Tests', () => {
 
       it('should handle non-existent files gracefully', async () => {
         await expect(testUtils.cleanupTempFiles(['/non/existent/file'])).resolves.not.toThrow()
+      })
+
+      it('should clean up multiple files concurrently', async () => {
+        const tempFiles = await Promise.all([
+          testUtils.createTempFile('content1', '.txt'),
+          testUtils.createTempFile('content2', '.json'),
+          testUtils.createTempFile('content3', '.md'),
+        ])
+
+        const { existsSync } = await import('node:fs')
+        tempFiles.forEach((file) => {
+          expect(existsSync(file)).toBe(true)
+        })
+
+        await testUtils.cleanupTempFiles(tempFiles)
+
+        tempFiles.forEach((file) => {
+          expect(existsSync(file)).toBe(false)
+        })
       })
     })
   })

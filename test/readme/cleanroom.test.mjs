@@ -3,7 +3,7 @@ import {
   setupCleanroom,
   runCitty,
   teardownCleanroom,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 
 describe('README Cleanroom Examples', () => {
   let cleanroomSetup = false
@@ -120,7 +120,7 @@ describe('README Cleanroom Examples', () => {
 
       // From README: Cross-environment testing
       // Skipped - test-cli.mjs not found in playground
-      const { runLocalCitty } = await import('../../src/core/runners/legacy-compatibility.js')
+      const { runLocalCitty } = await import('../../index.js')
 
       const localResult = await runLocalCitty(['--version'], {
         cwd: './playground',

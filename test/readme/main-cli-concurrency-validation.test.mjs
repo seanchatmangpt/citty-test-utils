@@ -3,7 +3,7 @@ import {
   setupCleanroom,
   runCitty,
   teardownCleanroom,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 import { scenario } from '../../src/core/scenarios/scenario-dsl.js'
 
 describe('Main CLI Concurrency Validation - ALL COMMANDS', () => {

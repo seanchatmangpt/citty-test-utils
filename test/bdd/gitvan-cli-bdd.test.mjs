@@ -17,35 +17,22 @@ describe('BDD Tests - GitVan CLI Testing Scenarios', () => {
         expect(userContext.wantsHelp).toBe(true)
       })
 
-      it("When the user runs 'gitvan --help'", async () => {
+      it("When the user runs 'ctu --help'", async () => {
         const result = await runLocalCitty(['--help'])
 
         // Then the system should display usage information
-        result.expectSuccess().expectOutput('USAGE').expectOutput('gitvan').expectOutput('COMMANDS')
+        result.expectSuccess().expectOutput('USAGE').expectOutput('ctu').expectOutput('COMMANDS')
       })
 
       it('And the help should include all available commands', async () => {
         const result = await runLocalCitty(['--help'])
 
         const expectedCommands = [
-          'graph',
-          'daemon',
-          'event',
-          'cron',
-          'audit',
-          'hooks',
-          'workflow',
-          'jtbd',
-          'cleanroom',
-          'init',
-          'setup',
-          'save',
-          'ensure',
-          'pack',
-          'marketplace',
-          'scaffold',
-          'compose',
-          'chat',
+          'test',
+          'gen',
+          'runner',
+          'info',
+          'analysis',
         ]
 
         expectedCommands.forEach((command) => {
@@ -68,7 +55,7 @@ describe('BDD Tests - GitVan CLI Testing Scenarios', () => {
         expect(userContext.wantsVersion).toBe(true)
       })
 
-      it("When the user runs 'gitvan --version'", async () => {
+      it("When the user runs 'ctu --version'", async () => {
         const result = await runLocalCitty(['--version'])
 
         // Then the system should display version information
@@ -94,7 +81,7 @@ describe('BDD Tests - GitVan CLI Testing Scenarios', () => {
         expect(userContext.invalidCommand).toBe('unknown-command')
       })
 
-      it("When the user runs 'gitvan unknown-command'", async () => {
+      it("When the user runs 'ctu unknown-command'", async () => {
         const result = await runLocalCitty(['unknown-command'])
 
         // Then the system should handle the error gracefully
@@ -119,7 +106,7 @@ describe('BDD Tests - GitVan CLI Testing Scenarios', () => {
 
   describe('Feature: Command-Specific Help', () => {
     describe('Scenario: User requests help for specific command', () => {
-      const commands = ['init', 'hooks', 'workflow', 'jtbd', 'cleanroom']
+      const commands = ['test', 'gen', 'runner', 'info', 'analysis']
 
       commands.forEach((command) => {
         it(`Given a user wants help for '${command}' command`, async () => {
@@ -127,7 +114,7 @@ describe('BDD Tests - GitVan CLI Testing Scenarios', () => {
           expect(userContext.command).toBe(command)
         })
 
-        it(`When the user runs 'gitvan ${command} --help'`, async () => {
+        it(`When the user runs 'ctu ${command} --help'`, async () => {
           const result = await runLocalCitty([command, '--help'])
 
           // Then the system should display command-specific help

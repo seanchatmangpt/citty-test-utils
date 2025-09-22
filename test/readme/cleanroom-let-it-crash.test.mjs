@@ -4,7 +4,7 @@ import {
   runCitty,
   runLocalCitty,
   teardownCleanroom,
-} from '../../src/core/runners/legacy-compatibility.js'
+} from '../../index.js'
 import { CleanroomTestUtils } from './error-handling-utilities.mjs'
 
 describe('Cleanroom Tests - Let It Crash Philosophy', () => {

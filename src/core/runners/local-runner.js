@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Citty Testing Functions
- * @description Core Citty-specific testing functions with cleanroom support
+ * @fileoverview Local Runner for Citty Testing
+ * @description Execute Citty CLI commands locally with fluent assertions
  */
 
 import { execSync } from 'child_process'
-import { setupCleanroom as setupCleanroomCore, runCitty as runCittyCore, teardownCleanroom as teardownCleanroomCore } from './cleanroom-runner.js'
-import { matchSnapshot, snapshotUtils } from '../assertions/snapshot.js'
+import { matchSnapshot } from '../assertions/snapshot.js'
+import {
+  setupCleanroom as setupCleanroomCore,
+  runCitty as runCittyCore,
+  teardownCleanroom as teardownCleanroomCore,
+} from './cleanroom-runner.js'
 
 /**
  * Execute Citty CLI commands locally
@@ -15,32 +19,25 @@ import { matchSnapshot, snapshotUtils } from '../assertions/snapshot.js'
  * @returns {Promise<Object>} Result with fluent assertions
  */
 export async function runLocalCitty(command, options = {}) {
-  const {
-    cwd = process.cwd(),
-    env = {},
-    timeout = 30000,
-    json = false
-  } = options
-  
+  const { cwd = process.cwd(), env = {}, timeout = 30000, json = false } = options
+
   const startTime = Date.now()
 
   // Check if we're in vitest environment and use mock responses
   const isVitestEnv = process.env.VITEST === 'true' || process.env.VITEST_MODE === 'RUN'
   const isUnitTest = isVitestEnv && typeof execSync.mockImplementation === 'function'
   const isIntegrationTest = isVitestEnv && env.TEST_CLI && !isUnitTest
-  
-  
+
   if (isIntegrationTest) {
     // Provide mock responses for vitest environment
     const startTime = Date.now()
     let stdout = ''
     let stderr = ''
     let exitCode = 0
-    
 
     // Mock responses based on command
     if (command.includes('--help')) {
-      stdout = `Test CLI for citty-test-utils integration testing (ctu v1.0.0)
+      stdout = `Test CLI for citty-test-utils integration testing (ctu v0.4.0)
 
 USAGE ctu greet|math|error|info
 
@@ -53,7 +50,7 @@ COMMANDS
 
 Use ctu <command> --help for more information about a command.`
     } else if (command.includes('--version')) {
-      stdout = '1.0.0'
+      stdout = '0.4.0'
     } else if (command.includes('invalid-command')) {
       exitCode = 1
       stderr = 'Unknown command: invalid-command'
@@ -74,8 +71,8 @@ Features:
     }
 
     // Add a small delay to simulate realistic execution time
-    await new Promise(resolve => setTimeout(resolve, 10))
-    
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
     const durationMs = Date.now() - startTime
     const result = {
       exitCode,
@@ -84,11 +81,10 @@ Features:
       args: command,
       cwd,
       durationMs,
-      json: json || command.includes('--json') ? safeJsonParse(stdout) : undefined
+      json: json || command.includes('--json') ? safeJsonParse(stdout) : undefined,
     }
-    
 
-    const wrapped = wrapWithLegacyAssertions(result)
+    const wrapped = wrapWithAssertions(result)
     wrapped.result = result
     return wrapped
   }
@@ -103,9 +99,9 @@ Features:
       cwd,
       env: { ...process.env, ...env },
       timeout,
-      encoding: 'utf8'
+      encoding: 'utf8',
     })
-    
+
     const durationMs = Date.now() - startTime
     const result = {
       exitCode: 0,
@@ -114,10 +110,10 @@ Features:
       args: command,
       cwd,
       durationMs,
-      json: json || command.includes('--json') ? safeJsonParse(stdout) : undefined
+      json: json || command.includes('--json') ? safeJsonParse(stdout) : undefined,
     }
 
-    const wrapped = wrapWithLegacyAssertions(result)
+    const wrapped = wrapWithAssertions(result)
     wrapped.result = result
     return wrapped
   } catch (error) {
@@ -129,10 +125,10 @@ Features:
       args: command,
       cwd,
       durationMs,
-      json: undefined
+      json: undefined,
     }
 
-    const wrapped = wrapWithLegacyAssertions(result)
+    const wrapped = wrapWithAssertions(result)
     wrapped.result = result
     return wrapped
   }
@@ -164,18 +160,24 @@ export async function teardownCleanroom() {
 }
 
 /**
- * Wrap result with legacy fluent assertion methods
+ * Wrap result with fluent assertion methods
  * @param {Object} result - Execution result
- * @returns {Object} Result with legacy methods
+ * @returns {Object} Result with assertion methods
  */
-function wrapWithLegacyAssertions(result) {
+function wrapWithAssertions(result) {
   return {
     ...result,
 
-    // Legacy fluent assertion methods
+    // Success/failure assertions
     expectSuccess() {
       if (result.exitCode !== 0) {
-        throw new Error(`Expected success (exit code 0), got ${result.exitCode}\nCommand: node src/cli.mjs ${result.args.join(' ')}\nWorking directory: ${result.cwd}\nStdout: ${result.stdout}\nStderr: ${result.stderr}`)
+        throw new Error(
+          `Expected success (exit code 0), got ${
+            result.exitCode
+          }\nCommand: node src/cli.mjs ${result.args.join(' ')}\nWorking directory: ${
+            result.cwd
+          }\nStdout: ${result.stdout}\nStderr: ${result.stderr}`
+        )
       }
       return this
     },
@@ -196,11 +198,14 @@ function wrapWithLegacyAssertions(result) {
 
     expectExitCodeIn(codes) {
       if (!codes.includes(result.exitCode)) {
-        throw new Error(`Expected exit code to be one of [${codes.join(', ')}], got ${result.exitCode}`)
+        throw new Error(
+          `Expected exit code to be one of [${codes.join(', ')}], got ${result.exitCode}`
+        )
       }
       return this
     },
 
+    // Output assertions
     expectOutput(pattern) {
       if (typeof pattern === 'string') {
         if (!result.stdout.includes(pattern)) {
@@ -255,6 +260,7 @@ function wrapWithLegacyAssertions(result) {
       return this
     },
 
+    // Length assertions
     expectOutputLength(min, max) {
       const length = result.stdout.length
       if (length < min || length > max) {
@@ -271,6 +277,7 @@ function wrapWithLegacyAssertions(result) {
       return this
     },
 
+    // Performance assertions
     expectDuration(maxMs) {
       if (result.durationMs > maxMs) {
         throw new Error(`Expected duration <= ${maxMs}ms, got ${result.durationMs}ms`)
@@ -278,6 +285,7 @@ function wrapWithLegacyAssertions(result) {
       return this
     },
 
+    // JSON assertions
     expectJson(validator) {
       try {
         const json = JSON.parse(result.stdout)
@@ -297,7 +305,7 @@ function wrapWithLegacyAssertions(result) {
       }
     },
 
-    // Add json property getter for legacy compatibility
+    // JSON property getter for convenience
     get json() {
       try {
         return JSON.parse(result.stdout)

@@ -1,5 +1,5 @@
 // Scenario DSL for building complex test scenarios
-import { runLocalCitty, runCitty } from '../runners/legacy-compatibility.js'
+import { runLocalCitty, runCitty } from '../runners/local-runner.js'
 import { matchSnapshot, snapshotUtils } from '../assertions/snapshot.js'
 
 export function scenario(name) {
@@ -328,7 +328,7 @@ export function scenario(name) {
   return builder
 }
 
-// Export a concurrent scenario factory function
+// Export concurrent scenario factory function
 export function concurrentScenario(name) {
   return scenario(name).concurrent()
 }
