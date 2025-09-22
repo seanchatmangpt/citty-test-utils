@@ -1,6 +1,6 @@
 {
   "name": "citty-test-utils",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "A comprehensive testing framework for CLI applications built with Citty, featuring Docker cleanroom support, fluent assertions, advanced scenario DSL, and noun-verb CLI structure with template generation.",
   "type": "module",
   "main": "index.js",
