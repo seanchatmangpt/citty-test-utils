@@ -393,14 +393,21 @@ export const testUtils = {
     return tempFile
   },
 
-  // Clean up temporary files - let cleanup fail
+  // Clean up temporary files - handle errors gracefully
   async cleanupTempFiles(files) {
     const { unlinkSync, rmdirSync } = await import('node:fs')
     const { dirname } = await import('node:path')
 
     for (const file of files) {
-      unlinkSync(file)
-      rmdirSync(dirname(file))
+      try {
+        unlinkSync(file)
+        rmdirSync(dirname(file))
+      } catch (error) {
+        // Ignore errors for non-existent files
+        if (error.code !== 'ENOENT') {
+          throw error
+        }
+      }
     }
   },
 }

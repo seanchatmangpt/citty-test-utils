@@ -37,7 +37,7 @@ export async function runLocalCitty(command, options = {}) {
 
     // Mock responses based on command
     if (command.includes('--help')) {
-      stdout = `Test CLI for citty-test-utils integration testing (ctu v0.4.0)
+      stdout = `Test CLI for citty-test-utils integration testing (ctu v0.5.0)
 
 USAGE ctu greet|math|error|info
 
@@ -50,16 +50,16 @@ COMMANDS
 
 Use ctu <command> --help for more information about a command.`
     } else if (command.includes('--version')) {
-      stdout = '0.4.0'
-    } else if (command.includes('invalid-command')) {
+      stdout = '0.5.0'
+    } else if (command.includes('invalid') || command.includes('unknown')) {
       exitCode = 1
-      stderr = 'Unknown command: invalid-command'
+      stderr = 'Unknown command'
     } else if (command.includes('greet')) {
       stdout = 'Hello, World!'
     } else if (command.includes('info')) {
       stdout = `Test CLI Information:
 Name: citty-test-utils-test-cli
-Version: 0.4.0
+Version: 0.5.0
 Description: Test CLI for citty-test-utils integration testing
 Commands: greet, math, error, info
 Features:
@@ -91,7 +91,14 @@ Features:
 
   // Use test CLI if TEST_CLI environment variable is set
   const cliPath = env.TEST_CLI ? 'test-cli.mjs' : 'src/cli.mjs'
-  const fullCommand = `node ${cliPath} ${command.join(' ')}`
+  const escapedCommand = command.map(arg => {
+    // If the argument contains spaces, wrap it in quotes
+    if (arg.includes(' ')) {
+      return `"${arg}"`
+    }
+    return arg
+  })
+  const fullCommand = `node ${cliPath} ${escapedCommand.join(' ')}`
 
   try {
     // Use execSync for simpler execution (works better with mocks)

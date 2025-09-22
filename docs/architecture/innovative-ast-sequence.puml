@@ -1,0 +1,216 @@
+@startuml CTU Analysis Verbs - Innovative AST Sequence Flow
+
+!theme aws-orange
+skinparam backgroundColor #FAFAFA
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 80
+skinparam noteBackgroundColor #FFF3E0
+skinparam noteBorderColor #FF9800
+
+title CTU Analysis Verbs - Innovative AST-Based Sequence Flow\n🚀 Next-Generation CLI Coverage Analysis Pipeline
+
+actor "👤 Developer" as Dev
+participant "📱 CLI Interface" as CLI
+participant "🎯 Command Router" as Router
+participant "⚡ Enhanced AST Analyzer" as ASTAnalyzer
+participant "🔗 Import Resolution Engine" as ImportEngine
+participant "🧪 Test Pattern Discovery" as TestDiscovery
+participant "📈 Coverage Calculator" as CoverageCalc
+participant "📋 Report Generator" as ReportGen
+participant "🔄 Format Converter" as FormatConv
+participant "📤 Output Handler" as OutputHandler
+
+== 🚀 Command Execution & Routing ==
+
+Dev -> CLI: ctu analysis <verb> [options]
+note right: Modern CLI interface with\nAST-based analysis
+
+CLI -> Router: route command with context
+activate Router
+
+Router -> Router: validate parameters
+note right: **Parameter Validation:**\n- CLI path validation\n- Test directory verification\n- Format compatibility check\n- Resource limit validation
+
+Router -> Router: build analysis context
+note right: **Context Building:**\n- Analysis options\n- Verbose mode\n- Output preferences\n- Performance settings
+
+Router --> CLI: validated context
+deactivate Router
+
+== ⚡ AST-Based Analysis Pipeline ==
+
+CLI -> ASTAnalyzer: analyze(context)
+activate ASTAnalyzer
+
+note over ASTAnalyzer
+  **🚀 AST Innovation Engine**
+  - Parses actual CLI definition files
+  - Tracks imported commands dynamically
+  - Provides 100% accurate structure discovery
+end note
+
+ASTAnalyzer -> ASTAnalyzer: discoverCLIStructureEnhanced()
+note right: **CLI Structure Discovery:**\n- Read CLI definition file\n- Parse JavaScript AST\n- Extract command definitions\n- Build command hierarchy
+
+ASTAnalyzer -> ImportEngine: extractImportedCommands()
+activate ImportEngine
+
+ImportEngine -> ImportEngine: parse import statements
+note right: **Import Analysis:**\n- Scan import declarations\n- Extract command imports\n- Map local names to sources\n- Track dependencies
+
+ImportEngine -> ImportEngine: build command mapping
+note right: **Command Mapping:**\n- Map imported commands\n- Resolve source file paths\n- Track import relationships\n- Detect circular dependencies
+
+ImportEngine --> ASTAnalyzer: imported commands map
+deactivate ImportEngine
+
+ASTAnalyzer -> ASTAnalyzer: parse CLI definition AST
+note right: **AST Processing:**\n- Walk AST nodes\n- Find defineCommand calls\n- Extract command metadata\n- Parse arguments and flags
+
+ASTAnalyzer -> ASTAnalyzer: resolve subcommand references
+note right: **Subcommand Resolution:**\n- Map imported commands\n- Resolve subcommand references\n- Build complete hierarchy\n- Validate command structure
+
+ASTAnalyzer -> TestDiscovery: discoverTestPatternsAST()
+activate TestDiscovery
+
+TestDiscovery -> TestDiscovery: scan test directory
+note right: **Test File Discovery:**\n- Find .test.mjs files\n- Apply inclusion patterns\n- Filter exclusions\n- Parallel processing
+
+TestDiscovery -> TestDiscovery: parse test file ASTs
+note right: **Test AST Processing:**\n- Parse each test file\n- Extract runCitty calls\n- Extract runLocalCitty calls\n- Build call patterns
+
+TestDiscovery -> TestDiscovery: extract command arguments
+note right: **Argument Extraction:**\n- Parse array arguments\n- Extract command chains\n- Track flag usage\n- Map option usage
+
+TestDiscovery -> TestDiscovery: build test patterns map
+note right: **Pattern Building:**\n- Map commands to tests\n- Track subcommand usage\n- Identify flag patterns\n- Build coverage matrix
+
+TestDiscovery --> ASTAnalyzer: test patterns
+deactivate TestDiscovery
+
+ASTAnalyzer -> CoverageCalc: calculateCoverage(cliStructure, testPatterns)
+activate CoverageCalc
+
+CoverageCalc -> CoverageCalc: compare CLI structure with test patterns
+note right: **Coverage Comparison:**\n- Match commands with tests\n- Calculate command coverage\n- Calculate subcommand coverage\n- Calculate flag coverage
+
+CoverageCalc -> CoverageCalc: generate statistics
+note right: **Statistics Generation:**\n- Calculate percentages\n- Identify untested items\n- Generate trends\n- Build recommendations
+
+CoverageCalc --> ASTAnalyzer: coverage statistics
+deactivate CoverageCalc
+
+ASTAnalyzer -> ReportGen: generateReport()
+activate ReportGen
+
+ReportGen -> ReportGen: build metadata
+note right: **Metadata Building:**\n- Analysis timestamps\n- File counts\n- Analysis method\n- Performance metrics
+
+ReportGen -> ReportGen: create coverage details
+note right: **Coverage Details:**\n- Untested commands\n- Untested subcommands\n- Untested flags\n- Untested options
+
+ReportGen -> ReportGen: generate recommendations
+note right: **Smart Recommendations:**\n- Prioritize untested items\n- Suggest specific tests\n- Provide actionable guidance\n- Generate improvement plans
+
+ReportGen --> ASTAnalyzer: comprehensive report
+deactivate ReportGen
+
+ASTAnalyzer --> CLI: analysis report
+deactivate ASTAnalyzer
+
+== 🔄 Output Generation & Formatting ==
+
+CLI -> FormatConv: formatReport(report, options)
+activate FormatConv
+
+alt 📝 Text Format
+    FormatConv -> FormatConv: generateTextReport()
+    note right: **Text Formatting:**\n- Human-readable format\n- Structured sections\n- Color coding\n- Progress indicators
+    FormatConv --> CLI: formatted text
+else 📊 JSON Format
+    FormatConv -> FormatConv: serializeToJSON()
+    note right: **JSON Serialization:**\n- Structured data format\n- API-compatible\n- Machine readable\n- High performance
+    FormatConv --> CLI: JSON string
+else 🐢 Turtle Format (Export only)
+    FormatConv -> FormatConv: generateTurtleReport()
+    note right: **Turtle/RDF Generation:**\n- Semantic web format\n- RDF triples\n- Linked data\n- SPARQL compatible
+    FormatConv --> CLI: Turtle string
+end
+
+deactivate FormatConv
+
+== 📤 Output Delivery ==
+
+alt 💾 Output to File
+    CLI -> OutputHandler: writeToFile(output, content)
+    activate OutputHandler
+    OutputHandler -> OutputHandler: validate file path
+    OutputHandler -> OutputHandler: check permissions
+    OutputHandler -> OutputHandler: write atomically
+    OutputHandler --> CLI: success confirmation
+    deactivate OutputHandler
+    CLI -> Dev: ✅ Report saved to: <file>
+else 🖥️ Output to Console
+    CLI -> OutputHandler: writeToConsole(content)
+    activate OutputHandler
+    OutputHandler -> OutputHandler: format for console
+    OutputHandler -> OutputHandler: handle colors
+    OutputHandler --> CLI: formatted output
+    deactivate OutputHandler
+    CLI -> Dev: formatted content
+end
+
+== 🚨 Error Handling & Recovery ==
+
+note over ASTAnalyzer, TestDiscovery
+  **🛡️ Advanced Error Handling:**
+  - AST parsing failures fall back to regex
+  - File access errors are logged and skipped
+  - Invalid CLI files throw descriptive errors
+  - Verbose mode shows full stack traces
+  - Graceful degradation for partial failures
+end note
+
+== ⚡ Performance Optimizations ==
+
+note over ImportEngine, TestDiscovery
+  **🚀 Performance Features:**
+  - Parallel test file processing
+  - AST caching for repeated analysis
+  - Memory-optimized data structures
+  - Configurable resource limits
+  - Lazy loading of components
+  - Streaming output support
+end note
+
+== 📊 Innovation Highlights ==
+
+note over ASTAnalyzer
+  **🎯 AST Innovation Benefits:**
+  - 100% accurate CLI structure discovery
+  - Real-time import tracking
+  - Precise test pattern matching
+  - Advanced coverage calculation
+  - Smart recommendation generation
+end note
+
+note over ImportEngine
+  **🔗 Import Resolution Innovation:**
+  - Dynamic command discovery
+  - Circular dependency detection
+  - Source file mapping
+  - Dependency tracking
+  - Module resolution
+end note
+
+note over CoverageCalc
+  **📈 Coverage Calculation Innovation:**
+  - Multi-dimensional analysis
+  - Trend analysis and predictions
+  - Statistical insights
+  - Performance optimization
+  - Real-time calculation
+end note
+
+@enduml

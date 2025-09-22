@@ -1,0 +1,360 @@
+@startuml CTU Analysis Verbs - New Verb Architecture
+
+!theme aws-orange
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam noteBackgroundColor #FFF3E0
+skinparam noteBorderColor #FF9800
+
+title CTU Analysis Verbs - New Verb Architecture\n🚀 Innovative AST-Based Analysis Commands
+
+package "🎯 Primary Analysis Verbs" {
+  component [🔍 discover] as Discover {
+    [CLI Structure Discovery]
+    [Import Resolution]
+    [Command Extraction]
+    [Validation]
+    [Structure Mapping]
+  }
+  
+  component [📊 coverage] as Coverage {
+    [Test Pattern Discovery]
+    [Coverage Calculation]
+    [Statistics Generation]
+    [Gap Analysis]
+    [Trend Tracking]
+  }
+  
+  component [💡 recommend] as Recommend {
+    [Gap Analysis]
+    [Priority Ranking]
+    [Actionable Suggestions]
+    [Improvement Plans]
+    [Smart Insights]
+  }
+  
+  component [⚡ profile] as Profile {
+    [Performance Monitoring]
+    [Bottleneck Detection]
+    [Optimization Suggestions]
+    [Benchmarking]
+    [Resource Analysis]
+  }
+  
+  component [✅ validate] as Validate {
+    [Structure Validation]
+    [Import Integrity Check]
+    [Test Consistency]
+    [Issue Detection]
+    [Fix Suggestions]
+  }
+}
+
+package "🔄 Utility Verbs" {
+  component [📤 export] as Export {
+    [Multi-format Export]
+    [Template Support]
+    [API Integration]
+    [Data Serialization]
+    [Custom Formats]
+  }
+  
+  component [🔄 compare] as Compare {
+    [Version Comparison]
+    [Trend Analysis]
+    [Diff Generation]
+    [Regression Detection]
+    [Change Tracking]
+  }
+  
+  component [📈 monitor] as Monitor {
+    [Continuous Monitoring]
+    [Real-time Tracking]
+    [Alert Generation]
+    [CI/CD Integration]
+    [Webhook Support]
+  }
+}
+
+package "🔄 Legacy Support" {
+  component [📋 analyze] as Analyze {
+    [Legacy Analysis]
+    [Backward Compatibility]
+    [Migration Support]
+    [Deprecation Warning]
+  }
+  
+  component [📊 stats] as Stats {
+    [Legacy Statistics]
+    [Basic Coverage]
+    [Simple Reports]
+    [Deprecation Warning]
+  }
+  
+  component [📄 report] as Report {
+    [Legacy Reporting]
+    [Basic Formatting]
+    [Simple Output]
+    [Deprecation Warning]
+  }
+}
+
+package "🧠 Core Analysis Engine" {
+  component [⚡ Enhanced AST CLI Analyzer] as ASTEngine {
+    [CLI Structure Discovery]
+    [Import Command Tracker]
+    [Test Pattern Discovery]
+    [Coverage Calculator]
+    [Recommendation Engine]
+    [Performance Profiler]
+  }
+  
+  component [🔄 Legacy CLI Coverage Analyzer] as LegacyEngine {
+    [Help Output Parser]
+    [Regex Pattern Matcher]
+    [Basic Coverage Calculator]
+    [Turtle Report Generator]
+  }
+}
+
+package "📊 Data Processing Layer" {
+  component [📈 Coverage Calculator] as CoverageCalc {
+    [Multi-dimensional Analysis]
+    [Trend Calculation]
+    [Statistical Analysis]
+    [Performance Metrics]
+  }
+  
+  component [💡 Recommendation Engine] as RecEngine {
+    [Gap Analysis]
+    [Priority Ranking]
+    [Actionable Suggestions]
+    [Improvement Planning]
+  }
+  
+  component [⚡ Performance Profiler] as Profiler {
+    [Execution Monitoring]
+    [Bottleneck Detection]
+    [Optimization Suggestions]
+    [Resource Analysis]
+  }
+  
+  component [✅ Validation Engine] as Validator {
+    [Structure Validation]
+    [Integrity Checking]
+    [Consistency Verification]
+    [Issue Detection]
+  }
+}
+
+package "📤 Output Layer" {
+  component [🔄 Format Converter] as FormatConv {
+    [Text Formatter]
+    [JSON Serializer]
+    [CSV Generator]
+    [XML Exporter]
+    [Turtle/RDF Generator]
+    [Markdown Generator]
+    [HTML Generator]
+  }
+  
+  component [📊 Report Generator] as ReportGen {
+    [Comprehensive Reports]
+    [Trend Analysis]
+    [Visualization Data]
+    [Custom Templates]
+  }
+  
+  component [📈 Monitor Engine] as MonitorEngine {
+    [Continuous Tracking]
+    [Alert Generation]
+    [Webhook Integration]
+    [CI/CD Support]
+  }
+}
+
+' Primary Analysis Verbs connections
+Discover --> ASTEngine : uses
+Coverage --> ASTEngine : uses
+Recommend --> ASTEngine : uses
+Profile --> ASTEngine : uses
+Validate --> ASTEngine : uses
+
+' Utility Verbs connections
+Export --> ASTEngine : uses
+Export --> LegacyEngine : uses
+Compare --> ASTEngine : uses
+Monitor --> ASTEngine : uses
+
+' Legacy Support connections
+Analyze --> ASTEngine : uses
+Stats --> ASTEngine : uses
+Report --> ASTEngine : uses
+
+' Core Analysis Engine connections
+ASTEngine --> CoverageCalc : calculates
+ASTEngine --> RecEngine : generates
+ASTEngine --> Profiler : profiles
+ASTEngine --> Validator : validates
+
+' Data Processing Layer connections
+CoverageCalc --> ReportGen : provides
+RecEngine --> ReportGen : provides
+Profiler --> ReportGen : provides
+Validator --> ReportGen : provides
+
+' Output Layer connections
+ReportGen --> FormatConv : converts
+MonitorEngine --> FormatConv : converts
+
+' Verb relationships
+Discover --> Coverage : provides structure
+Coverage --> Recommend : provides coverage data
+Coverage --> Profile : provides performance data
+Validate --> Recommend : provides validation results
+Recommend --> Export : provides recommendations
+Profile --> Export : provides performance data
+Compare --> Monitor : provides comparison data
+
+' Innovation annotations
+note right of Discover
+  **🔍 CLI Structure Discovery**
+  - AST-based command extraction
+  - Import resolution and tracking
+  - Command hierarchy mapping
+  - Structure validation
+  - Dependency analysis
+end note
+
+note right of Coverage
+  **📊 Coverage Analysis**
+  - Multi-dimensional coverage
+  - Test pattern discovery
+  - Statistical analysis
+  - Trend tracking
+  - Gap identification
+end note
+
+note right of Recommend
+  **💡 Smart Recommendations**
+  - AI-powered suggestions
+  - Priority-based ranking
+  - Actionable guidance
+  - Improvement planning
+  - Smart insights
+end note
+
+note right of Profile
+  **⚡ Performance Profiling**
+  - Execution monitoring
+  - Bottleneck detection
+  - Optimization suggestions
+  - Resource analysis
+  - Benchmarking
+end note
+
+note right of Validate
+  **✅ CLI Validation**
+  - Structure integrity check
+  - Import resolution validation
+  - Test consistency verification
+  - Issue detection and fixing
+  - Quality assurance
+end note
+
+note right of Export
+  **📤 Universal Export**
+  - Multi-format support
+  - Template-based generation
+  - API integration
+  - Custom format support
+  - Data serialization
+end note
+
+note right of Compare
+  **🔄 Analysis Comparison**
+  - Version comparison
+  - Trend analysis
+  - Diff generation
+  - Regression detection
+  - Change tracking
+end note
+
+note right of Monitor
+  **📈 Continuous Monitoring**
+  - Real-time tracking
+  - Alert generation
+  - CI/CD integration
+  - Webhook support
+  - Automated reporting
+end note
+
+' Verb capabilities matrix
+note bottom
+  **📊 Verb Capabilities Matrix:**
+  
+  | Verb | Discovery | Coverage | Recommend | Profile | Validate | Export | Compare | Monitor |
+  |------|-----------|----------|-----------|---------|----------|--------|---------|---------|
+  | discover | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
+  | coverage | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
+  | recommend | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
+  | profile | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ |
+  | validate | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
+  | export | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+  | compare | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+  | monitor | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+end note
+
+' Implementation phases
+note top
+  **🚀 Implementation Phases:**
+  
+  **Phase 1: Core Verbs**
+  - discover: CLI structure discovery
+  - coverage: Coverage analysis
+  - recommend: Smart recommendations
+  
+  **Phase 2: Advanced Verbs**
+  - profile: Performance profiling
+  - validate: CLI validation
+  
+  **Phase 3: Utility Verbs**
+  - export: Data export
+  - compare: Analysis comparison
+  - monitor: Continuous monitoring
+  
+  **Phase 4: Legacy Migration**
+  - Deprecate old verbs
+  - Migration guide
+  - Backward compatibility
+end note
+
+' Architecture benefits
+note left
+  **🎯 Architecture Benefits:**
+  
+  **Clear Purpose**
+  - Each verb has specific purpose
+  - No overlapping functionality
+  - Intuitive naming
+  
+  **Better UX**
+  - Logical verb progression
+  - Clear command structure
+  - Consistent parameters
+  
+  **Enhanced Capabilities**
+  - AST-first design
+  - Performance optimization
+  - Smart recommendations
+  - Continuous monitoring
+  
+  **Future-Proof**
+  - Extensible architecture
+  - Plugin support
+  - Cloud integration
+  - CI/CD compatible
+end note
+
+@enduml

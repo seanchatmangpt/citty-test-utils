@@ -75,121 +75,102 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
     })
   })
 
-  describe('Gen Command Cleanroom Examples', () => {
-    it('should work with gen project command in cleanroom', async () => {
+  describe('Playground Command Cleanroom Examples', () => {
+    it('should work with greet command in cleanroom', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // From README: Template generation with gen commands
-      // Test gen project command in cleanroom
-      const result = await runCitty(['gen', 'project', 'test-cleanroom-project'], {
-        env: { TEST_CLI: 'true' },
+      // From README: Test playground greet command in cleanroom
+      const result = await runCitty(['greet', 'Alice'], {
         timeout: 30000,
       })
 
       result
         .expectSuccess()
-        .expectOutput(/Generated/)
-        .expectOutput(/test-cleanroom-project/)
+        .expectOutput(/Hello, Alice!/)
     })
 
-    it('should work with gen test command in cleanroom', async () => {
+    it('should work with math command in cleanroom', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test gen test command in cleanroom
-      const result = await runCitty(['gen', 'test', 'cleanroom-test', '--test-type', 'cleanroom'], {
-        env: { TEST_CLI: 'true' },
+      // Test playground math command in cleanroom
+      const result = await runCitty(['math', 'add', '5', '3'], {
         timeout: 30000,
       })
 
       result
         .expectSuccess()
-        .expectOutput(/Generated/)
-        .expectOutput(/cleanroom-test/)
+        .expectOutput(/8/)
     })
 
-    it('should work with gen scenario command in cleanroom', async () => {
+    it('should work with error command in cleanroom', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test gen scenario command in cleanroom
-      const result = await runCitty(
-        ['gen', 'scenario', 'cleanroom-scenario', '--environment', 'cleanroom'],
-        {
-          env: { TEST_CLI: 'true' },
-          timeout: 30000,
-        }
-      )
+      // Test playground error command in cleanroom
+      const result = await runCitty(['error', 'timeout'], {
+        timeout: 35000, // Increased timeout for timeout error
+      })
 
       result
-        .expectSuccess()
-        .expectOutput(/Generated/)
-        .expectOutput(/cleanroom-scenario/)
-    })
+        .expectExit(0) // timeout command exits normally after waiting
+        .expectNoStderr() // timeout command doesn't produce stderr
+    }, 40000) // Increased test timeout
 
-    it('should work with gen cli command in cleanroom', async () => {
+    it('should work with info command in cleanroom', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test gen cli command in cleanroom
-      const result = await runCitty(['gen', 'cli', 'cleanroom-cli'], {
-        env: { TEST_CLI: 'true' },
+      // Test playground info command in cleanroom
+      const result = await runCitty(['info'], {
         timeout: 30000,
       })
 
       result
         .expectSuccess()
-        .expectOutput(/Generated/)
-        .expectOutput(/cleanroom-cli/)
+        .expectOutput(/Playground CLI/)
     })
 
-    it('should work with gen config command in cleanroom', async () => {
+    it('should work with playground help in cleanroom', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test gen config command in cleanroom
-      const result = await runCitty(['gen', 'config', 'cleanroom-config'], {
-        env: { TEST_CLI: 'true' },
+      // Test playground help command in cleanroom
+      const result = await runCitty(['--show-help'], {
         timeout: 30000,
       })
 
       result
         .expectSuccess()
-        .expectOutput(/Generated/)
-        .expectOutput(/cleanroom-config/)
+        .expectOutput(/playground/)
+        .expectOutput(/greet|math|error|info/)
     })
 
-    it('should show gen command help in cleanroom', async () => {
+    it('should show playground command help in cleanroom', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test gen command help in cleanroom
-      const result = await runCitty(['gen', '--help'], {
-        env: { TEST_CLI: 'true' },
+      // Test playground command help in cleanroom
+      const result = await runCitty(['greet', '--help'], {
+        timeout: 30000,
       })
 
       result
         .expectSuccess()
-        .expectOutput(/Generate Command/)
-        .expectOutput(/VERBS/)
-        .expectOutput(/project/)
-        .expectOutput(/test/)
-        .expectOutput(/scenario/)
-        .expectOutput(/cli/)
-        .expectOutput(/config/)
+        .expectOutput(/Greet someone/)
     })
   })
 
@@ -334,28 +315,28 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       expect(localResult.result.stdout).toBe(cleanroomResult.result.stdout)
     })
 
-    it('should work with cross-environment gen command testing', async () => {
+    it('should work with cross-environment playground command testing', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test gen commands work consistently across environments
+      // Test playground commands work consistently across environments
       const { runLocalCitty } = await import('../../index.js')
 
-      const localResult = await runLocalCitty(['gen', '--help'], {
+      const localResult = await runLocalCitty(['greet', '--help'], {
         cwd: './playground',
         env: { TEST_CLI: 'true' },
       })
-      const cleanroomResult = await runCitty(['gen', '--help'], {
-        env: { TEST_CLI: 'true' },
+      const cleanroomResult = await runCitty(['greet', '--help'], {
+        timeout: 30000,
       })
 
       // Both should produce the same help output
       expect(localResult.result.stdout).toBeDefined()
       expect(cleanroomResult.result.stdout).toBeDefined()
-      expect(localResult.result.stdout).toContain('Generate Command')
-      expect(cleanroomResult.result.stdout).toContain('Generate Command')
+      expect(localResult.result.stdout).toContain('Greet someone')
+      expect(cleanroomResult.result.stdout).toContain('Greet someone')
     })
   })
 
@@ -404,28 +385,24 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should handle gen command workflow in cleanroom', async () => {
+    it('should handle playground command workflow in cleanroom', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test gen command workflow in cleanroom
+      // Test playground command workflow in cleanroom
       const { scenario } = await import('../../src/core/scenarios/scenario-dsl.js')
 
-      const result = await scenario('Gen command workflow')
-        .step('Show gen help')
-        .run('gen', '--help')
+      const result = await scenario('Playground command workflow')
+        .step('Greet someone')
+        .run(['greet', 'Alice'])
         .expectSuccess()
-        .expectOutput(/Generate Command/)
-        .step('Generate project')
-        .run('gen', 'project', 'workflow-test')
+        .expectOutput(/Hello, Alice!/)
+        .step('Test math')
+        .run(['math', 'add', '5', '3'])
         .expectSuccess()
-        .expectOutput(/Generated/)
-        .step('Generate test')
-        .run('gen', 'test', 'workflow-test', '--test-type', 'cleanroom')
-        .expectSuccess()
-        .expectOutput(/Generated/)
+        .expectOutput(/8/)
         .execute('cleanroom')
 
       expect(result.success).toBe(true)
@@ -473,26 +450,25 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       result.expectSuccess()
     })
 
-    it('should ensure gen command isolation in cleanroom', async () => {
+    it('should ensure playground command isolation in cleanroom', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test that gen commands generate files in cleanroom container only
-      // This ensures files don't pollute the host system
-      const result = await runCitty(['gen', 'project', 'isolation-test'], {
-        env: { TEST_CLI: 'true' },
+      // Test that playground commands work in cleanroom container only
+      // This ensures commands don't affect the host system
+      const result = await runCitty(['info'], {
         timeout: 30000,
       })
 
       result
         .expectSuccess()
-        .expectOutput(/Generated/)
-        .expectOutput(/isolation-test/)
+        .expectOutput(/Playground CLI/)
+        .expectOutput(/testing citty-test-utils/)
 
-      // The generated files should stay in the cleanroom container
-      // and not appear on the host system
+      // The command should work in the cleanroom container
+      // but not affect the host system
     })
   })
 })

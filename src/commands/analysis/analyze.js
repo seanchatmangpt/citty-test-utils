@@ -4,13 +4,13 @@
  */
 
 import { defineCommand } from 'citty'
-import { CLCoverageAnalyzer } from '../../core/coverage/cli-coverage-analyzer.js'
+import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
 import { writeFileSync } from 'fs'
 
 export const analyzeCommand = defineCommand({
   meta: {
     name: 'analyze',
-    description: 'Analyze CLI test coverage by walking help output and finding tests',
+    description: '🚀 AST-based CLI test coverage analysis for accurate results',
   },
   args: {
     'cli-path': {
@@ -23,14 +23,9 @@ export const analyzeCommand = defineCommand({
       description: 'Directory containing test files',
       default: 'test',
     },
-    'use-test-cli': {
-      type: 'boolean',
-      description: 'Use test CLI instead of main CLI for analysis',
-      default: false,
-    },
     format: {
       type: 'string',
-      description: 'Output format (text, json, turtle)',
+      description: 'Output format (text, json)',
       default: 'text',
     },
     output: {
@@ -54,12 +49,12 @@ export const analyzeCommand = defineCommand({
     },
     'base-uri': {
       type: 'string',
-      description: 'Base URI for Turtle/RDF output',
+      description: 'Base URI for RDF output (deprecated - use export command)',
       default: 'http://example.org/cli',
     },
     'cli-name': {
       type: 'string',
-      description: 'CLI name for Turtle/RDF output',
+      description: 'CLI name for RDF output (deprecated - use export command)',
       default: 'cli',
     },
   },
@@ -67,7 +62,6 @@ export const analyzeCommand = defineCommand({
     const {
       'cli-path': cliPath,
       'test-dir': testDir,
-      'use-test-cli': useTestCli,
       format,
       output,
       verbose,
@@ -78,39 +72,32 @@ export const analyzeCommand = defineCommand({
     } = ctx.args
 
     try {
-      const options = {
+      const analyzer = new EnhancedASTCLIAnalyzer({
         cliPath,
         testDir,
-        useTestCli,
-        format,
-        verbose,
         includePatterns: includePatterns.split(',').map((p) => p.trim()),
         excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
-        baseUri,
-        cliName,
-      }
+        verbose,
+      })
 
       if (verbose) {
-        console.error('🔍 Starting CLI coverage analysis...')
-        console.error(`CLI Path: ${cliPath}`)
-        console.error(`Test Directory: ${testDir}`)
-        console.error(`Format: ${format}`)
-        console.error(`Use Test CLI: ${useTestCli}`)
+        console.log('🚀 Starting AST-based CLI coverage analysis...')
+        console.log(`CLI Path: ${cliPath}`)
+        console.log(`Test Directory: ${testDir}`)
+        console.log(`Format: ${format}`)
       }
 
-      const analyzer = new CLCoverageAnalyzer(options)
-      const report = await analyzer.analyze(options)
-      const formattedReport = await analyzer.formatReport(report, options)
+      const report = await analyzer.analyze()
+      const formattedReport = await analyzer.formatReport(report, { format })
 
       if (output) {
         writeFileSync(output, formattedReport)
-        console.log(`📄 Report written to: ${output}`)
+        console.log(`✅ AST-based analysis report saved to: ${output}`)
       } else {
         console.log(formattedReport)
       }
     } catch (error) {
-      console.error('❌ Coverage analysis failed:')
-      console.error(error.message)
+      console.error(`❌ AST-based analysis failed: ${error.message}`)
       if (verbose) {
         console.error(error.stack)
       }

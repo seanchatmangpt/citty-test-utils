@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { runLocalCitty, scenario, scenarios } from '../../src/local-runner.js'
-import { scenario as scenarioDSL, scenarios as scenariosDSL } from '../../src/scenario-dsl.js'
+import { runLocalCitty, scenario, scenarios } from '../../src/core/runners/local-runner.js'
+import { scenario as scenarioDSL, scenarios as scenariosDSL } from '../../src/core/scenarios/scenario-dsl.js'
 
 describe('Playground Snapshot Examples', () => {
   describe('Basic Snapshot Testing', () => {
@@ -31,7 +31,7 @@ console.log('  math <op>     Math operations')
         // Test snapshot with help output
         const result = await runLocalCitty(['--help'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
         })
 
         result.expectSuccess().expectSnapshotStdout('playground-help')
@@ -44,7 +44,7 @@ console.log('1.0.0')
 
         const versionResult = await runLocalCitty(['--version'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
         })
 
         versionResult.expectSuccess().expectSnapshotStdout('playground-version')
@@ -77,7 +77,7 @@ console.log('  --version  Show version')
       try {
         const result = await scenarioDSL('Playground scenario snapshot test')
           .step('Get help')
-          .run('--help', { cwd: tempDir, env: { TEST_CLI: 'true' } })
+          .run('--help', { cwd: tempDir, cliPath: testCliPath, env: { TEST_CLI: 'true' } })
           .expectSuccess()
           .expectSnapshotStdout('playground-scenario-help')
           .execute()
@@ -126,15 +126,15 @@ if (args.includes('--help')) {
       try {
         const result = await scenarioDSL('Playground multi-step snapshot workflow')
           .step('Get help')
-          .run('--help', { cwd: tempDir, env: { TEST_CLI: 'true' } })
+          .run('--help', { cwd: tempDir, cliPath: testCliPath, env: { TEST_CLI: 'true' } })
           .expectSuccess()
           .snapshot('workflow-help')
           .step('Get version')
-          .run('--version', { cwd: tempDir, env: { TEST_CLI: 'true' } })
+          .run('--version', { cwd: tempDir, cliPath: testCliPath, env: { TEST_CLI: 'true' } })
           .expectSuccess()
           .snapshot('workflow-version')
           .step('Get status')
-          .run('--status', { cwd: tempDir, env: { TEST_CLI: 'true' } })
+          .run('--status', { cwd: tempDir, cliPath: testCliPath, env: { TEST_CLI: 'true' } })
           .expectSuccess()
           .snapshot('workflow-status', { type: 'full' })
           .execute()
@@ -230,21 +230,21 @@ if (args.includes('--help')) {
         // Test stdout snapshot
         const stdoutResult = await runLocalCitty(['--help'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
         })
         stdoutResult.expectSuccess().expectSnapshotStdout('types-stdout')
 
         // Test stderr snapshot
         const stderrResult = await runLocalCitty(['invalid-command'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
         })
         stderrResult.expectFailure().expectSnapshotStderr('types-stderr')
 
         // Test JSON snapshot
         const jsonResult = await runLocalCitty(['--json'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
           json: true,
         })
         jsonResult.expectSuccess().expectSnapshotJson('types-json')
@@ -252,14 +252,14 @@ if (args.includes('--help')) {
         // Test full result snapshot
         const fullResult = await runLocalCitty(['--version'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
         })
         fullResult.expectSuccess().expectSnapshotFull('types-full')
 
         // Test combined output snapshot
         const outputResult = await runLocalCitty(['--help'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
         })
         outputResult.expectSuccess().expectSnapshotOutput('types-output')
       } finally {
@@ -272,7 +272,7 @@ if (args.includes('--help')) {
 
   describe('Snapshot Management Examples', () => {
     it('should demonstrate snapshot management utilities', async () => {
-      const { SnapshotManagerUtils } = await import('../../src/snapshot-management.js')
+      const { SnapshotManagerUtils } = await import('../../src/core/snapshot/snapshot-manager.js')
 
       // Create a test CLI
       const testCliContent = `
@@ -294,13 +294,13 @@ console.log('  --version  Show version')
         // Create some snapshots
         const result1 = await runLocalCitty(['--help'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
         })
         result1.expectSuccess().expectSnapshotStdout('management-help')
 
         const result2 = await runLocalCitty(['--version'], {
           cwd: tempDir,
-          
+          cliPath: testCliPath,
         })
         result2.expectSuccess().expectSnapshotStdout('management-version')
 

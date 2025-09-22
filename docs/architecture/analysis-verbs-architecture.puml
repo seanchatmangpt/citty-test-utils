@@ -1,0 +1,172 @@
+@startuml Analysis Verbs Architecture
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+title CTU Analysis Verbs Architecture\nAST-Based CLI Coverage Analysis System
+
+package "CLI Interface Layer" {
+  [ctu analysis] as CLI
+  [analyze] as AnalyzeCmd
+  [stats] as StatsCmd
+  [report] as ReportCmd
+  [export] as ExportCmd
+  [ast-analyze] as AstAnalyzeCmd
+}
+
+package "Command Layer" {
+  [Analysis Command Router] as Router
+  [Command Validation] as Validation
+  [Parameter Processing] as Params
+}
+
+package "Analysis Engine Layer" {
+  [Enhanced AST CLI Analyzer] as ASTAnalyzer
+  [Legacy CLI Coverage Analyzer] as LegacyAnalyzer
+  [Import Tracker] as ImportTracker
+  [Test Pattern Discovery] as TestDiscovery
+}
+
+package "AST Processing Layer" {
+  [Acorn Parser] as AcornParser
+  [AST Walker] as ASTWalker
+  [Command Definition Parser] as CmdParser
+  [Subcommand Resolver] as SubCmdResolver
+}
+
+package "Data Processing Layer" {
+  [Coverage Calculator] as CoverageCalc
+  [Report Generator] as ReportGen
+  [Format Converter] as FormatConv
+  [Recommendation Engine] as RecEngine
+}
+
+package "Output Layer" {
+  [Text Formatter] as TextFormat
+  [JSON Formatter] as JSONFormat
+  [Turtle/RDF Formatter] as TurtleFormat
+  [File Writer] as FileWriter
+}
+
+package "Data Models" {
+  [CLI Structure] as CLIStruct
+  [Test Patterns] as TestPatterns
+  [Coverage Report] as CoverageReport
+  [Recommendations] as Recommendations
+}
+
+' CLI Interface Layer connections
+CLI --> Router
+Router --> AnalyzeCmd
+Router --> StatsCmd
+Router --> ReportCmd
+Router --> ExportCmd
+Router --> AstAnalyzeCmd
+
+' Command Layer connections
+AnalyzeCmd --> Validation
+StatsCmd --> Validation
+ReportCmd --> Validation
+ExportCmd --> Validation
+AstAnalyzeCmd --> Validation
+
+Validation --> Params
+
+' Analysis Engine Layer connections
+Params --> ASTAnalyzer
+Params --> LegacyAnalyzer
+
+ASTAnalyzer --> ImportTracker
+ASTAnalyzer --> TestDiscovery
+LegacyAnalyzer --> TestDiscovery
+
+' AST Processing Layer connections
+ASTAnalyzer --> AcornParser
+AcornParser --> ASTWalker
+ASTWalker --> CmdParser
+CmdParser --> SubCmdResolver
+
+ImportTracker --> AcornParser
+TestDiscovery --> AcornParser
+
+' Data Processing Layer connections
+ASTAnalyzer --> CoverageCalc
+LegacyAnalyzer --> CoverageCalc
+CoverageCalc --> ReportGen
+ReportGen --> FormatConv
+ReportGen --> RecEngine
+
+' Output Layer connections
+FormatConv --> TextFormat
+FormatConv --> JSONFormat
+FormatConv --> TurtleFormat
+TextFormat --> FileWriter
+JSONFormat --> FileWriter
+TurtleFormat --> FileWriter
+
+' Data Models connections
+ASTAnalyzer --> CLIStruct
+TestDiscovery --> TestPatterns
+CoverageCalc --> CoverageReport
+RecEngine --> Recommendations
+
+CLIStruct --> CoverageCalc
+TestPatterns --> CoverageCalc
+CoverageReport --> ReportGen
+Recommendations --> ReportGen
+
+' Data flow annotations
+note right of ASTAnalyzer
+  **Enhanced AST-Based Analysis**
+  - Parses actual CLI definition files
+  - Tracks imported commands
+  - Provides accurate structure discovery
+end note
+
+note right of LegacyAnalyzer
+  **Legacy Help-Based Analysis**
+  - Parses --help output with regex
+  - Used only for Turtle/RDF export
+  - Maintains backward compatibility
+end note
+
+note right of ImportTracker
+  **Import Resolution**
+  - Detects command imports from ./commands/*.js
+  - Maps imported commands to source files
+  - Enables subcommand discovery
+end note
+
+note right of CoverageCalc
+  **Coverage Calculation**
+  - Compares CLI structure with test patterns
+  - Calculates percentages and statistics
+  - Identifies untested components
+end note
+
+note right of RecEngine
+  **Smart Recommendations**
+  - Prioritizes untested commands/subcommands
+  - Suggests specific test improvements
+  - Provides actionable guidance
+end note
+
+' Command-specific flows
+AnalyzeCmd ..> ASTAnalyzer : uses
+StatsCmd ..> ASTAnalyzer : uses
+ReportCmd ..> ASTAnalyzer : uses
+ExportCmd ..> ASTAnalyzer : uses (JSON)
+ExportCmd ..> LegacyAnalyzer : uses (Turtle)
+AstAnalyzeCmd ..> ASTAnalyzer : uses
+
+' Format-specific flows
+AnalyzeCmd ..> TextFormat : text/json
+StatsCmd ..> TextFormat : text only
+ReportCmd ..> TextFormat : text/json
+ExportCmd ..> JSONFormat : json
+ExportCmd ..> TurtleFormat : turtle
+AstAnalyzeCmd ..> TextFormat : text/json
+
+@enduml

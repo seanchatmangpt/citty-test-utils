@@ -1,13 +1,13 @@
-# Getting Started
+# Getting Started with citty-test-utils
 
-A comprehensive guide to getting started with `citty-test-utils`.
+A comprehensive guide to getting started with the `citty-test-utils` testing framework.
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [Project Setup](#project-setup)
 - [First Test](#first-test)
-- [Understanding the Basics](#understanding-the-basics)
+- [Understanding the Testing Framework](#understanding-the-testing-framework)
 - [Next Steps](#next-steps)
 
 ## Installation
@@ -17,7 +17,7 @@ A comprehensive guide to getting started with `citty-test-utils`.
 Before installing `citty-test-utils`, ensure you have:
 
 - **Node.js** >= 18.0.0
-- **GitVan Project** - A project with GitVan CLI installed
+- **Citty Project** - A project with Citty CLI installed
 - **Docker** (optional) - For cleanroom testing
 
 ### Install the Package
@@ -36,7 +36,9 @@ import { runLocalCitty } from 'citty-test-utils'
 
 async function testInstallation() {
   try {
-    const result = await runLocalCitty(['--help'])
+    const result = await runLocalCitty(['--help'], {
+      cwd: './my-cli-project'  // Point to your CLI project
+    })
     console.log('✅ Installation successful!')
     console.log('Exit code:', result.result.exitCode)
     console.log('Output length:', result.result.stdout.length)
@@ -56,24 +58,24 @@ node test-installation.mjs
 
 ## Project Setup
 
-### GitVan Project Structure
+### Citty Project Structure
 
-`citty-test-utils` works with GitVan projects that have this structure:
+`citty-test-utils` works with any Citty-based CLI project that has this structure:
 
 ```
-my-gitvan-project/
+my-citty-project/
 ├── src/
-│   └── cli.mjs          # GitVan CLI entry point
-├── package.json         # Contains "name": "gitvan"
+│   └── cli.mjs          # Citty CLI entry point
+├── package.json         # Contains citty dependency
 ├── tests/               # Your test files
 │   └── cli-tests.mjs
 └── node_modules/
     └── citty-test-utils/
 ```
 
-### Verify GitVan CLI
+### Verify Your CLI
 
-Ensure your GitVan CLI is working:
+Ensure your Citty CLI is working:
 
 ```bash
 node src/cli.mjs --help
@@ -82,9 +84,9 @@ node src/cli.mjs --help
 You should see output like:
 
 ```
-Git-native development automation platform (gitvan v3.0.0)
+My CLI - Description of your CLI (my-cli v1.0.0)
 
-USAGE gitvan graph|daemon|event|cron|audit|hooks|workflow|jtbd|cleanroom|init|setup|save|ensure|pack|marketplace|scaffold|compose|chat
+USAGE my-cli <command> [options]
 ...
 ```
 
@@ -94,11 +96,18 @@ Your `package.json` should contain:
 
 ```json
 {
-  "name": "gitvan",
+  "name": "my-cli",
   "type": "module",
   "scripts": {
     "test": "vitest",
     "test:cli": "vitest tests/cli-tests.mjs"
+  },
+  "dependencies": {
+    "citty": "^1.0.0"
+  },
+  "devDependencies": {
+    "citty-test-utils": "^0.4.0",
+    "vitest": "^1.0.0"
   }
 }
 ```
@@ -116,7 +125,9 @@ import { runLocalCitty } from 'citty-test-utils'
 async function testHelpCommand() {
   console.log('🧪 Testing help command...')
   
-  const result = await runLocalCitty(['--help'])
+  const result = await runLocalCitty(['--help'], {
+    cwd: './my-cli-project'  // Point to your CLI project
+  })
   
   // Use fluent assertions
   result
@@ -145,9 +156,11 @@ For a more structured testing approach, use Vitest:
 import { describe, it } from 'vitest'
 import { runLocalCitty } from 'citty-test-utils'
 
-describe('GitVan CLI Tests', () => {
+describe('My CLI Tests', () => {
   it('should show help', async () => {
-    const result = await runLocalCitty(['--help'])
+    const result = await runLocalCitty(['--help'], {
+      cwd: './my-cli-project'
+    })
     
     result
       .expectSuccess()
@@ -156,7 +169,9 @@ describe('GitVan CLI Tests', () => {
   })
   
   it('should show version', async () => {
-    const result = await runLocalCitty(['--version'])
+    const result = await runLocalCitty(['--version'], {
+      cwd: './my-cli-project'
+    })
     
     result
       .expectSuccess()
@@ -171,28 +186,31 @@ Run with Vitest:
 npm run test:cli
 ```
 
-## Understanding the Basics
+## Understanding the Testing Framework
 
 ### How Local Runner Works
 
-The local runner (`runLocalCitty`) automatically:
+The local runner (`runLocalCitty`) provides:
 
-1. **Finds GitVan Project**: Searches up the directory tree for `package.json` with `"name": "gitvan"`
-2. **Validates CLI Path**: Ensures `src/cli.mjs` exists
-3. **Executes Command**: Runs the command with proper working directory
-4. **Returns Result**: Provides a fluent assertion object
+1. **Flexible Execution**: Run CLI commands with full environment control
+2. **Working Directory Control**: Specify custom working directories
+3. **Environment Variables**: Pass custom environment variables
+4. **Timeout Management**: Configure execution timeouts
+5. **Fluent Assertions**: Chainable expectation API
 
 ### Fluent Assertions
 
 The fluent assertion API allows chaining expectations:
 
 ```javascript
-const result = await runLocalCitty(['--help'])
+const result = await runLocalCitty(['--help'], {
+  cwd: './my-cli-project'
+})
 
 result
   .expectSuccess()                    // Exit code 0
   .expectOutput('USAGE')              // String match
-  .expectOutput(/gitvan/)             // Regex match
+  .expectOutput(/my-cli/)             // Regex match
   .expectNoStderr()                   // Empty stderr
   .expectOutputLength(100, 5000)      // Length range
 ```
@@ -209,21 +227,28 @@ Stdout:
 Stderr: Error: Command not found
 ```
 
-### Working Directory Detection
+### Working Directory Control
 
-The runner automatically detects your GitVan project root:
-
-```javascript
-// Works from any subdirectory
-const result = await runLocalCitty(['--help'])
-// Automatically finds the GitVan project root
-```
-
-You can also specify a custom working directory:
+You can specify custom working directories:
 
 ```javascript
 const result = await runLocalCitty(['--help'], {
-  cwd: '/custom/path'
+  cwd: '/custom/path/to/cli-project'
+})
+```
+
+### Environment Variables
+
+Test with custom environment:
+
+```javascript
+const result = await runLocalCitty(['dev'], {
+  cwd: './my-cli-project',
+  env: {
+    NODE_ENV: 'development',
+    DEBUG: 'true'
+  },
+  timeout: 60000  // 60 second timeout
 })
 ```
 
@@ -234,7 +259,9 @@ const result = await runLocalCitty(['--help'], {
 Try different assertion methods:
 
 ```javascript
-const result = await runLocalCitty(['--version'])
+const result = await runLocalCitty(['--version'], {
+  cwd: './my-cli-project'
+})
 
 result
   .expectSuccess()
@@ -248,7 +275,9 @@ result
 Test how your CLI handles invalid commands:
 
 ```javascript
-const result = await runLocalCitty(['invalid-command'])
+const result = await runLocalCitty(['invalid-command'], {
+  cwd: './my-cli-project'
+})
 
 result
   .expectFailure()                    // Non-zero exit code
@@ -262,6 +291,7 @@ Test with custom environment:
 
 ```javascript
 const result = await runLocalCitty(['dev'], {
+  cwd: './my-cli-project',
   env: {
     NODE_ENV: 'development',
     DEBUG: 'true'
@@ -278,7 +308,7 @@ Test in isolated Docker containers:
 import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
 
 // Setup (run once per test suite)
-await setupCleanroom({ rootDir: '.' })
+await setupCleanroom({ rootDir: './my-cli-project' })
 
 // Run tests in cleanroom
 const result = await runCitty(['--help'])
@@ -307,19 +337,38 @@ const result = await scenario('Help and Version')
   .execute('local')
 ```
 
+### 6. Use Pre-built Scenarios
+
+Leverage ready-to-use testing patterns:
+
+```javascript
+import { scenarios } from 'citty-test-utils'
+
+// Basic scenarios
+await scenarios.help('local').execute()
+await scenarios.version('local').execute()
+await scenarios.invalidCommand('nope', 'local').execute()
+
+// JSON output testing
+await scenarios.jsonOutput(['greet', 'Alice', '--json'], 'local').execute()
+
+// Robustness testing
+await scenarios.idempotent(['greet', 'Alice'], 'local').execute()
+```
+
 ## Common Issues
 
 ### CLI Not Found
 
 **Error:** `CLI not found at /path/to/src/cli.mjs`
 
-**Solution:** Ensure you're in a GitVan project with `src/cli.mjs`
+**Solution:** Ensure you're pointing to the correct CLI project directory with `cwd` option
 
 ### Project Detection Failed
 
-**Error:** Runner can't find GitVan project
+**Error:** Runner can't find CLI project
 
-**Solution:** Check that `package.json` contains `"name": "gitvan"`
+**Solution:** Check that you're specifying the correct `cwd` path to your CLI project
 
 ### Docker Not Available
 
@@ -335,7 +384,20 @@ const result = await scenario('Help and Version')
 
 ```javascript
 const result = await runLocalCitty(['long-running-command'], {
+  cwd: './my-cli-project',
   timeout: 120000  // 2 minutes
+})
+```
+
+### Working Directory Issues
+
+**Error:** Command fails with path-related errors
+
+**Solution:** Ensure the `cwd` points to your CLI project root:
+
+```javascript
+const result = await runLocalCitty(['--help'], {
+  cwd: './my-cli-project'  // Should contain src/cli.mjs
 })
 ```
 

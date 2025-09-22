@@ -4,12 +4,12 @@
  */
 
 import { defineCommand } from 'citty'
-import { CLCoverageAnalyzer } from '../../core/coverage/cli-coverage-analyzer.js'
+import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
 
 export const statsCommand = defineCommand({
   meta: {
     name: 'stats',
-    description: 'Show coverage statistics summary',
+    description: '🚀 AST-based coverage statistics summary',
   },
   args: {
     'cli-path': {
@@ -21,11 +21,6 @@ export const statsCommand = defineCommand({
       type: 'string',
       description: 'Directory containing test files',
       default: 'test',
-    },
-    'use-test-cli': {
-      type: 'boolean',
-      description: 'Use test CLI instead of main CLI for analysis',
-      default: false,
     },
     verbose: {
       type: 'boolean',
@@ -47,40 +42,37 @@ export const statsCommand = defineCommand({
     const {
       'cli-path': cliPath,
       'test-dir': testDir,
-      'use-test-cli': useTestCli,
       verbose,
       'include-patterns': includePatterns,
       'exclude-patterns': excludePatterns,
     } = ctx.args
 
     try {
-      const options = {
+      const analyzer = new EnhancedASTCLIAnalyzer({
         cliPath,
         testDir,
-        useTestCli,
-        format: 'text',
-        verbose,
         includePatterns: includePatterns.split(',').map((p) => p.trim()),
         excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
-      }
+        verbose,
+      })
 
       if (verbose) {
-        console.error('📈 Calculating coverage statistics...')
-        console.error(`CLI Path: ${cliPath}`)
-        console.error(`Test Directory: ${testDir}`)
+        console.log('🚀 Starting AST-based CLI coverage analysis...')
+        console.log(`CLI Path: ${cliPath}`)
+        console.log(`Test Directory: ${testDir}`)
       }
 
-      const analyzer = new CLCoverageAnalyzer(options)
-      const report = await analyzer.analyze(options)
+      const report = await analyzer.analyze()
 
-      // Display statistics summary
-      console.log('📊 Enhanced CLI Coverage Statistics')
-      console.log('==================================')
+      // Display enhanced statistics summary
+      console.log('🚀 Enhanced AST-Based CLI Coverage Statistics')
+      console.log('============================================')
       console.log(`CLI: ${report.metadata.cliPath}`)
       console.log(`Test Directory: ${report.metadata.testDir}`)
+      console.log(`Analysis Method: ${report.metadata.analysisMethod}`)
       console.log(`Total Test Files: ${report.metadata.totalTestFiles}`)
       console.log(`Total Commands: ${report.metadata.totalCommands}`)
-      console.log(`Total Arguments: ${report.metadata.totalArguments}`)
+      console.log(`Total Subcommands: ${report.metadata.totalSubcommands || 0}`)
       console.log(`Total Flags: ${report.metadata.totalFlags}`)
       console.log(`Total Options: ${report.metadata.totalOptions}`)
       console.log('')
@@ -90,11 +82,13 @@ export const statsCommand = defineCommand({
           report.coverage.summary.commands.total
         } (${report.coverage.summary.commands.percentage.toFixed(1)}%)`
       )
-      console.log(
-        `  Arguments: ${report.coverage.summary.arguments.tested}/${
-          report.coverage.summary.arguments.total
-        } (${report.coverage.summary.arguments.percentage.toFixed(1)}%)`
-      )
+      if (report.coverage.summary.subcommands) {
+        console.log(
+          `  Subcommands: ${report.coverage.summary.subcommands.tested}/${
+            report.coverage.summary.subcommands.total
+          } (${report.coverage.summary.subcommands.percentage.toFixed(1)}%)`
+        )
+      }
       console.log(
         `  Flags: ${report.coverage.summary.flags.tested}/${
           report.coverage.summary.flags.total
@@ -115,12 +109,57 @@ export const statsCommand = defineCommand({
       if (report.recommendations.length > 0) {
         console.log('💡 Top Recommendations:')
         report.recommendations.slice(0, 3).forEach((rec, index) => {
-          console.log(`  ${index + 1}. ${rec.message}`)
+          console.log(`  ${index + 1}. [${rec.priority.toUpperCase()}] ${rec.message}`)
+        })
+      }
+
+      // Show detailed command breakdown
+      console.log('')
+      console.log('📋 Command Details:')
+      for (const [name, command] of Object.entries(report.commands)) {
+        const status = command.tested ? '✅' : '❌'
+        console.log(`  ${status} ${name}: ${command.description}`)
+
+        // Show subcommands if any
+        if (command.subcommands && Object.keys(command.subcommands).length > 0) {
+          for (const [subName, subcommand] of Object.entries(command.subcommands)) {
+            const subStatus = subcommand.tested ? '✅' : '❌'
+            const imported = subcommand.imported ? ' (imported)' : ''
+            console.log(`    ${subStatus} ${name} ${subName}: ${subcommand.description}${imported}`)
+          }
+        }
+      }
+
+      // Show untested items details
+      if (report.coverage.details.untestedCommands.length > 0) {
+        console.log('')
+        console.log('❌ Untested Commands:')
+        report.coverage.details.untestedCommands.forEach((cmd) => {
+          console.log(`  - ${cmd.name}: ${cmd.description}`)
+        })
+      }
+
+      if (report.coverage.details.untestedSubcommands.length > 0) {
+        console.log('')
+        console.log('❌ Untested Subcommands:')
+        report.coverage.details.untestedSubcommands.forEach((subcmd) => {
+          const imported = subcmd.imported ? ' (imported)' : ''
+          console.log(
+            `  - ${subcmd.command} ${subcmd.subcommand}: ${subcmd.description}${imported}`
+          )
+        })
+      }
+
+      if (report.coverage.details.untestedFlags.length > 0) {
+        console.log('')
+        console.log('❌ Untested Flags:')
+        report.coverage.details.untestedFlags.forEach((flag) => {
+          const global = flag.global ? ' (global)' : ''
+          console.log(`  - --${flag.name}: ${flag.description}${global}`)
         })
       }
     } catch (error) {
-      console.error('❌ Statistics calculation failed:')
-      console.error(error.message)
+      console.error(`❌ AST-based statistics calculation failed: ${error.message}`)
       if (verbose) {
         console.error(error.stack)
       }

@@ -23,7 +23,7 @@ describe.concurrent('Cleanroom Consolidated Tests', () => {
       const result = await runCitty(['--version'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('0.4.0')
+      expect(result.stdout).toContain('0.5.0')
       expect(result.cwd).toBe('/app')
     })
 

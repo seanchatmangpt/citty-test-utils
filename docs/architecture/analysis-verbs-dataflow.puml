@@ -1,0 +1,183 @@
+@startuml Analysis Verbs Data Flow Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activityStyle rectangle
+skinparam activityBackgroundColor #E8F4FD
+skinparam activityBorderColor #2E86AB
+skinparam activityFontColor #000000
+
+title CTU Analysis Verbs - Data Flow Architecture\nAST-Based CLI Coverage Analysis Data Pipeline
+
+start
+
+:User executes analysis command;
+note right: ctu analysis <verb> [options]
+
+:Parse command arguments;
+note right: CLI path, test dir, format, etc.
+
+if (Command type?) then (analyze/stats/report/ast-analyze)
+  :Use Enhanced AST Analyzer;
+  note right: Primary analysis engine
+else (export)
+  if (Format?) then (json)
+    :Use Enhanced AST Analyzer;
+    note right: AST-based for JSON
+  else (turtle)
+    :Use Legacy Analyzer;
+    note right: Help-based for Turtle/RDF
+  endif
+endif
+
+partition "AST-Based Analysis Pipeline" {
+  :Read CLI definition file;
+  note right: src/cli.mjs or specified path
+  
+  :Parse JavaScript AST;
+  note right: Acorn parser with ES2022 support
+  
+  :Extract import statements;
+  note right: Find commands from ./commands/*.js
+  
+  :Build imported commands map;
+  note right: Map local names to source files
+  
+  :Parse CLI definition;
+  note right: Find defineCommand calls
+  
+  :Extract command metadata;
+  note right: name, description, args, flags
+  
+  :Resolve subcommands;
+  note right: Map imported commands to subcommands
+  
+  :Build CLI structure;
+  note right: Complete command hierarchy
+}
+
+partition "Test Pattern Discovery Pipeline" {
+  :Scan test directory;
+  note right: Find .test.mjs, .test.js files
+  
+  :Parse test file ASTs;
+  note right: Extract runCitty/runLocalCitty calls
+  
+  :Extract command arguments;
+  note right: Parse array arguments from calls
+  
+  :Build test patterns map;
+  note right: Map commands to test usage
+  
+  :Track flag/option usage;
+  note right: Identify tested flags and options
+}
+
+partition "Coverage Calculation Pipeline" {
+  :Compare CLI structure with test patterns;
+  note right: Match commands and subcommands
+  
+  :Calculate command coverage;
+  note right: Tested vs total commands
+  
+  :Calculate subcommand coverage;
+  note right: Tested vs total subcommands
+  
+  :Calculate flag coverage;
+  note right: Tested vs total flags
+  
+  :Calculate option coverage;
+  note right: Tested vs total options
+  
+  :Generate overall statistics;
+  note right: Combined coverage percentage
+}
+
+partition "Report Generation Pipeline" {
+  :Build report metadata;
+  note right: Analysis method, timestamps, file counts
+  
+  :Generate coverage details;
+  note right: Untested commands, flags, options
+  
+  :Create recommendations;
+  note right: Prioritized improvement suggestions
+  
+  :Assemble comprehensive report;
+  note right: Complete analysis results
+}
+
+partition "Output Formatting Pipeline" {
+  if (Format?) then (text)
+    :Generate text report;
+    note right: Human-readable format
+  elseif (json)
+    :Serialize to JSON;
+    note right: Structured data format
+  elseif (turtle)
+    :Generate Turtle/RDF;
+    note right: Semantic web format
+  endif
+}
+
+if (Output file specified?) then (yes)
+  :Write to file;
+  note right: File system output
+  :Display success message;
+else (no)
+  :Output to console;
+  note right: Standard output
+endif
+
+stop
+
+' Data flow annotations
+note top of "AST-Based Analysis Pipeline"
+  **Input:** CLI definition files (src/cli.mjs)
+  **Processing:** AST parsing, import resolution
+  **Output:** Complete CLI structure with commands, subcommands, flags, options
+end note
+
+note top of "Test Pattern Discovery Pipeline"
+  **Input:** Test directory with .test.mjs files
+  **Processing:** AST parsing of test files
+  **Output:** Test usage patterns mapped to CLI structure
+end note
+
+note top of "Coverage Calculation Pipeline"
+  **Input:** CLI structure + Test patterns
+  **Processing:** Coverage comparison and statistics
+  **Output:** Coverage percentages and untested items
+end note
+
+note top of "Report Generation Pipeline"
+  **Input:** Coverage data + CLI structure
+  **Processing:** Report assembly and recommendations
+  **Output:** Comprehensive analysis report
+end note
+
+note top of "Output Formatting Pipeline"
+  **Input:** Analysis report data
+  **Processing:** Format-specific serialization
+  **Output:** Formatted text, JSON, or Turtle/RDF
+end note
+
+' Error handling flow
+note bottom
+  **Error Handling:**
+  - AST parsing failures fall back to regex
+  - File access errors are logged and skipped
+  - Invalid CLI files throw descriptive errors
+  - Verbose mode shows full stack traces
+end note
+
+' Performance optimizations
+note bottom
+  **Performance Features:**
+  - Parallel test file processing
+  - AST caching for repeated analysis
+  - Efficient pattern matching
+  - Memory-optimized data structures
+end note
+
+@enduml

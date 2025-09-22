@@ -6,6 +6,10 @@ import { analyzeCommand } from './analysis/analyze.js'
 import { reportCommand } from './analysis/report.js'
 import { exportCommand } from './analysis/export.js'
 import { statsCommand } from './analysis/stats.js'
+import { astAnalyzeCommand } from './analysis/ast-analyze.js'
+import { discoverCommand } from './analysis/discover.js'
+import { coverageCommand } from './analysis/coverage.js'
+import { recommendCommand } from './analysis/recommend.js'
 
 export const analysisCommand = defineCommand({
   meta: {
@@ -22,15 +26,31 @@ export const analysisCommand = defineCommand({
         usage: 'ctu analysis <verb> [options]',
         verbs: [
           {
-            name: 'analyze',
-            description: 'Analyze CLI test coverage by walking help output and finding tests',
+            name: 'discover',
+            description: '🔍 Discover CLI structure using AST parsing for accurate command extraction',
           },
-          { name: 'report', description: 'Generate a detailed coverage report' },
+          {
+            name: 'coverage',
+            description: '📊 Analyze test coverage using AST-based pattern matching for accurate results',
+          },
+          {
+            name: 'recommend',
+            description: '💡 Generate intelligent recommendations for improving test coverage',
+          },
+          {
+            name: 'analyze',
+            description: '🚀 AST-based CLI test coverage analysis for accurate results (legacy)',
+          },
+          {
+            name: 'ast-analyze',
+            description: '🚀 AST-based CLI coverage analysis for accurate results (legacy)',
+          },
+          { name: 'report', description: '🚀 AST-based detailed coverage report (legacy)' },
           {
             name: 'export',
-            description: 'Export coverage data in structured formats (JSON, Turtle)',
+            description: '🚀 AST-based coverage data export (JSON, Turtle) (legacy)',
           },
-          { name: 'stats', description: 'Show coverage statistics summary' },
+          { name: 'stats', description: '🚀 AST-based coverage statistics summary (legacy)' },
         ],
       }
 
@@ -48,10 +68,14 @@ export const analysisCommand = defineCommand({
         })
         console.log('')
         console.log('EXAMPLES')
-        console.log('  ctu analysis analyze --cli-path src/cli.mjs --test-dir test')
-        console.log('  ctu analysis report --format json --output coverage.json')
-        console.log('  ctu analysis export --format turtle --output coverage.ttl')
-        console.log('  ctu analysis stats --verbose')
+        console.log('  ctu analysis discover --cli-path src/cli.mjs --format json')
+        console.log('  ctu analysis coverage --test-dir test --threshold 80')
+        console.log('  ctu analysis recommend --priority high --actionable')
+        console.log('  ctu analysis analyze --cli-path src/cli.mjs --test-dir test (legacy)')
+        console.log('  ctu analysis ast-analyze --verbose --format json (legacy)')
+        console.log('  ctu analysis report --format json --output coverage.json (legacy)')
+        console.log('  ctu analysis export --format turtle --output coverage.ttl (legacy)')
+        console.log('  ctu analysis stats --verbose (legacy)')
         console.log('')
         console.log('Use ctu analysis <verb> --help for more information about a verb.')
       }
@@ -59,7 +83,11 @@ export const analysisCommand = defineCommand({
     }
   },
   subCommands: {
+    discover: discoverCommand,
+    coverage: coverageCommand,
+    recommend: recommendCommand,
     analyze: analyzeCommand,
+    'ast-analyze': astAnalyzeCommand,
     report: reportCommand,
     export: exportCommand,
     stats: statsCommand,

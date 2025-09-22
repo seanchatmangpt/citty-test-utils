@@ -1,0 +1,266 @@
+@startuml CTU Analysis Verbs - New Verb Workflow Sequence
+
+!theme aws-orange
+skinparam backgroundColor #FAFAFA
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 80
+skinparam noteBackgroundColor #FFF3E0
+skinparam noteBorderColor #FF9800
+
+title CTU Analysis Verbs - New Verb Workflow Sequence\n🚀 Innovative AST-Based Analysis Pipeline
+
+actor "👤 Developer" as Dev
+participant "📱 CLI Interface" as CLI
+participant "🎯 Command Router" as Router
+participant "🔍 Discover Verb" as Discover
+participant "📊 Coverage Verb" as Coverage
+participant "💡 Recommend Verb" as Recommend
+participant "⚡ Profile Verb" as Profile
+participant "✅ Validate Verb" as Validate
+participant "📤 Export Verb" as Export
+participant "🧠 AST Engine" as ASTEngine
+
+== 🚀 Primary Analysis Workflow ==
+
+Dev -> CLI: ctu analysis discover --cli-path src/cli.mjs
+CLI -> Router: route discover command
+Router -> Discover: execute discovery
+activate Discover
+
+Discover -> ASTEngine: discoverCLIStructureEnhanced()
+activate ASTEngine
+ASTEngine -> ASTEngine: parse CLI definition AST
+ASTEngine -> ASTEngine: extract imported commands
+ASTEngine -> ASTEngine: build command hierarchy
+ASTEngine -> ASTEngine: validate structure integrity
+ASTEngine --> Discover: CLI structure
+deactivate ASTEngine
+
+Discover --> CLI: CLI structure report
+deactivate Discover
+CLI --> Dev: ✅ CLI structure discovered
+
+note right of Discover
+  **🔍 Discovery Results:**
+  - Commands: 5 discovered
+  - Subcommands: 15 discovered
+  - Flags: 8 discovered
+  - Options: 3 discovered
+  - Imports: 5 resolved
+end note
+
+Dev -> CLI: ctu analysis coverage --test-dir test
+CLI -> Router: route coverage command
+Router -> Coverage: execute coverage analysis
+activate Coverage
+
+Coverage -> ASTEngine: discoverTestPatternsAST()
+activate ASTEngine
+ASTEngine -> ASTEngine: scan test directory
+ASTEngine -> ASTEngine: parse test file ASTs
+ASTEngine -> ASTEngine: extract test patterns
+ASTEngine -> ASTEngine: calculate coverage
+ASTEngine --> Coverage: coverage statistics
+deactivate ASTEngine
+
+Coverage --> CLI: coverage analysis report
+deactivate Coverage
+CLI --> Dev: 📊 Coverage: 75% overall
+
+note right of Coverage
+  **📊 Coverage Results:**
+  - Commands: 4/5 (80%)
+  - Subcommands: 12/15 (80%)
+  - Flags: 6/8 (75%)
+  - Options: 2/3 (67%)
+  - Overall: 24/31 (77%)
+end note
+
+Dev -> CLI: ctu analysis recommend --priority high
+CLI -> Router: route recommend command
+Router -> Recommend: execute recommendations
+activate Recommend
+
+Recommend -> ASTEngine: generateRecommendations()
+activate ASTEngine
+ASTEngine -> ASTEngine: analyze coverage gaps
+ASTEngine -> ASTEngine: prioritize untested items
+ASTEngine -> ASTEngine: generate actionable suggestions
+ASTEngine -> ASTEngine: create improvement plans
+ASTEngine --> Recommend: smart recommendations
+deactivate ASTEngine
+
+Recommend --> CLI: recommendation report
+deactivate Recommend
+CLI --> Dev: 💡 5 high-priority recommendations
+
+note right of Recommend
+  **💡 Smart Recommendations:**
+  1. [HIGH] Add tests for 'export' command
+  2. [HIGH] Add tests for '--verbose' flag
+  3. [MEDIUM] Add tests for 'compare' subcommand
+  4. [MEDIUM] Add tests for '--format' option
+  5. [LOW] Add tests for '--output' option
+end note
+
+== ⚡ Performance & Validation Workflow ==
+
+Dev -> CLI: ctu analysis profile --benchmark
+CLI -> Router: route profile command
+Router -> Profile: execute profiling
+activate Profile
+
+Profile -> ASTEngine: profileAnalysis()
+activate ASTEngine
+ASTEngine -> ASTEngine: monitor execution performance
+ASTEngine -> ASTEngine: detect bottlenecks
+ASTEngine -> ASTEngine: analyze resource usage
+ASTEngine -> ASTEngine: generate optimization suggestions
+ASTEngine --> Profile: performance report
+deactivate ASTEngine
+
+Profile --> CLI: performance profile
+deactivate Profile
+CLI --> Dev: ⚡ Performance: 2.3s analysis time
+
+note right of Profile
+  **⚡ Performance Results:**
+  - Analysis Time: 2.3s
+  - Memory Usage: 45MB
+  - Cache Hit Rate: 95%
+  - Bottlenecks: None detected
+  - Optimization: Already optimized
+end note
+
+Dev -> CLI: ctu analysis validate --strict
+CLI -> Router: route validate command
+Router -> Validate: execute validation
+activate Validate
+
+Validate -> ASTEngine: validateCLIStructure()
+activate ASTEngine
+ASTEngine -> ASTEngine: validate structure integrity
+ASTEngine -> ASTEngine: check import resolution
+ASTEngine -> ASTEngine: verify test consistency
+ASTEngine -> ASTEngine: detect issues
+ASTEngine --> Validate: validation report
+deactivate ASTEngine
+
+Validate --> CLI: validation report
+deactivate Validate
+CLI --> Dev: ✅ Validation: All checks passed
+
+note right of Validate
+  **✅ Validation Results:**
+  - Structure Integrity: ✅ Passed
+  - Import Resolution: ✅ Passed
+  - Test Consistency: ✅ Passed
+  - Issue Detection: ✅ No issues found
+  - Quality Score: 95/100
+end note
+
+== 📤 Export & Integration Workflow ==
+
+Dev -> CLI: ctu analysis export --format json --output coverage.json
+CLI -> Router: route export command
+Router -> Export: execute export
+activate Export
+
+Export -> ASTEngine: exportAnalysisData()
+activate ASTEngine
+ASTEngine -> ASTEngine: gather all analysis data
+ASTEngine -> ASTEngine: format for export
+ASTEngine -> ASTEngine: serialize data
+ASTEngine --> Export: formatted data
+deactivate ASTEngine
+
+Export -> Export: writeToFile(coverage.json)
+Export --> CLI: export confirmation
+deactivate Export
+CLI --> Dev: 📤 Exported to coverage.json
+
+note right of Export
+  **📤 Export Results:**
+  - Format: JSON
+  - File: coverage.json
+  - Size: 15KB
+  - Records: 31 coverage items
+  - Metadata: Complete
+end note
+
+== 🔄 Advanced Workflow Examples ==
+
+note over Dev, ASTEngine
+  **🔄 Advanced Workflows:**
+  
+  **Continuous Monitoring:**
+  ctu analysis monitor --watch --interval 30
+  
+  **Comparison Analysis:**
+  ctu analysis compare --baseline old.json --current new.json
+  
+  **Batch Processing:**
+  ctu analysis discover && ctu analysis coverage && ctu analysis recommend
+  
+  **CI/CD Integration:**
+  ctu analysis coverage --threshold 80 --format json | jq '.coverage.overall.percentage'
+end note
+
+== 🚀 Innovation Highlights ==
+
+note over Discover, Recommend
+  **🚀 Innovation Benefits:**
+  
+  **AST-First Design**
+  - 100% accurate CLI structure discovery
+  - Precise test pattern matching
+  - Dynamic import resolution
+  
+  **Smart Recommendations**
+  - AI-powered improvement suggestions
+  - Priority-based ranking
+  - Actionable guidance
+  
+  **Performance Optimization**
+  - Real-time performance monitoring
+  - Bottleneck detection
+  - Optimization suggestions
+  
+  **Quality Assurance**
+  - Structure validation
+  - Integrity checking
+  - Consistency verification
+end note
+
+== 📊 Workflow Benefits ==
+
+note bottom
+  **📊 Workflow Benefits:**
+  
+  **Clear Progression**
+  - discover → coverage → recommend
+  - Logical command sequence
+  - Progressive analysis depth
+  
+  **Comprehensive Analysis**
+  - Structure discovery
+  - Coverage analysis
+  - Smart recommendations
+  - Performance profiling
+  - Quality validation
+  
+  **Flexible Integration**
+  - Individual command execution
+  - Batch processing support
+  - CI/CD pipeline integration
+  - Continuous monitoring
+  
+  **Enhanced Developer Experience**
+  - Intuitive command names
+  - Clear output formatting
+  - Actionable recommendations
+  - Performance insights
+end note
+
+@enduml

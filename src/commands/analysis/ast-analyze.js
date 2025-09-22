@@ -1,16 +1,17 @@
+#!/usr/bin/env node
 /**
- * @fileoverview Generate coverage report subcommand
- * @description Generate a detailed coverage report
+ * @fileoverview AST-based analysis command
+ * @description Uses AST parsing for accurate CLI coverage analysis
  */
 
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
 import { writeFileSync } from 'fs'
 
-export const reportCommand = defineCommand({
+export const astAnalyzeCommand = defineCommand({
   meta: {
-    name: 'report',
-    description: '🚀 AST-based detailed coverage report',
+    name: 'ast-analyze',
+    description: 'Analyze CLI test coverage using AST parsing for accurate results',
   },
   args: {
     'cli-path': {
@@ -68,27 +69,17 @@ export const reportCommand = defineCommand({
         verbose,
       })
 
-      if (verbose) {
-        console.log('🚀 Starting AST-based CLI coverage analysis...')
-        console.log(`CLI Path: ${cliPath}`)
-        console.log(`Test Directory: ${testDir}`)
-        console.log(`Format: ${format}`)
-      }
-
       const report = await analyzer.analyze()
       const formattedReport = await analyzer.formatReport(report, { format })
 
       if (output) {
         writeFileSync(output, formattedReport)
-        console.log(`✅ AST-based report saved to: ${output}`)
+        console.log(`✅ AST-based analysis report saved to: ${output}`)
       } else {
         console.log(formattedReport)
       }
     } catch (error) {
-      console.error(`❌ AST-based report generation failed: ${error.message}`)
-      if (verbose) {
-        console.error(error.stack)
-      }
+      console.error(`❌ AST analysis failed: ${error.message}`)
       process.exit(1)
     }
   },

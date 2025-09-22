@@ -1,0 +1,123 @@
+@startuml Analysis Verbs Sequence Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+
+title CTU Analysis Verbs - Detailed Sequence Flow\nAST-Based CLI Coverage Analysis
+
+actor User
+participant "CLI Interface" as CLI
+participant "Command Router" as Router
+participant "Enhanced AST Analyzer" as ASTAnalyzer
+participant "Import Tracker" as ImportTracker
+participant "Test Discovery" as TestDiscovery
+participant "Coverage Calculator" as CoverageCalc
+participant "Report Generator" as ReportGen
+participant "Format Converter" as FormatConv
+participant "File Writer" as FileWriter
+
+== Command Execution Flow ==
+
+User -> CLI: ctu analysis <verb> [options]
+CLI -> Router: route command
+Router -> Router: validate parameters
+Router -> Router: process arguments
+
+== AST-Based Analysis Flow ==
+
+Router -> ASTAnalyzer: analyze(options)
+activate ASTAnalyzer
+
+ASTAnalyzer -> ASTAnalyzer: discoverCLIStructureEnhanced()
+ASTAnalyzer -> ImportTracker: extractImportedCommands()
+activate ImportTracker
+ImportTracker -> ImportTracker: parse import statements
+ImportTracker -> ImportTracker: map commands to source files
+ImportTracker --> ASTAnalyzer: imported commands map
+deactivate ImportTracker
+
+ASTAnalyzer -> ASTAnalyzer: parse CLI definition AST
+ASTAnalyzer -> ASTAnalyzer: extract defineCommand calls
+ASTAnalyzer -> ASTAnalyzer: resolve subcommand references
+ASTAnalyzer -> ASTAnalyzer: parse args/flags/options
+
+ASTAnalyzer -> TestDiscovery: discoverTestPatternsAST()
+activate TestDiscovery
+TestDiscovery -> TestDiscovery: find test files
+TestDiscovery -> TestDiscovery: parse test file ASTs
+TestDiscovery -> TestDiscovery: extract runCitty/runLocalCitty calls
+TestDiscovery -> TestDiscovery: build command patterns map
+TestDiscovery --> ASTAnalyzer: test patterns
+deactivate TestDiscovery
+
+ASTAnalyzer -> CoverageCalc: calculateCoverage(cliStructure, testPatterns)
+activate CoverageCalc
+CoverageCalc -> CoverageCalc: compare CLI structure with test patterns
+CoverageCalc -> CoverageCalc: calculate percentages
+CoverageCalc -> CoverageCalc: identify untested components
+CoverageCalc --> ASTAnalyzer: coverage statistics
+deactivate CoverageCalc
+
+ASTAnalyzer -> ReportGen: generateReport()
+activate ReportGen
+ReportGen -> ReportGen: build metadata
+ReportGen -> ReportGen: create coverage details
+ReportGen -> ReportGen: generate recommendations
+ReportGen --> ASTAnalyzer: comprehensive report
+deactivate ReportGen
+
+ASTAnalyzer --> Router: analysis report
+deactivate ASTAnalyzer
+
+== Output Generation Flow ==
+
+Router -> FormatConv: formatReport(report, options)
+activate FormatConv
+
+alt Text Format
+    FormatConv -> FormatConv: generateTextReport()
+    FormatConv --> Router: formatted text
+else JSON Format
+    FormatConv -> FormatConv: JSON.stringify()
+    FormatConv --> Router: JSON string
+else Turtle Format (Export only)
+    FormatConv -> FormatConv: generateTurtleReport()
+    FormatConv --> Router: Turtle/RDF string
+end
+
+deactivate FormatConv
+
+alt Output to File
+    Router -> FileWriter: writeFileSync(output, content)
+    FileWriter --> Router: success
+    Router -> CLI: ✅ Report saved to: <file>
+else Output to Console
+    Router -> CLI: formatted content
+end
+
+CLI --> User: analysis results
+
+== Error Handling Flow ==
+
+note over ASTAnalyzer, TestDiscovery
+  **Error Handling:**
+  - AST parsing failures fall back to regex
+  - File access errors are logged and skipped
+  - Invalid CLI files throw descriptive errors
+  - Verbose mode shows full stack traces
+end note
+
+== Performance Optimizations ==
+
+note over ImportTracker, TestDiscovery
+  **Performance Features:**
+  - Parallel test file processing
+  - AST caching for repeated analysis
+  - Efficient pattern matching
+  - Memory-optimized data structures
+end note
+
+@enduml

@@ -36,7 +36,7 @@ describe.concurrent('Citty Integration Tests', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 0.4.0')
+      expect(result.stdout).toContain('Version: 0.5.0')
     })
 
     it('should test gen project command', async () => {
@@ -72,7 +72,7 @@ describe.concurrent('Citty Integration Tests', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.json).toBeDefined()
-      expect(result.json.version).toBe('0.4.0')
+      expect(result.json.version).toBe('0.5.0')
       expect(result.json.name).toBe('ctu')
     })
 
@@ -91,8 +91,8 @@ describe.concurrent('Citty Integration Tests', () => {
     it('should execute multiple local commands concurrently', async () => {
       const commands = [
         { args: ['--help'], expected: 'USAGE' },
-        { args: ['--show-version'], expected: '0.4.0' },
-        { args: ['info', 'version'], expected: 'Version: 0.4.0' },
+        { args: ['--show-version'], expected: '0.5.0' },
+        { args: ['info', 'version'], expected: 'Version: 0.5.0' },
         {
           args: ['gen', 'project', 'concurrent-test', '--description', 'Concurrent test'],
           expected: 'Generated complete project',
@@ -159,7 +159,7 @@ describe.concurrent('Citty Integration Tests', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 0.4.0')
+      expect(result.stdout).toContain('Version: 0.5.0')
     })
 
     it('should test gen project command in cleanroom', async () => {
@@ -190,8 +190,8 @@ describe.concurrent('Citty Integration Tests', () => {
       await getSharedCleanroom()
       const commands = [
         { args: ['--help'], expected: 'USAGE' },
-        { args: ['--show-version'], expected: '0.4.0' },
-        { args: ['info', 'version'], expected: 'Version: 0.4.0' },
+        { args: ['--show-version'], expected: '0.5.0' },
+        { args: ['info', 'version'], expected: 'Version: 0.5.0' },
         {
           args: ['gen', 'project', 'concurrent-cleanroom-test'],
           expected: 'Generated complete project',
@@ -247,8 +247,8 @@ describe.concurrent('Citty Integration Tests', () => {
       })
 
       result.expectSuccess().expectJson((data) => {
-        if (data.version !== '0.4.0') {
-          throw new Error(`Expected version '0.4.0', got '${data.version}'`)
+        if (data.version !== '0.5.0') {
+          throw new Error(`Expected version '0.5.0', got '${data.version}'`)
         }
         if (data.name !== 'ctu') {
           throw new Error(`Expected name 'ctu', got '${data.name}'`)
@@ -262,10 +262,10 @@ describe.concurrent('Citty Integration Tests', () => {
           r.expectSuccess().expectOutput('USAGE')
         ),
         runLocalCitty(['--show-version'], { cwd: process.cwd(), env: {} }).then((r) =>
-          r.expectSuccess().expectOutput('0.4.0')
+          r.expectSuccess().expectOutput('0.5.0')
         ),
         runLocalCitty(['info', 'version'], { cwd: process.cwd(), env: {} }).then((r) =>
-          r.expectSuccess().expectOutput('Version: 0.4.0')
+          r.expectSuccess().expectOutput('Version: 0.5.0')
         ),
       ]
 

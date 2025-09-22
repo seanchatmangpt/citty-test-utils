@@ -17,7 +17,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 0.4.0')
+      expect(result.stdout).toContain('Version: 0.5.0')
     })
 
     it('should test info version command in cleanroom', async () => {
@@ -33,7 +33,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 0.4.0')
+      expect(result.stdout).toContain('Version: 0.5.0')
     })
 
     it('should test JSON output', async () => {
@@ -44,7 +44,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.json).toBeDefined()
-      expect(result.json.version).toBe('0.4.0')
+      expect(result.json.version).toBe('0.5.0')
       expect(result.json.name).toBe('ctu')
     })
   })
@@ -121,7 +121,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
 
   describe.concurrent('Runner Commands', () => {
     it('should test runner execute command locally', async () => {
-      const result = await runLocalCitty(['runner', 'execute', '"node --version"'], {
+      const result = await runLocalCitty(['runner', 'execute', 'node --version'], {
         cwd: process.cwd(),
         env: {},
       })
@@ -139,7 +139,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
       }
 
       await getSharedCleanroom()
-      const result = await runCitty(['runner', 'execute', '"node --version"'], {
+      const result = await runCitty(['runner', 'execute', 'node --version'], {
         cwd: '/app',
         env: {},
       })

@@ -160,7 +160,7 @@ describe.concurrent('README Consolidated Tests', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('0.4.0')
+      expect(result.stdout).toContain('0.5.0')
     })
   })
 

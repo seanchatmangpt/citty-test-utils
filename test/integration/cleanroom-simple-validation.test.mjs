@@ -23,7 +23,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
       const result = await runCitty(['--version'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('0.4.0')
+      expect(result.stdout).toContain('0.5.0')
       expect(result.cwd).toBe('/app')
     })
 
@@ -50,7 +50,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
 
       await getSharedCleanroom()
       const commands = [
-        { args: ['--version'], expected: '0.4.0' },
+        { args: ['--version'], expected: '0.5.0' },
         { args: ['--help'], expected: 'USAGE' },
         {
           args: ['gen', 'test', `concurrent-test-${testTimestamp}-1`],
@@ -437,7 +437,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
 
       expect(result.exitCode).toBe(0)
       expect(result.cwd).toBe('/app')
-      expect(result.stdout).toContain('0.4.0')
+      expect(result.stdout).toContain('0.5.0')
     })
 
     it('should prove cleanroom environment is consistent', async () => {
@@ -457,7 +457,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
       results.forEach((result) => {
         expect(result.exitCode).toBe(0)
         expect(result.cwd).toBe('/app')
-        expect(result.stdout).toContain('0.4.0')
+        expect(result.stdout).toContain('0.5.0')
       })
     })
   })

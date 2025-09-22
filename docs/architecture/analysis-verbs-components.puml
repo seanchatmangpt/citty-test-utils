@@ -1,0 +1,250 @@
+@startuml Analysis Verbs Component Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+title CTU Analysis Verbs - Component Architecture\nDetailed Internal Structure
+
+package "Command Interface" {
+  component [Analysis Command] {
+    [Command Router]
+    [Parameter Validator]
+    [Option Processor]
+  }
+  
+  component [Analyze Command] {
+    [AST Analyzer Client]
+    [Report Formatter]
+    [Output Handler]
+  }
+  
+  component [Stats Command] {
+    [Statistics Generator]
+    [Summary Formatter]
+    [Console Output]
+  }
+  
+  component [Report Command] {
+    [Report Generator Client]
+    [Format Selector]
+    [File Writer]
+  }
+  
+  component [Export Command] {
+    [Export Manager]
+    [Format Router]
+    [Legacy Analyzer Client]
+  }
+  
+  component [AST Analyze Command] {
+    [Enhanced Analyzer Client]
+    [Direct AST Processing]
+    [Advanced Output]
+  }
+}
+
+package "Core Analysis Engine" {
+  component [Enhanced AST CLI Analyzer] {
+    [CLI Structure Discovery]
+    [Import Command Tracker]
+    [Test Pattern Discovery]
+    [Coverage Calculator]
+    [Report Generator]
+    [Recommendation Engine]
+  }
+  
+  component [Legacy CLI Coverage Analyzer] {
+    [Help Output Parser]
+    [Regex Pattern Matcher]
+    [Basic Coverage Calculator]
+    [Turtle Report Generator]
+  }
+}
+
+package "AST Processing Core" {
+  component [JavaScript Parser] {
+    [Acorn Parser]
+    [AST Builder]
+    [Syntax Validator]
+  }
+  
+  component [AST Walker] {
+    [Node Visitor]
+    [Pattern Matcher]
+    [Context Tracker]
+  }
+  
+  component [Command Definition Parser] {
+    [defineCommand Extractor]
+    [Meta Object Parser]
+    [Subcommand Resolver]
+    [Argument Parser]
+  }
+  
+  component [Import Resolution Engine] {
+    [Import Statement Parser]
+    [Module Path Resolver]
+    [Command Mapping]
+    [Dependency Tracker]
+  }
+}
+
+package "Test Analysis Engine" {
+  component [Test File Discovery] {
+    [File System Scanner]
+    [Pattern Matcher]
+    [Exclusion Filter]
+  }
+  
+  component [Test Pattern Extractor] {
+    [runCitty Call Parser]
+    [runLocalCitty Call Parser]
+    [Argument Array Extractor]
+    [Command Chain Builder]
+  }
+  
+  component [Test Coverage Mapper] {
+    [Command Usage Tracker]
+    [Flag Usage Tracker]
+    [Option Usage Tracker]
+    [Coverage Matrix Builder]
+  }
+}
+
+package "Data Processing Layer" {
+  component [Coverage Calculator] {
+    [Command Coverage]
+    [Subcommand Coverage]
+    [Flag Coverage]
+    [Option Coverage]
+    [Overall Statistics]
+  }
+  
+  component [Report Generator] {
+    [Metadata Builder]
+    [Coverage Details]
+    [Recommendation Generator]
+    [Summary Statistics]
+  }
+  
+  component [Format Converter] {
+    [Text Formatter]
+    [JSON Serializer]
+    [Turtle Generator]
+    [RDF Builder]
+  }
+}
+
+package "Output Layer" {
+  component [Console Output] {
+    [Text Renderer]
+    [Progress Indicator]
+    [Error Display]
+    [Success Messages]
+  }
+  
+  component [File Output] {
+    [File Writer]
+    [Path Validator]
+    [Permission Checker]
+    [Write Confirmation]
+  }
+  
+  component [Stream Output] {
+    [Stdout Writer]
+    [Stderr Writer]
+    [Buffer Manager]
+  }
+}
+
+' Command Interface connections
+[Analysis Command] --> [Analyze Command]
+[Analysis Command] --> [Stats Command]
+[Analysis Command] --> [Report Command]
+[Analysis Command] --> [Export Command]
+[Analysis Command] --> [AST Analyze Command]
+
+' Core Analysis Engine connections
+[Analyze Command] --> [Enhanced AST CLI Analyzer]
+[Stats Command] --> [Enhanced AST CLI Analyzer]
+[Report Command] --> [Enhanced AST CLI Analyzer]
+[AST Analyze Command] --> [Enhanced AST CLI Analyzer]
+[Export Command] --> [Enhanced AST CLI Analyzer]
+[Export Command] --> [Legacy CLI Coverage Analyzer]
+
+' AST Processing Core connections
+[Enhanced AST CLI Analyzer] --> [JavaScript Parser]
+[Enhanced AST CLI Analyzer] --> [AST Walker]
+[Enhanced AST CLI Analyzer] --> [Command Definition Parser]
+[Enhanced AST CLI Analyzer] --> [Import Resolution Engine]
+
+' Test Analysis Engine connections
+[Enhanced AST CLI Analyzer] --> [Test File Discovery]
+[Enhanced AST CLI Analyzer] --> [Test Pattern Extractor]
+[Enhanced AST CLI Analyzer] --> [Test Coverage Mapper]
+
+' Data Processing Layer connections
+[Enhanced AST CLI Analyzer] --> [Coverage Calculator]
+[Enhanced AST CLI Analyzer] --> [Report Generator]
+[Legacy CLI Coverage Analyzer] --> [Coverage Calculator]
+[Legacy CLI Coverage Analyzer] --> [Report Generator]
+[Report Generator] --> [Format Converter]
+
+' Output Layer connections
+[Analyze Command] --> [Console Output]
+[Analyze Command] --> [File Output]
+[Stats Command] --> [Console Output]
+[Report Command] --> [Console Output]
+[Report Command] --> [File Output]
+[Export Command] --> [File Output]
+[AST Analyze Command] --> [Console Output]
+[AST Analyze Command] --> [File Output]
+
+[Format Converter] --> [Console Output]
+[Format Converter] --> [File Output]
+[Format Converter] --> [Stream Output]
+
+' Internal component connections
+[JavaScript Parser] --> [AST Walker]
+[AST Walker] --> [Command Definition Parser]
+[Command Definition Parser] --> [Import Resolution Engine]
+[Test File Discovery] --> [Test Pattern Extractor]
+[Test Pattern Extractor] --> [Test Coverage Mapper]
+[Test Coverage Mapper] --> [Coverage Calculator]
+[Coverage Calculator] --> [Report Generator]
+
+' Data flow annotations
+note right of [Enhanced AST CLI Analyzer]
+  **Primary Analysis Engine**
+  - AST-based CLI structure discovery
+  - Import tracking and resolution
+  - Precise test pattern matching
+  - Accurate coverage calculation
+end note
+
+note right of [Legacy CLI Coverage Analyzer]
+  **Backward Compatibility**
+  - Help-based parsing for Turtle/RDF
+  - Maintains existing functionality
+  - Used only for export command
+end note
+
+note right of [Import Resolution Engine]
+  **Command Discovery**
+  - Parses import statements
+  - Maps commands to source files
+  - Enables subcommand resolution
+  - Tracks dependencies
+end note
+
+note right of [Test Coverage Mapper]
+  **Test Analysis**
+  - Finds runCitty/runLocalCitty calls
+  - Extracts command arguments
+  - Maps test usage to CLI structure
+  - Calculates coverage metrics
+end note
+
+@enduml

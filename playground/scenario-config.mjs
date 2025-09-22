@@ -15,9 +15,9 @@ export const scenarios = {
         const exec = env === 'cleanroom' ? runCitty : runLocalCitty
         const options = {
           cwd: env === 'cleanroom' ? undefined : playgroundDir,
-          env: { TEST_CLI: 'true' },
+          cliPath: 'src/cli.mjs',
         }
-        const result = await exec(['--help'], options)
+        const result = await exec(['--show-help'], options)
         result.expectSuccess().expectOutput(/USAGE|COMMANDS/i)
         return { success: true, result: result.result }
       },
@@ -30,9 +30,9 @@ export const scenarios = {
         const exec = env === 'cleanroom' ? runCitty : runLocalCitty
         const options = {
           cwd: env === 'cleanroom' ? undefined : playgroundDir,
-          env: { TEST_CLI: 'true' },
+          cliPath: 'src/cli.mjs',
         }
-        const result = await exec(['--version'], options)
+        const result = await exec(['--show-version'], options)
         result.expectSuccess().expectOutput(/\d+\.\d+\.\d+/)
         return { success: true, result: result.result }
       },
@@ -45,7 +45,7 @@ export const scenarios = {
         const exec = env === 'cleanroom' ? runCitty : runLocalCitty
         const options = {
           cwd: env === 'cleanroom' ? undefined : playgroundDir,
-          env: { TEST_CLI: 'true' },
+          cliPath: 'src/cli.mjs',
         }
         const result = await exec([cmd], options)
         result.expectFailure()
@@ -60,7 +60,7 @@ export const scenarios = {
         const exec = env === 'cleanroom' ? runCitty : runLocalCitty
         const options = {
           cwd: env === 'cleanroom' ? undefined : playgroundDir,
-          env: { TEST_CLI: 'true' },
+          cliPath: 'src/cli.mjs',
           json: true,
         }
         const result = await exec(args, options)
@@ -76,7 +76,7 @@ export const scenarios = {
         const exec = env === 'cleanroom' ? runCitty : runLocalCitty
         const options = {
           cwd: env === 'cleanroom' ? undefined : playgroundDir,
-          env: { TEST_CLI: 'true' },
+          cliPath: 'src/cli.mjs',
         }
         const result = await exec([cmd, ...args], options)
         result.expectSuccess()
@@ -91,7 +91,7 @@ export const scenarios = {
         const exec = env === 'cleanroom' ? runCitty : runLocalCitty
         const options = {
           cwd: env === 'cleanroom' ? undefined : playgroundDir,
-          env: { TEST_CLI: 'true' },
+          cliPath: 'src/cli.mjs',
         }
 
         const result1 = await exec(args, options)
@@ -115,7 +115,7 @@ export const scenarios = {
         const exec = env === 'cleanroom' ? runCitty : runLocalCitty
         const options = {
           cwd: env === 'cleanroom' ? undefined : playgroundDir,
-          env: { TEST_CLI: 'true' },
+          cliPath: 'src/cli.mjs',
         }
 
         const promises = runs.map((run) => exec(run.args, { ...options, ...run.opts }))
@@ -134,7 +134,7 @@ export const scenarios = {
         const exec = env === 'cleanroom' ? runCitty : runLocalCitty
         const options = {
           cwd: env === 'cleanroom' ? undefined : playgroundDir,
-          env: { TEST_CLI: 'true' },
+          cliPath: 'src/cli.mjs',
         }
         const result = await exec(args, options)
         result.expectFailure()

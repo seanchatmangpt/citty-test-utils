@@ -4,13 +4,14 @@
  */
 
 import { defineCommand } from 'citty'
+import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
 import { CLCoverageAnalyzer } from '../../core/coverage/cli-coverage-analyzer.js'
 import { writeFileSync } from 'fs'
 
 export const exportCommand = defineCommand({
   meta: {
     name: 'export',
-    description: 'Export coverage data in structured formats (JSON, Turtle)',
+    description: '🚀 AST-based coverage data export (JSON, Turtle)',
   },
   args: {
     'cli-path': {
@@ -68,7 +69,6 @@ export const exportCommand = defineCommand({
     const {
       'cli-path': cliPath,
       'test-dir': testDir,
-      'use-test-cli': useTestCli,
       format,
       output,
       verbose,
@@ -79,37 +79,59 @@ export const exportCommand = defineCommand({
     } = ctx.args
 
     try {
-      const options = {
-        cliPath,
-        testDir,
-        useTestCli,
-        format,
-        verbose,
-        includePatterns: includePatterns.split(',').map((p) => p.trim()),
-        excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
-        baseUri,
-        cliName,
-      }
-
       if (verbose) {
-        console.error('📤 Exporting coverage data...')
-        console.error(`CLI Path: ${cliPath}`)
-        console.error(`Test Directory: ${testDir}`)
-        console.error(`Format: ${format}`)
-        console.error(`Output: ${output}`)
+        console.log('🚀 Starting AST-based CLI coverage analysis...')
+        console.log(`CLI Path: ${cliPath}`)
+        console.log(`Test Directory: ${testDir}`)
+        console.log(`Format: ${format}`)
+        console.log(`Output: ${output}`)
       }
 
-      const analyzer = new CLCoverageAnalyzer(options)
-      const report = await analyzer.analyze(options)
-      const formattedReport = await analyzer.formatReport(report, options)
+      // Use AST-based analyzer for JSON, legacy analyzer for Turtle
+      if (format === 'turtle') {
+        const options = {
+          cliPath,
+          testDir,
+          format,
+          verbose,
+          includePatterns: includePatterns.split(',').map((p) => p.trim()),
+          excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
+          baseUri,
+          cliName,
+        }
 
-      writeFileSync(output, formattedReport)
-      console.log(`✅ Coverage data exported to: ${output}`)
-      console.log(`📊 Format: ${format.toUpperCase()}`)
-      console.log(`📈 Overall Coverage: ${report.coverage.summary.overall.percentage.toFixed(1)}%`)
+        const analyzer = new CLCoverageAnalyzer(options)
+        const report = await analyzer.analyze(options)
+        const formattedReport = await analyzer.formatReport(report, options)
+
+        writeFileSync(output, formattedReport)
+        console.log(`✅ Coverage data exported to: ${output}`)
+        console.log(`📊 Format: ${format.toUpperCase()}`)
+        console.log(
+          `📈 Overall Coverage: ${report.coverage.summary.overall.percentage.toFixed(1)}%`
+        )
+      } else {
+        // Use AST-based analyzer for JSON
+        const analyzer = new EnhancedASTCLIAnalyzer({
+          cliPath,
+          testDir,
+          includePatterns: includePatterns.split(',').map((p) => p.trim()),
+          excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
+          verbose,
+        })
+
+        const report = await analyzer.analyze()
+        const formattedReport = await analyzer.formatReport(report, { format })
+
+        writeFileSync(output, formattedReport)
+        console.log(`✅ AST-based coverage data exported to: ${output}`)
+        console.log(`📊 Format: ${format.toUpperCase()}`)
+        console.log(
+          `📈 Overall Coverage: ${report.coverage.summary.overall.percentage.toFixed(1)}%`
+        )
+      }
     } catch (error) {
-      console.error('❌ Export failed:')
-      console.error(error.message)
+      console.error(`❌ AST-based export failed: ${error.message}`)
       if (verbose) {
         console.error(error.stack)
       }
