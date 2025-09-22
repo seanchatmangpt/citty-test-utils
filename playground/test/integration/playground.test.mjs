@@ -18,7 +18,6 @@ describe('Playground CLI Tests', () => {
     it('should show help information', async () => {
       const result = await runLocalCitty(['--show-help'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
       })
 
       result
@@ -30,7 +29,7 @@ describe('Playground CLI Tests', () => {
     it('should show version information', async () => {
       const result = await runLocalCitty(['--show-version'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result.expectSuccess().expectOutput(/1\.0\.0/)
@@ -39,7 +38,7 @@ describe('Playground CLI Tests', () => {
     it('should execute greet command', async () => {
       const result = await runLocalCitty(['greet', 'Alice'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result
@@ -51,7 +50,7 @@ describe('Playground CLI Tests', () => {
     it('should execute greet command with options', async () => {
       const result = await runLocalCitty(['greet', 'Bob', '--count', '3', '--verbose'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result
@@ -65,7 +64,7 @@ describe('Playground CLI Tests', () => {
     it('should execute math add command', async () => {
       const result = await runLocalCitty(['math', 'add', '5', '3'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result
@@ -77,7 +76,7 @@ describe('Playground CLI Tests', () => {
     it('should execute math multiply command', async () => {
       const result = await runLocalCitty(['math', 'multiply', '4', '7'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result
@@ -89,7 +88,7 @@ describe('Playground CLI Tests', () => {
     it('should handle JSON output', async () => {
       const result = await runLocalCitty(['greet', 'Charlie', '--json'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
         json: true,
       })
 
@@ -103,7 +102,7 @@ describe('Playground CLI Tests', () => {
     it('should handle invalid commands gracefully', async () => {
       const result = await runLocalCitty(['invalid-command'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result.expectFailure().expectStderr(/Unknown command/)
@@ -114,7 +113,7 @@ describe('Playground CLI Tests', () => {
     it('should handle generic errors', async () => {
       const result = await runLocalCitty(['error', 'generic'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result.expectFailure().expectStderr(/Generic error occurred/)
@@ -123,7 +122,7 @@ describe('Playground CLI Tests', () => {
     it('should handle validation errors', async () => {
       const result = await runLocalCitty(['error', 'validation'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result.expectFailure().expectStderr(/Validation error/)
@@ -132,7 +131,7 @@ describe('Playground CLI Tests', () => {
     it('should handle timeout errors', async () => {
       const result = await runLocalCitty(['error', 'timeout'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
         timeout: 1000,
       })
 
@@ -152,7 +151,7 @@ describe('Playground CLI Tests', () => {
     it('should run commands in cleanroom environment', async () => {
       const result = await runCitty(['greet', 'Cleanroom'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result
@@ -164,7 +163,7 @@ describe('Playground CLI Tests', () => {
     it('should handle JSON output in cleanroom', async () => {
       const result = await runCitty(['math', 'add', '10', '20', '--json'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
         json: true,
       })
 
@@ -179,7 +178,7 @@ describe('Playground CLI Tests', () => {
     it('should handle errors in cleanroom', async () => {
       const result = await runCitty(['error', 'generic'], {
         cwd: playgroundDir,
-        env: { TEST_CLI: 'true' },
+        
       })
 
       result.expectFailure().expectStderr(/Generic error occurred/)

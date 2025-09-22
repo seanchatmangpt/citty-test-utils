@@ -71,11 +71,20 @@ describe('CLI Coverage Analysis Integration', () => {
     })
 
     it('should analyze main CLI coverage', async () => {
+      console.log('Current working directory:', process.cwd())
+      console.log('Testing main CLI analysis...')
+      
       const report = await analyzeCLICoverage({
         cliPath: 'src/cli.mjs',
         testDir: 'test',
         useTestCli: false,
-        verbose: false,
+        verbose: true,
+      })
+
+      console.log('Report received:', {
+        commandsCount: Object.keys(report.commands).length,
+        commands: Object.keys(report.commands),
+        summary: report.summary
       })
 
       // Should have discovered commands from main CLI

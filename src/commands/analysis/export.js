@@ -106,7 +106,7 @@ export const exportCommand = defineCommand({
       writeFileSync(output, formattedReport)
       console.log(`✅ Coverage data exported to: ${output}`)
       console.log(`📊 Format: ${format.toUpperCase()}`)
-      console.log(`📈 Overall Coverage: ${report.summary.overall.percentage.toFixed(1)}%`)
+      console.log(`📈 Overall Coverage: ${report.coverage.summary.overall.percentage.toFixed(1)}%`)
     } catch (error) {
       console.error('❌ Export failed:')
       console.error(error.message)

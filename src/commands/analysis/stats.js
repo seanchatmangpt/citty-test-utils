@@ -74,27 +74,41 @@ export const statsCommand = defineCommand({
       const report = await analyzer.analyze(options)
 
       // Display statistics summary
-      console.log('📊 CLI Coverage Statistics')
-      console.log('========================')
+      console.log('📊 Enhanced CLI Coverage Statistics')
+      console.log('==================================')
       console.log(`CLI: ${report.metadata.cliPath}`)
       console.log(`Test Directory: ${report.metadata.testDir}`)
       console.log(`Total Test Files: ${report.metadata.totalTestFiles}`)
+      console.log(`Total Commands: ${report.metadata.totalCommands}`)
+      console.log(`Total Arguments: ${report.metadata.totalArguments}`)
+      console.log(`Total Flags: ${report.metadata.totalFlags}`)
+      console.log(`Total Options: ${report.metadata.totalOptions}`)
       console.log('')
       console.log('📈 Coverage Summary:')
       console.log(
-        `  Main Commands: ${report.summary.mainCommands.tested}/${
-          report.summary.mainCommands.total
-        } (${report.summary.mainCommands.percentage.toFixed(1)}%)`
+        `  Commands: ${report.coverage.summary.commands.tested}/${
+          report.coverage.summary.commands.total
+        } (${report.coverage.summary.commands.percentage.toFixed(1)}%)`
       )
       console.log(
-        `  Subcommands: ${report.summary.subcommands.tested}/${
-          report.summary.subcommands.total
-        } (${report.summary.subcommands.percentage.toFixed(1)}%)`
+        `  Arguments: ${report.coverage.summary.arguments.tested}/${
+          report.coverage.summary.arguments.total
+        } (${report.coverage.summary.arguments.percentage.toFixed(1)}%)`
       )
       console.log(
-        `  Overall: ${report.summary.overall.tested}/${
-          report.summary.overall.total
-        } (${report.summary.overall.percentage.toFixed(1)}%)`
+        `  Flags: ${report.coverage.summary.flags.tested}/${
+          report.coverage.summary.flags.total
+        } (${report.coverage.summary.flags.percentage.toFixed(1)}%)`
+      )
+      console.log(
+        `  Options: ${report.coverage.summary.options.tested}/${
+          report.coverage.summary.options.total
+        } (${report.coverage.summary.options.percentage.toFixed(1)}%)`
+      )
+      console.log(
+        `  Overall: ${report.coverage.summary.overall.tested}/${
+          report.coverage.summary.overall.total
+        } (${report.coverage.summary.overall.percentage.toFixed(1)}%)`
       )
       console.log('')
 

@@ -31,7 +31,7 @@ console.log('  math <op>     Math operations')
         // Test snapshot with help output
         const result = await runLocalCitty(['--help'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
         })
 
         result.expectSuccess().expectSnapshotStdout('playground-help')
@@ -44,7 +44,7 @@ console.log('1.0.0')
 
         const versionResult = await runLocalCitty(['--version'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
         })
 
         versionResult.expectSuccess().expectSnapshotStdout('playground-version')
@@ -230,21 +230,21 @@ if (args.includes('--help')) {
         // Test stdout snapshot
         const stdoutResult = await runLocalCitty(['--help'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
         })
         stdoutResult.expectSuccess().expectSnapshotStdout('types-stdout')
 
         // Test stderr snapshot
         const stderrResult = await runLocalCitty(['invalid-command'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
         })
         stderrResult.expectFailure().expectSnapshotStderr('types-stderr')
 
         // Test JSON snapshot
         const jsonResult = await runLocalCitty(['--json'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
           json: true,
         })
         jsonResult.expectSuccess().expectSnapshotJson('types-json')
@@ -252,14 +252,14 @@ if (args.includes('--help')) {
         // Test full result snapshot
         const fullResult = await runLocalCitty(['--version'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
         })
         fullResult.expectSuccess().expectSnapshotFull('types-full')
 
         // Test combined output snapshot
         const outputResult = await runLocalCitty(['--help'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
         })
         outputResult.expectSuccess().expectSnapshotOutput('types-output')
       } finally {
@@ -294,13 +294,13 @@ console.log('  --version  Show version')
         // Create some snapshots
         const result1 = await runLocalCitty(['--help'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
         })
         result1.expectSuccess().expectSnapshotStdout('management-help')
 
         const result2 = await runLocalCitty(['--version'], {
           cwd: tempDir,
-          env: { TEST_CLI: 'true' },
+          
         })
         result2.expectSuccess().expectSnapshotStdout('management-version')
 
