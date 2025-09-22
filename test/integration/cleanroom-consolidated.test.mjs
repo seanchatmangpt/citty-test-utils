@@ -64,7 +64,7 @@ describe.concurrent('Cleanroom Consolidated Tests', () => {
       expect(cleanroomResult.exitCode).toBe(0)
       expect(localResult.exitCode).toBe(0)
       expect(cleanroomResult.stdout).toContain('Generated CLI template')
-      expect(localResult.stdout).toContain('0.4.0')
+      expect(localResult.stdout).toContain('0.5.0')
       expect(totalTime).toBeLessThan(15000)
     })
 
@@ -124,7 +124,7 @@ describe.concurrent('Cleanroom Consolidated Tests', () => {
 
       const localResult = await runLocalCitty(['--version'], { env: { TEST_CLI: 'true' } })
       expect(localResult.exitCode).toBe(0)
-      expect(localResult.stdout).toContain('0.4.0')
+      expect(localResult.stdout).toContain('0.5.0')
     })
   })
 

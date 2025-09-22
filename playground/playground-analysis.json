@@ -1,0 +1,353 @@
+{
+  "metadata": {
+    "analyzedAt": "2025-09-22T03:47:32.652Z",
+    "cliPath": "src/cli.mjs",
+    "testDir": "test",
+    "analysisMethod": "Enhanced AST-based",
+    "totalTestFiles": 4,
+    "totalCommands": 7,
+    "totalSubcommands": 6,
+    "totalFlags": 3,
+    "totalOptions": 7
+  },
+  "commands": {
+    "greet": {
+      "name": "greet",
+      "description": "Greet someone",
+      "subcommands": {},
+      "arguments": {},
+      "flags": {
+        "verbose": {
+          "name": "",
+          "description": "Enable verbose output",
+          "type": "boolean",
+          "isFlag": true,
+          "tested": true,
+          "testFiles": [
+            "test/integration/playground.test.mjs"
+          ]
+        }
+      },
+      "options": {
+        "name": {
+          "name": "",
+          "description": "Name to greet",
+          "type": "positional",
+          "isFlag": false,
+          "tested": false,
+          "testFiles": []
+        },
+        "count": {
+          "name": "",
+          "description": "Number of times to repeat",
+          "type": "number",
+          "isFlag": false,
+          "tested": false,
+          "testFiles": []
+        }
+      },
+      "tested": true,
+      "testFiles": [
+        "test/integration/playground.test.mjs"
+      ]
+    },
+    "add": {
+      "name": "add",
+      "description": "Add two numbers",
+      "subcommands": {},
+      "arguments": {},
+      "flags": {},
+      "options": {
+        "a": {
+          "name": "",
+          "description": "First number",
+          "type": "positional",
+          "isFlag": false,
+          "tested": false,
+          "testFiles": []
+        },
+        "b": {
+          "name": "",
+          "description": "Second number",
+          "type": "positional",
+          "isFlag": false,
+          "tested": false,
+          "testFiles": []
+        }
+      },
+      "tested": false,
+      "testFiles": []
+    },
+    "multiply": {
+      "name": "multiply",
+      "description": "Multiply two numbers",
+      "subcommands": {},
+      "arguments": {},
+      "flags": {},
+      "options": {
+        "a": {
+          "name": "",
+          "description": "First number",
+          "type": "positional",
+          "isFlag": false,
+          "tested": false,
+          "testFiles": []
+        },
+        "b": {
+          "name": "",
+          "description": "Second number",
+          "type": "positional",
+          "isFlag": false,
+          "tested": false,
+          "testFiles": []
+        }
+      },
+      "tested": false,
+      "testFiles": []
+    },
+    "math": {
+      "name": "math",
+      "description": "Perform mathematical operations",
+      "subcommands": {
+        "add": {
+          "name": "add",
+          "description": "Add two numbers",
+          "subcommands": {},
+          "arguments": {},
+          "flags": {},
+          "options": {},
+          "tested": true,
+          "testFiles": [
+            "test/unit/cli.test.mjs"
+          ]
+        },
+        "multiply": {
+          "name": "multiply",
+          "description": "Multiply two numbers",
+          "subcommands": {},
+          "arguments": {},
+          "flags": {},
+          "options": {},
+          "tested": true,
+          "testFiles": [
+            "test/unit/cli.test.mjs"
+          ]
+        }
+      },
+      "arguments": {},
+      "flags": {},
+      "options": {},
+      "tested": true,
+      "testFiles": [
+        "test/integration/playground.test.mjs"
+      ]
+    },
+    "error": {
+      "name": "error",
+      "description": "Simulate different types of errors",
+      "subcommands": {},
+      "arguments": {},
+      "flags": {},
+      "options": {
+        "type": {
+          "name": "",
+          "description": "Type of error to simulate",
+          "type": "positional",
+          "isFlag": false,
+          "tested": false,
+          "testFiles": []
+        }
+      },
+      "tested": true,
+      "testFiles": [
+        "test/integration/playground.test.mjs"
+      ]
+    },
+    "info": {
+      "name": "info",
+      "description": "Show playground information",
+      "subcommands": {},
+      "arguments": {},
+      "flags": {},
+      "options": {},
+      "tested": false,
+      "testFiles": []
+    },
+    "playground": {
+      "name": "playground",
+      "description": "Playground CLI for testing citty-test-utils functionality",
+      "subcommands": {
+        "greet": {
+          "name": "greet",
+          "description": "Greet someone",
+          "subcommands": {},
+          "arguments": {},
+          "flags": {},
+          "options": {},
+          "tested": false,
+          "testFiles": []
+        },
+        "math": {
+          "name": "math",
+          "description": "Perform mathematical operations",
+          "subcommands": {},
+          "arguments": {},
+          "flags": {},
+          "options": {},
+          "tested": false,
+          "testFiles": []
+        },
+        "error": {
+          "name": "error",
+          "description": "Simulate different types of errors",
+          "subcommands": {},
+          "arguments": {},
+          "flags": {},
+          "options": {},
+          "tested": false,
+          "testFiles": []
+        },
+        "info": {
+          "name": "info",
+          "description": "Show playground information",
+          "subcommands": {},
+          "arguments": {},
+          "flags": {},
+          "options": {},
+          "tested": false,
+          "testFiles": []
+        }
+      },
+      "arguments": {},
+      "flags": {
+        "show-help": {
+          "name": "",
+          "description": "Show help information",
+          "type": "boolean",
+          "isFlag": true,
+          "tested": false,
+          "testFiles": []
+        },
+        "show-version": {
+          "name": "",
+          "description": "Show version information",
+          "type": "boolean",
+          "isFlag": true,
+          "tested": false,
+          "testFiles": []
+        }
+      },
+      "options": {},
+      "tested": false,
+      "testFiles": []
+    }
+  },
+  "globalOptions": {},
+  "coverage": {
+    "summary": {
+      "commands": {
+        "tested": 3,
+        "total": 7,
+        "percentage": 42.857142857142854
+      },
+      "subcommands": {
+        "tested": 2,
+        "total": 6,
+        "percentage": 33.33333333333333
+      },
+      "flags": {
+        "tested": 1,
+        "total": 3,
+        "percentage": 33.33333333333333
+      },
+      "options": {
+        "tested": 0,
+        "total": 7,
+        "percentage": 0
+      },
+      "overall": {
+        "tested": 6,
+        "total": 23,
+        "percentage": 26.08695652173913
+      }
+    },
+    "details": {
+      "untestedCommands": [
+        {
+          "name": "add",
+          "description": "Add two numbers"
+        },
+        {
+          "name": "multiply",
+          "description": "Multiply two numbers"
+        },
+        {
+          "name": "info",
+          "description": "Show playground information"
+        },
+        {
+          "name": "playground",
+          "description": "Playground CLI for testing citty-test-utils functionality"
+        }
+      ],
+      "untestedSubcommands": [
+        {
+          "command": "playground",
+          "subcommand": "greet",
+          "description": "Greet someone",
+          "imported": false,
+          "sourcePath": null
+        },
+        {
+          "command": "playground",
+          "subcommand": "math",
+          "description": "Perform mathematical operations",
+          "imported": false,
+          "sourcePath": null
+        },
+        {
+          "command": "playground",
+          "subcommand": "error",
+          "description": "Simulate different types of errors",
+          "imported": false,
+          "sourcePath": null
+        },
+        {
+          "command": "playground",
+          "subcommand": "info",
+          "description": "Show playground information",
+          "imported": false,
+          "sourcePath": null
+        }
+      ],
+      "untestedFlags": [],
+      "untestedOptions": []
+    }
+  },
+  "recommendations": [
+    {
+      "type": "command",
+      "priority": "high",
+      "message": "Add tests for 4 untested commands",
+      "count": 4
+    },
+    {
+      "type": "subcommand",
+      "priority": "high",
+      "message": "Add tests for 4 untested subcommands",
+      "count": 4
+    },
+    {
+      "type": "flag",
+      "priority": "medium",
+      "message": "Add tests for 2 untested flags",
+      "count": 2
+    },
+    {
+      "type": "option",
+      "priority": "medium",
+      "message": "Add tests for 7 untested options",
+      "count": 7
+    }
+  ]
+}

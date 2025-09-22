@@ -7,7 +7,7 @@ export default async function setup() {
   try {
     // Setup cleanroom for tests that need it
     await setupCleanroom({
-      rootDir: './playground',
+      rootDir: '.',
       timeout: 60000,
     })
     console.log('✅ Cleanroom setup complete')
@@ -18,4 +18,3 @@ export default async function setup() {
 
   console.log('✅ README test setup complete')
 }
-

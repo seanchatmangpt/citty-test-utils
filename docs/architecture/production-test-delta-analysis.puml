@@ -1,0 +1,90 @@
+@startuml Production vs Test Environment Delta Analysis
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Production vs Test Environment Delta Analysis
+
+package "Test Environment (Development)" {
+  component [Local Runner] as LocalTest {
+    - Uses execSync directly
+    - Safe JSON parsing with try/catch
+    - Mock responses for vitest
+    - TEST_CLI environment variable
+  }
+  
+  component [Playground CLI] as PlaygroundTest {
+    - Direct file execution
+    - Local file system access
+    - Development dependencies
+    - Custom scenario config
+  }
+  
+  component [Test Scenarios] as TestScenarios {
+    - Local execution paths
+    - Custom fluent assertions
+    - Playground-specific runners
+  }
+}
+
+package "Production Environment (NPM Package)" {
+  component [Cleanroom Runner] as CleanroomProd {
+    - Docker container execution
+    - Unsafe JSON parsing
+    - Production npm package
+    - Container file system
+  }
+  
+  component [Playground CLI] as PlaygroundProd {
+    - NPM package execution
+    - Container file system access
+    - Production dependencies
+    - Standard citty-test-utils
+  }
+  
+  component [Production Scenarios] as ProdScenarios {
+    - Cleanroom execution paths
+    - Standard fluent assertions
+    - Production runners
+  }
+}
+
+' Key Differences
+note right of LocalTest
+  **JSON Parsing:**
+  - safeJsonParse() with try/catch
+  - Returns undefined on error
+  - No exceptions thrown
+end note
+
+note right of CleanroomProd
+  **JSON Parsing:**
+  - Direct JSON.parse() call
+  - Throws SyntaxError on invalid JSON
+  - No error handling
+end note
+
+note right of PlaygroundTest
+  **Error Handling:**
+  - Custom error messages
+  - Graceful error handling
+  - Local file system context
+end note
+
+note right of PlaygroundProd
+  **Error Handling:**
+  - Citty framework errors
+  - Container execution context
+  - Different error messages
+end note
+
+' Data Flow Issues
+LocalTest --> PlaygroundTest : ✅ Works
+CleanroomProd --> PlaygroundProd : ❌ JSON Parse Errors
+
+' Error Message Differences
+PlaygroundTest --> TestScenarios : Custom error messages
+PlaygroundProd --> ProdScenarios : Citty framework messages
+
+@enduml

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  playground-production:
+    build:
+      context: .
+      dockerfile: playground/Dockerfile
+    image: citty-test-utils-playground:latest
+    container_name: playground-production-test
+    environment:
+      - NODE_ENV=production
+      - DEBUG=false
+      - LOG_LEVEL=info
+    volumes:
+      - ./playground:/app
+    working_dir: /app
+    command: ["node", "src/cli.mjs", "--show-help"]
+    networks:
+      - playground-network
+
+  playground-stress-test:
+    build:
+      context: .
+      dockerfile: playground/Dockerfile
+    image: citty-test-utils-playground:latest
+    container_name: playground-stress-test
+    environment:
+      - NODE_ENV=production
+      - DEBUG=false
+      - LOG_LEVEL=info
+    volumes:
+      - ./playground:/app
+    working_dir: /app
+    command: ["node", "src/cli.mjs", "greet", "StressTest"]
+    networks:
+      - playground-network
+    depends_on:
+      - playground-production
+
+networks:
+  playground-network:
+    driver: bridge

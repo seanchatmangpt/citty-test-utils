@@ -87,10 +87,26 @@
   "files": [
     "index.js",
     "src/",
-    "playground/",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
     "docs/"
+  ],
+  ".npmignore": [
+    "playground/",
+    "test/",
+    "tests/",
+    "*.test.mjs",
+    "*.test.js",
+    "vitest.config.*",
+    "node_modules/",
+    ".git/",
+    ".github/",
+    "*.log",
+    "*.tmp",
+    "coverage/",
+    ".nyc_output/",
+    "dist/",
+    "build/"
   ]
 }

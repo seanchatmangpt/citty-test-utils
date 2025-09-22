@@ -1,0 +1,87 @@
+@startuml Environment Architecture Comparison
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Environment Architecture Comparison
+
+package "Development Test Environment" {
+  component [Local Runner] as DevLocal {
+    + execSync execution
+    + Safe JSON parsing
+    + Mock responses
+    + TEST_CLI environment
+  }
+  
+  component [Playground CLI] as DevPlayground {
+    + Direct file execution
+    + Local file system
+    + Development dependencies
+    + Custom scenario config
+  }
+  
+  component [Test Scenarios] as DevScenarios {
+    + runPlaygroundLocal()
+    + Custom fluent assertions
+    + Playground-specific paths
+  }
+}
+
+package "Production NPM Environment" {
+  component [Cleanroom Runner] as ProdCleanroom {
+    + Docker container execution
+    + Unsafe JSON parsing
+    + Production npm package
+    + Container file system
+  }
+  
+  component [Playground CLI] as ProdPlayground {
+    + NPM package execution
+    + Container file system
+    + Production dependencies
+    + Standard citty-test-utils
+  }
+  
+  component [Production Scenarios] as ProdScenarios {
+    + runPlaygroundCleanroom()
+    + Standard fluent assertions
+    + Production runners
+  }
+}
+
+' Key Architectural Differences
+note right of DevLocal
+  **Development Features:**
+  - Safe error handling
+  - Mock responses for testing
+  - Local file system access
+  - Custom assertion methods
+end note
+
+note right of ProdCleanroom
+  **Production Features:**
+  - Docker isolation
+  - Unsafe JSON parsing
+  - Container file system
+  - Standard assertion methods
+end note
+
+' Data Flow Issues
+DevLocal --> DevPlayground : ✅ Works seamlessly
+ProdCleanroom --> ProdPlayground : ❌ JSON parsing errors
+
+DevScenarios --> DevPlayground : ✅ Custom runners work
+ProdScenarios --> ProdPlayground : ❌ Standard runners fail
+
+' Environment Variables
+component [Environment Variables] as EnvVars {
+  + TEST_CLI=true (dev)
+  + NODE_ENV=production (prod)
+  + Different execution paths
+}
+
+EnvVars --> DevLocal : Development mode
+EnvVars --> ProdCleanroom : Production mode
+
+@enduml

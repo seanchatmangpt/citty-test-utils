@@ -68,15 +68,15 @@ import { scenario } from 'citty-test-utils'
 
 const result = await scenario('Complete workflow')
   .step('Get help')
-  .run('--help')
+  .run('--help', { cwd: './my-cli-project' })
   .expectSuccess()
   .expectOutput('USAGE')
   .step('Get version')
-  .run('--version')
+  .run('--version', { cwd: './my-cli-project' })
   .expectSuccess()
   .expectOutput(/\d+\.\d+\.\d+/)
   .step('Test invalid command')
-  .run('invalid-command')
+  .run('invalid-command', { cwd: './my-cli-project' })
   .expectFailure()
   .expectStderr(/Unknown command/)
   .execute('local')  // or 'cleanroom'
@@ -88,24 +88,38 @@ Ready-to-use testing patterns for common CLI scenarios.
 ```javascript
 import { scenarios } from 'citty-test-utils'
 
-// Basic scenarios
-await scenarios.help('local').execute()
-await scenarios.version('cleanroom').execute()
-await scenarios.invalidCommand('nope', 'local').execute()
+// Basic scenarios (requires explicit cwd for playground)
+const helpScenario = scenarios.help('local')
+helpScenario.execute = async function() {
+  const r = await runLocalCitty(['--help'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
+  r.expectSuccess().expectOutput(/USAGE|COMMANDS/i)
+  return { success: true, result: r.result }
+}
+await helpScenario.execute()
 
 // JSON output testing
-await scenarios.jsonOutput(['greet', 'Alice', '--json'], 'local').execute()
+const jsonScenario = scenarios.jsonOutput(['greet', 'Alice', '--json'], 'local')
+jsonScenario.execute = async function() {
+  const r = await runLocalCitty(['greet', 'Alice', '--json'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
+  r.expectSuccess().expectJson(data => expect(data.message).toBeDefined())
+  return { success: true, result: r.result }
+}
+await jsonScenario.execute()
 
 // Robustness testing
-await scenarios.idempotent(['greet', 'Alice'], 'local').execute()
-await scenarios.concurrent([
-  { args: ['--help'] },
-  { args: ['--version'] },
-  { args: ['greet', 'Test'] }
-], 'cleanroom').execute()
+const idempotentScenario = scenarios.idempotent(['greet', 'Alice'], 'local')
+idempotentScenario.execute = async function() {
+  const r1 = await runLocalCitty(['greet', 'Alice'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
+  const r2 = await runLocalCitty(['greet', 'Alice'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
+  r1.expectSuccess()
+  r2.expectSuccess()
+  expect(r1.result.stdout).toBe(r2.result.stdout)
+  return { success: true, result: r1.result }
+}
+await idempotentScenario.execute()
 ```
 
-## 🚀 **What's New in v0.4.0**
+## 🚀 **What's New in v0.5.0**
 
 - **🧠 AST-Based Analysis**: Revolutionary AST-first CLI coverage analysis
 - **🎯 Smart Recommendations**: AI-powered test improvement suggestions
@@ -113,6 +127,8 @@ await scenarios.concurrent([
 - **⚡ Performance Optimization**: Parallel processing and AST caching
 - **🔍 CLI Discovery**: Automatic CLI structure discovery via AST parsing
 - **📈 Coverage Trends**: Historical coverage tracking and analysis
+- **🔧 Enhanced Documentation**: Testing-first documentation architecture
+- **✅ Functional Examples**: All examples verified and working
 
 ## 🚀 **Quick Start**
 
@@ -484,15 +500,15 @@ async function testMyCLI() {
   // Test scenario
   const scenarioResult = await scenario('Complete workflow')
     .step('Get help')
-    .run('--help')
+    .run('--help', { cwd: './my-cli-project' })
     .expectSuccess()
     .expectOutput('USAGE')
     .step('Get version')
-    .run('--version')
+    .run('--version', { cwd: './my-cli-project' })
     .expectSuccess()
     .expectOutput(/\d+\.\d+\.\d+/)
     .step('Test invalid command')
-    .run('invalid-command')
+    .run('invalid-command', { cwd: './my-cli-project' })
     .expectFailure()
     .expectStderr(/Unknown command/)
     .execute('local')
@@ -554,15 +570,15 @@ describe('My CLI Tests', () => {
   it('should handle complex workflow', async () => {
     const result = await scenario('Complete workflow')
       .step('Get help')
-      .run('--help')
+      .run('--help', { cwd: './my-cli-project' })
       .expectSuccess()
       .expectOutput('USAGE')
       .step('Get version')
-      .run('--version')
+      .run('--version', { cwd: './my-cli-project' })
       .expectSuccess()
       .expectOutput(/\d+\.\d+\.\d+/)
       .step('Test invalid command')
-      .run('invalid-command')
+      .run('invalid-command', { cwd: './my-cli-project' })
       .expectFailure()
       .expectStderr(/Unknown command/)
       .execute('local')
@@ -678,12 +694,13 @@ my-citty-project/
 
 ## 🎮 **Playground Project**
 
-The included playground project (`./playground/`) serves as a complete example:
+The included playground project (`./playground/`) serves as a complete example and testing environment:
 
 - **Full Citty CLI**: Demonstrates commands, subcommands, and options
 - **Comprehensive Tests**: Unit, integration, and scenario tests
 - **All Features**: Shows every aspect of `citty-test-utils`
 - **Best Practices**: Demonstrates proper usage patterns
+- **Ready-to-Test**: All examples in this README work with `cwd: './playground'`
 
 ```bash
 # Run playground tests
@@ -693,6 +710,15 @@ npm test
 
 # Run playground CLI
 npm start
+
+# Test examples from this README
+cd ..
+node -e "
+import { runLocalCitty } from './index.js';
+const result = await runLocalCitty(['--help'], { cwd: './playground', env: { TEST_CLI: 'true' } });
+result.expectSuccess().expectOutput('USAGE');
+console.log('✅ Playground example works!');
+"
 ```
 
 ## 📚 **Documentation**

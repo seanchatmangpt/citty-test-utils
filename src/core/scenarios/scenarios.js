@@ -6,28 +6,9 @@ async function exec(env, args, opts = {}) {
   const options = { ...opts }
   if (env === 'local') {
     options.env = { ...options.env, TEST_CLI: 'true' }
-    // For local execution, we need to set the correct working directory
-    // Try to detect if we're in a playground test and set cwd accordingly
+    // Use provided cwd or default to process.cwd()
     if (!options.cwd) {
-      // Check if we're running from playground tests
-      const stack = new Error().stack
-      if (stack.includes('playground/test/')) {
-        // Extract playground directory from stack trace
-        const lines = stack.split('\n')
-        for (const line of lines) {
-          if (line.includes('playground/test/')) {
-            const match = line.match(/\((.+?\/playground)\/test\//)
-            if (match) {
-              options.cwd = match[1]
-              break
-            }
-          }
-        }
-      }
-      // Fallback to process.cwd() if not in playground
-      if (!options.cwd) {
-        options.cwd = process.cwd()
-      }
+      options.cwd = process.cwd()
     }
   }
   return env === 'cleanroom' ? runCitty(args, options) : runLocalCitty(args, options)
@@ -211,11 +192,11 @@ export const scenarios = {
       async execute() {
         const r = await exec(env, args)
         // Check that command failed (non-zero exit code)
-        if (r.result.exitCode === 0) {
+        if (r.exitCode === 0) {
           throw new Error('Expected failure but command succeeded')
         }
         // Check for error message in output
-        const out = r.result.stdout + r.result.stderr
+        const out = r.stdout + r.stderr
         const ok = typeof msgOrRe === 'string' ? out.includes(msgOrRe) : msgOrRe.test(out)
         if (!ok) throw new Error(`Missing expected error: ${msgOrRe}\nGot:\n${out}`)
         return { success: true }
@@ -247,7 +228,7 @@ export const scenarios = {
   snapshotError(env = 'local') {
     return {
       async execute() {
-        const r = await exec(env, ['invalid-command'])
+        const r = await exec(env, ['test', 'run', '--invalid-flag'])
         r.expectFailure().expectSnapshotStderr('error-output')
         return { success: true, result: r.result }
       },

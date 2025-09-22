@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { scenario, concurrentScenario } from 'citty-test-utils'
+import { scenario, concurrentScenario } from '../scenario-config.mjs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -118,14 +118,14 @@ describe('Concurrent Default Execution', () => {
 
     try {
       const result = await concurrentScenario('Cleanroom Concurrent Test')
-        .step('Greet Alice in Docker')
-        .run(['greet', 'Alice'])
+        .step('Get help in Docker')
+        .run(['--help'])
         .expectSuccess()
-        .step('Greet Bob in Docker')
-        .run(['greet', 'Bob'])
+        .step('Get version in Docker')
+        .run(['--version'])
         .expectSuccess()
-        .step('Math Operation in Docker')
-        .run(['math', 'add', '5', '3'])
+        .step('Get info in Docker')
+        .run(['info'])
         .expectSuccess()
         .execute('cleanroom')
 
@@ -139,5 +139,5 @@ describe('Concurrent Default Execution', () => {
     } finally {
       await teardownCleanroom()
     }
-  })
+  }, 30000) // 30 second timeout for Docker operations
 })

@@ -4,6 +4,7 @@
 import { defineCommand } from 'citty'
 import { spawn, exec } from 'node:child_process'
 import { promisify } from 'node:util'
+import { runCitty } from '../../core/runners/cleanroom-runner.js'
 
 const execAsync = promisify(exec)
 

@@ -1,0 +1,69 @@
+@startuml JSON Parsing Issue Analysis
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title JSON Parsing Issue: Test vs Production
+
+package "Test Environment" {
+  component [Local Runner] as LocalRunner {
+    + safeJsonParse(stdout)
+    + try/catch error handling
+    + Returns undefined on error
+  }
+  
+  component [Playground CLI] as PlaygroundCLI {
+    + --json flag support
+    + JSON.stringify() output
+    + Proper JSON formatting
+  }
+}
+
+package "Production Environment" {
+  component [Cleanroom Runner] as CleanroomRunner {
+    + Direct JSON.parse(output)
+    + No error handling
+    + Throws SyntaxError
+  }
+  
+  component [Playground CLI] as PlaygroundCLIProd {
+    + --json flag support
+    + JSON.stringify() output
+    + Proper JSON formatting
+  }
+}
+
+' Issue Flow
+LocalRunner --> PlaygroundCLI : ✅ JSON parsing works
+CleanroomRunner --> PlaygroundCLIProd : ❌ JSON.parse() fails
+
+' Error Details
+note right of CleanroomRunner
+  **Error:**
+  SyntaxError: Unexpected token 'P', "Playground"... is not valid JSON
+  
+  **Root Cause:**
+  - JSON.parse() called on non-JSON output
+  - No error handling in cleanroom runner
+  - Production tests expect JSON but get help text
+end note
+
+note right of LocalRunner
+  **Success:**
+  - safeJsonParse() handles errors gracefully
+  - Returns undefined for invalid JSON
+  - Tests continue without crashing
+end note
+
+' Specific Test Cases
+component [Test Cases] as TestCases {
+  + should handle playground JSON output
+  + should work with production environment variables
+  + Both expect JSON but get help text
+}
+
+TestCases --> CleanroomRunner : ❌ Fails
+TestCases --> LocalRunner : ✅ Passes
+
+@enduml

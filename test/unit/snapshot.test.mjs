@@ -37,7 +37,7 @@ describe('Snapshot Testing', () => {
     })
 
     snapshotManager = new SnapshotManager(config)
-    
+
     // Also configure the global snapshot manager for scenarios
     getSnapshotManager(config)
   })
@@ -269,7 +269,7 @@ describe('Snapshot Testing', () => {
         stdout: 'hello world',
         stderr: '',
         args: ['--help'],
-        cwd: '/test',
+        // cwd field is excluded from snapshots to avoid temporary directory path mismatches
         json: null,
       })
     })

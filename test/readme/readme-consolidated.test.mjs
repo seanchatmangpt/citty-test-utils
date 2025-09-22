@@ -47,7 +47,7 @@ describe.concurrent('README Consolidated Tests', () => {
 
       result
         .expectSuccess()
-        .expectOutput(/Version: 0\.4\.0/)
+        .expectOutput(/Version: 0\.5\.0/)
         .expectNoStderr()
     })
   })
@@ -156,7 +156,7 @@ describe.concurrent('README Consolidated Tests', () => {
       // This would typically test npm install, but we'll simulate
       const result = await runLocalCitty(['--version'], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -169,7 +169,7 @@ describe.concurrent('README Consolidated Tests', () => {
       // Test that TypeScript definitions are available
       const result = await runLocalCitty(['--help'], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)

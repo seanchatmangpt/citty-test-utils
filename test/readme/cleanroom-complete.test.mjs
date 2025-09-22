@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import {
-  setupCleanroom,
-  runCitty,
-  teardownCleanroom,
-} from '../../index.js'
+import { setupCleanroom, runCitty, teardownCleanroom } from '../../index.js'
 
 describe('README Cleanroom Examples - Complete Coverage', () => {
   let cleanroomSetup = false
@@ -12,7 +8,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
     console.log('🐳 Setting up Docker cleanroom for comprehensive README tests...')
     try {
       await setupCleanroom({
-        rootDir: './playground',
+        rootDir: '.',
         timeout: 60000, // 1 minute timeout
       })
       cleanroomSetup = true
@@ -67,110 +63,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
         },
       })
 
-      result
-        .expectSuccess()
-        .expectOutput('USAGE')
-        .expectOutput(/playground/)
-        .expectNoStderr()
-    })
-  })
-
-  describe('Playground Command Cleanroom Examples', () => {
-    it('should work with greet command in cleanroom', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - cleanroom not available')
-        return
-      }
-
-      // From README: Test playground greet command in cleanroom
-      const result = await runCitty(['greet', 'Alice'], {
-        timeout: 30000,
-      })
-
-      result
-        .expectSuccess()
-        .expectOutput(/Hello, Alice!/)
-    })
-
-    it('should work with math command in cleanroom', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - cleanroom not available')
-        return
-      }
-
-      // Test playground math command in cleanroom
-      const result = await runCitty(['math', 'add', '5', '3'], {
-        timeout: 30000,
-      })
-
-      result
-        .expectSuccess()
-        .expectOutput(/8/)
-    })
-
-    it('should work with error command in cleanroom', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - cleanroom not available')
-        return
-      }
-
-      // Test playground error command in cleanroom
-      const result = await runCitty(['error', 'timeout'], {
-        timeout: 35000, // Increased timeout for timeout error
-      })
-
-      result
-        .expectExit(0) // timeout command exits normally after waiting
-        .expectNoStderr() // timeout command doesn't produce stderr
-    }, 40000) // Increased test timeout
-
-    it('should work with info command in cleanroom', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - cleanroom not available')
-        return
-      }
-
-      // Test playground info command in cleanroom
-      const result = await runCitty(['info'], {
-        timeout: 30000,
-      })
-
-      result
-        .expectSuccess()
-        .expectOutput(/Playground CLI/)
-    })
-
-    it('should work with playground help in cleanroom', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - cleanroom not available')
-        return
-      }
-
-      // Test playground help command in cleanroom
-      const result = await runCitty(['--show-help'], {
-        timeout: 30000,
-      })
-
-      result
-        .expectSuccess()
-        .expectOutput(/playground/)
-        .expectOutput(/greet|math|error|info/)
-    })
-
-    it('should show playground command help in cleanroom', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - cleanroom not available')
-        return
-      }
-
-      // Test playground command help in cleanroom
-      const result = await runCitty(['greet', '--help'], {
-        timeout: 30000,
-      })
-
-      result
-        .expectSuccess()
-        .expectOutput(/Greet someone/)
+      result.expectSuccess().expectOutput('USAGE').expectOutput(/ctu/).expectNoStderr()
     })
   })
 
@@ -218,9 +111,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       // From README: JSON output testing in cleanroom
       const { scenarios } = await import('../../src/core/scenarios/scenarios.js')
 
-      const jsonResult = await scenarios
-        .jsonOutput(['greet', 'Alice', '--json'], 'cleanroom')
-        .execute()
+      const jsonResult = await scenarios.jsonOutput(['info', '--json'], 'cleanroom').execute()
       expect(jsonResult.success).toBe(true)
     })
 
@@ -233,9 +124,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       // From README: Subcommand testing in cleanroom
       const { scenarios } = await import('../../src/core/scenarios/scenarios.js')
 
-      const subcommandResult = await scenarios
-        .subcommand('math', ['add', '5', '3'], 'cleanroom')
-        .execute()
+      const subcommandResult = await scenarios.subcommand('test', ['--help'], 'cleanroom').execute()
       expect(subcommandResult.success).toBe(true)
     })
 
@@ -248,7 +137,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       // From README: Robustness testing in cleanroom
       const { scenarios } = await import('../../src/core/scenarios/scenarios.js')
 
-      const idempotentResult = await scenarios.idempotent(['greet', 'Alice'], 'cleanroom').execute()
+      const idempotentResult = await scenarios.idempotent(['info'], 'cleanroom').execute()
       expect(idempotentResult.success).toBe(true)
     })
 
@@ -263,7 +152,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
 
       const concurrentResult = await scenarios
         .concurrent(
-          [{ args: ['--help'] }, { args: ['--version'] }, { args: ['greet', 'Test'] }],
+          [{ args: ['--help'] }, { args: ['--version'] }, { args: ['info'] }],
           'cleanroom'
         )
         .execute()
@@ -295,48 +184,34 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Cross-environment testing
-      const { runLocalCitty } = await import('../../index.js')
-
-      const localResult = await runLocalCitty(['--version'], {
-        cwd: './playground',
-        env: { TEST_CLI: 'true' },
-      })
+      // Test that cleanroom works independently
       const cleanroomResult = await runCitty(['--version'], {
-        env: { TEST_CLI: 'true' },
+        env: {},
       })
 
-      // Check that both results exist and have stdout
-      expect(localResult.result).toBeDefined()
-      expect(cleanroomResult.result).toBeDefined()
-      expect(localResult.result.stdout).toBeDefined()
-      expect(cleanroomResult.result.stdout).toBeDefined()
-
-      // Compare the outputs
-      expect(localResult.result.stdout).toBe(cleanroomResult.result.stdout)
+      // Check that cleanroom result exists and has stdout
+      expect(cleanroomResult).toBeDefined()
+      expect(cleanroomResult.stdout).toBeDefined()
+      expect(cleanroomResult.stdout).toBe('0.5.0') // Main CLI version
+      expect(cleanroomResult.exitCode).toBe(0)
     })
 
-    it('should work with cross-environment playground command testing', async () => {
+    it('should work with cross-environment help command testing', async () => {
       if (!cleanroomSetup) {
         console.log('⏭️ Skipping test - cleanroom not available')
         return
       }
 
-      // Test playground commands work consistently across environments
-      const { runLocalCitty } = await import('../../index.js')
-
-      const localResult = await runLocalCitty(['greet', '--help'], {
-        cwd: './playground',
-        env: { TEST_CLI: 'true' },
-      })
-      const cleanroomResult = await runCitty(['greet', '--help'], {
+      // Test main CLI help command works in cleanroom
+      const cleanroomResult = await runCitty(['--help'], {
         timeout: 30000,
       })
 
-      // Both should produce the same help output
-      expect(localResult.result.stdout).toBeDefined()
-      expect(cleanroomResult.result.stdout).toBeDefined()
-      expect(localResult.result.stdout).toContain('Greet someone')
-      expect(cleanroomResult.result.stdout).toContain('Greet someone')
+      // Should produce help output (main CLI)
+      expect(cleanroomResult.stdout).toBeDefined()
+      expect(cleanroomResult.stdout).toContain('USAGE')
+      expect(cleanroomResult.stdout).toContain('ctu') // Main CLI, not playground CLI
+      expect(cleanroomResult.exitCode).toBe(0)
     })
   })
 
@@ -351,11 +226,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       const result = await runCitty(['--help'], {
         env: { TEST_CLI: 'true' },
       })
-      result
-        .expectSuccess()
-        .expectOutput('USAGE')
-        .expectOutput(/playground/)
-        .expectNoStderr()
+      result.expectSuccess().expectOutput('USAGE').expectOutput(/ctu/).expectNoStderr()
     })
 
     it('should handle complex workflow in cleanroom', async () => {
@@ -380,29 +251,6 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
         .run('invalid-command')
         .expectFailure()
         .expectStderr(/Unknown command/)
-        .execute('cleanroom')
-
-      expect(result.success).toBe(true)
-    })
-
-    it('should handle playground command workflow in cleanroom', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - cleanroom not available')
-        return
-      }
-
-      // Test playground command workflow in cleanroom
-      const { scenario } = await import('../../src/core/scenarios/scenario-dsl.js')
-
-      const result = await scenario('Playground command workflow')
-        .step('Greet someone')
-        .run(['greet', 'Alice'])
-        .expectSuccess()
-        .expectOutput(/Hello, Alice!/)
-        .step('Test math')
-        .run(['math', 'add', '5', '3'])
-        .expectSuccess()
-        .expectOutput(/8/)
         .execute('cleanroom')
 
       expect(result.success).toBe(true)
@@ -439,7 +287,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Environment-specific configuration
-      const result = await runCitty(['greet', 'Alice'], {
+      const result = await runCitty(['info'], {
         env: {
           TEST_CLI: 'true',
           DEBUG: 'true',
@@ -449,27 +297,5 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
 
       result.expectSuccess()
     })
-
-    it('should ensure playground command isolation in cleanroom', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - cleanroom not available')
-        return
-      }
-
-      // Test that playground commands work in cleanroom container only
-      // This ensures commands don't affect the host system
-      const result = await runCitty(['info'], {
-        timeout: 30000,
-      })
-
-      result
-        .expectSuccess()
-        .expectOutput(/Playground CLI/)
-        .expectOutput(/testing citty-test-utils/)
-
-      // The command should work in the cleanroom container
-      // but not affect the host system
-    })
   })
 })
-

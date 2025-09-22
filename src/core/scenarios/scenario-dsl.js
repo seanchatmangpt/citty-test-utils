@@ -102,24 +102,9 @@ export function scenario(name) {
               const options = { ...step.command.options }
               if (runner === 'local') {
                 options.env = { ...options.env, TEST_CLI: 'true' }
-                // Try to detect playground directory for local execution
+                // Use provided cwd or default to process.cwd()
                 if (!options.cwd) {
-                  const stack = new Error().stack
-                  if (stack.includes('playground/test/')) {
-                    const lines = stack.split('\n')
-                    for (const line of lines) {
-                      if (line.includes('playground/test/')) {
-                        const match = line.match(/\((.+?\/playground)\/test\//)
-                        if (match) {
-                          options.cwd = match[1]
-                          break
-                        }
-                      }
-                    }
-                  }
-                  if (!options.cwd) {
-                    options.cwd = process.cwd()
-                  }
+                  options.cwd = process.cwd()
                 }
               }
               result =
@@ -183,24 +168,9 @@ export function scenario(name) {
               const options = { ...step.command.options }
               if (runner === 'local') {
                 options.env = { ...options.env, TEST_CLI: 'true' }
-                // Try to detect playground directory for local execution
+                // Use provided cwd or default to process.cwd()
                 if (!options.cwd) {
-                  const stack = new Error().stack
-                  if (stack.includes('playground/test/')) {
-                    const lines = stack.split('\n')
-                    for (const line of lines) {
-                      if (line.includes('playground/test/')) {
-                        const match = line.match(/\((.+?\/playground)\/test\//)
-                        if (match) {
-                          options.cwd = match[1]
-                          break
-                        }
-                      }
-                    }
-                  }
-                  if (!options.cwd) {
-                    options.cwd = process.cwd()
-                  }
+                  options.cwd = process.cwd()
                 }
               }
               result =
@@ -303,7 +273,7 @@ export function scenario(name) {
         const snapshotResult = matchSnapshot(snapshotData, testFile, snapshotName, {
           args: lastResult.args,
           env: options.env,
-          cwd: lastResult.cwd,
+          // Exclude cwd to avoid temporary directory path mismatches
           ...options,
         })
 

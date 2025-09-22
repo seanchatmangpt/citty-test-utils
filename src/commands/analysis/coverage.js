@@ -171,9 +171,18 @@ function generateTextCoverageReport(report, options) {
   // Coverage Statistics
   const coverage = report.coverage.summary
   lines.push('📊 Coverage Statistics:')
-  lines.push(
-    `  Commands: ${coverage.commands.tested}/${coverage.commands.total} (${coverage.commands.percentage.toFixed(1)}%)`
-  )
+  
+  // Handle new hierarchy structure
+  if (coverage.mainCommand) {
+    lines.push(
+      `  Main Command: ${coverage.mainCommand.tested}/${coverage.mainCommand.total} (${coverage.mainCommand.percentage.toFixed(1)}%)`
+    )
+  } else if (coverage.commands) {
+    lines.push(
+      `  Commands: ${coverage.commands.tested}/${coverage.commands.total} (${coverage.commands.percentage.toFixed(1)}%)`
+    )
+  }
+  
   if (coverage.subcommands) {
     lines.push(
       `  Subcommands: ${coverage.subcommands.tested}/${coverage.subcommands.total} (${coverage.subcommands.percentage.toFixed(1)}%)`

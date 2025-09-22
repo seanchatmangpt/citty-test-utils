@@ -6,6 +6,7 @@
 
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
+import { SmartCLIDetector } from '../../core/utils/smart-cli-detector.js'
 import { writeFileSync } from 'fs'
 
 export const discoverCommand = defineCommand({
@@ -67,8 +68,40 @@ export const discoverCommand = defineCommand({
     } = ctx.args
 
     try {
+      // Smart CLI detection
+      const detector = new SmartCLIDetector({ verbose })
+      let detectedCLI = null
+      let finalCLIPath = cliPath
+
+      if (verbose) {
+        console.log('🔍 Starting smart CLI detection...')
+      }
+
+      // If no CLI path specified, try to detect it
+      if (!cliPath || cliPath === 'src/cli.mjs') {
+        detectedCLI = await detector.detectCLI()
+
+        if (detectedCLI && detectedCLI.cliPath) {
+          finalCLIPath = detectedCLI.cliPath
+
+          if (verbose) {
+            console.log(`✅ Auto-detected CLI: ${finalCLIPath}`)
+            console.log(`   Detection method: ${detectedCLI.detectionMethod}`)
+            console.log(`   Confidence: ${detectedCLI.confidence}`)
+            if (detectedCLI.packageName) {
+              console.log(`   Package: ${detectedCLI.packageName}`)
+            }
+            if (detectedCLI.binName) {
+              console.log(`   Bin name: ${detectedCLI.binName}`)
+            }
+          }
+        } else {
+          console.log('⚠️ No CLI auto-detected, using default path')
+        }
+      }
+
       const analyzer = new EnhancedASTCLIAnalyzer({
-        cliPath,
+        cliPath: finalCLIPath,
         testDir: 'test', // Not used for discovery, but required by analyzer
         includePatterns: includePatterns.split(',').map((p) => p.trim()),
         excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
@@ -77,27 +110,35 @@ export const discoverCommand = defineCommand({
 
       if (verbose) {
         console.log('🔍 Starting CLI structure discovery...')
-        console.log(`CLI Path: ${cliPath}`)
+        console.log(`CLI Path: ${finalCLIPath}`)
         console.log(`Format: ${format}`)
         console.log(`Include Imports: ${includeImports}`)
         console.log(`Validate: ${validate}`)
       }
 
       // Discover CLI structure
-      const cliStructure = await analyzer.discoverCLIStructureEnhanced({
-        cliPath,
+      const cliHierarchy = await analyzer.discoverCLIStructureEnhanced({
+        cliPath: finalCLIPath,
         verbose,
         includeImports,
         validate,
       })
 
+      // Wrap in expected structure for report generation
+      const cliStructure = {
+        cliHierarchy: cliHierarchy,
+        commands: new Map(), // Empty for backward compatibility
+        globalOptions: new Map(), // Empty for backward compatibility
+      }
+
       // Generate discovery report
       const discoveryReport = generateDiscoveryReport(cliStructure, {
-        cliPath,
+        cliPath: finalCLIPath,
         format,
         includeImports,
         validate,
         verbose,
+        detectedCLI,
       })
 
       if (output) {
@@ -123,7 +164,7 @@ export const discoverCommand = defineCommand({
  * @returns {string} Formatted discovery report
  */
 function generateDiscoveryReport(cliStructure, options) {
-  const { format, includeImports, validate, verbose } = options
+  const { format, includeImports, validate, verbose, detectedCLI } = options
 
   switch (format.toLowerCase()) {
     case 'json':
@@ -143,25 +184,60 @@ function generateDiscoveryReport(cliStructure, options) {
  * @returns {string} Text discovery report
  */
 function generateTextReport(cliStructure, options) {
-  const { cliPath, includeImports, validate, verbose } = options
+  const { cliPath, includeImports, validate, verbose, detectedCLI } = options
   const lines = []
 
   lines.push('🔍 CLI Structure Discovery Report')
   lines.push('='.repeat(40))
   lines.push('')
 
+  // CLI Detection Info
+  if (detectedCLI) {
+    lines.push('🎯 CLI Detection:')
+    lines.push(`  Method: ${detectedCLI.detectionMethod}`)
+    lines.push(`  Confidence: ${detectedCLI.confidence}`)
+    if (detectedCLI.packageName) {
+      lines.push(`  Package: ${detectedCLI.packageName}`)
+    }
+    if (detectedCLI.binName) {
+      lines.push(`  Bin Name: ${detectedCLI.binName}`)
+    }
+    lines.push('')
+  }
+
   // Summary
   lines.push('📊 Discovery Summary:')
   lines.push(`  CLI Path: ${cliPath}`)
-  lines.push(`  Commands: ${cliStructure.commands.size}`)
-  lines.push(`  Global Options: ${cliStructure.globalOptions.size}`)
+  
+  // Handle new hierarchy structure
+  if (cliStructure.cliHierarchy) {
+    lines.push(`  Main Command: ${cliStructure.cliHierarchy.mainCommand.name}`)
+    lines.push(`  Subcommands: ${cliStructure.cliHierarchy.subcommands.size}`)
+    lines.push(`  Global Options: ${cliStructure.cliHierarchy.globalOptions.size}`)
+  } else {
+    // Handle old structure for backward compatibility
+    lines.push(`  Commands: ${cliStructure.commands?.size || 0}`)
+    lines.push(`  Global Options: ${cliStructure.globalOptions?.size || 0}`)
+  }
+  
   if (includeImports && cliStructure.imports) {
     lines.push(`  Imports: ${cliStructure.imports.size}`)
   }
   lines.push('')
 
   // Commands
-  if (cliStructure.commands.size > 0) {
+  if (cliStructure.cliHierarchy) {
+    // New hierarchy structure
+    lines.push('📋 Discovered Commands:')
+    lines.push(`  ${cliStructure.cliHierarchy.mainCommand.name}: ${cliStructure.cliHierarchy.mainCommand.description}`)
+    
+    if (cliStructure.cliHierarchy.subcommands.size > 0) {
+      for (const [subPath, subCommand] of cliStructure.cliHierarchy.subcommands) {
+        lines.push(`    ${subPath}: ${subCommand.description}`)
+      }
+    }
+    lines.push('')
+  } else if (cliStructure.commands && cliStructure.commands.size > 0) {
     lines.push('📋 Discovered Commands:')
     for (const [name, command] of cliStructure.commands) {
       const status = command.tested ? '✅' : '❌'
@@ -172,7 +248,11 @@ function generateTextReport(cliStructure, options) {
         for (const [subName, subcommand] of command.subcommands) {
           const subStatus = subcommand.tested ? '✅' : '❌'
           const imported = subcommand.imported ? ' (imported)' : ''
-          lines.push(`    ${subStatus} ${name} ${subName}: ${subcommand.description || 'No description'}${imported}`)
+          lines.push(
+            `    ${subStatus} ${name} ${subName}: ${
+              subcommand.description || 'No description'
+            }${imported}`
+          )
         }
       }
 
@@ -190,7 +270,9 @@ function generateTextReport(cliStructure, options) {
         lines.push(`    Options: ${command.options.size}`)
         for (const [optionName, option] of command.options) {
           const optionStatus = option.tested ? '✅' : '❌'
-          lines.push(`      ${optionStatus} --${optionName}: ${option.description || 'No description'}`)
+          lines.push(
+            `      ${optionStatus} --${optionName}: ${option.description || 'No description'}`
+          )
         }
       }
     }
@@ -223,9 +305,15 @@ function generateTextReport(cliStructure, options) {
   // Validation Results
   if (validate && cliStructure.validation) {
     lines.push('✅ Validation Results:')
-    lines.push(`  Structure Integrity: ${cliStructure.validation.integrity ? '✅ Passed' : '❌ Failed'}`)
-    lines.push(`  Import Resolution: ${cliStructure.validation.imports ? '✅ Passed' : '❌ Failed'}`)
-    lines.push(`  Command Consistency: ${cliStructure.validation.consistency ? '✅ Passed' : '❌ Failed'}`)
+    lines.push(
+      `  Structure Integrity: ${cliStructure.validation.integrity ? '✅ Passed' : '❌ Failed'}`
+    )
+    lines.push(
+      `  Import Resolution: ${cliStructure.validation.imports ? '✅ Passed' : '❌ Failed'}`
+    )
+    lines.push(
+      `  Command Consistency: ${cliStructure.validation.consistency ? '✅ Passed' : '❌ Failed'}`
+    )
     if (cliStructure.validation.issues && cliStructure.validation.issues.length > 0) {
       lines.push('  Issues Found:')
       cliStructure.validation.issues.forEach((issue, index) => {
@@ -256,7 +344,7 @@ function generateTextReport(cliStructure, options) {
  * @returns {string} JSON discovery report
  */
 function generateJSONReport(cliStructure, options) {
-  const { cliPath, includeImports, validate, verbose } = options
+  const { cliPath, includeImports, validate, verbose, detectedCLI } = options
 
   const report = {
     metadata: {
@@ -267,6 +355,15 @@ function generateJSONReport(cliStructure, options) {
       validation: validate,
       verbose,
     },
+    cliDetection: detectedCLI
+      ? {
+          method: detectedCLI.detectionMethod,
+          confidence: detectedCLI.confidence,
+          packageName: detectedCLI.packageName,
+          binName: detectedCLI.binName,
+          packageJson: detectedCLI.packageJson,
+        }
+      : null,
     summary: {
       commands: cliStructure.commands.size,
       globalOptions: cliStructure.globalOptions.size,
@@ -337,8 +434,12 @@ summary:
   imports: ${report.summary.imports}
 
 commands:
-${Object.entries(report.commands).map(([name, cmd]) => `  ${name}: ${cmd.description || 'No description'}`).join('\n')}
+${Object.entries(report.commands)
+  .map(([name, cmd]) => `  ${name}: ${cmd.description || 'No description'}`)
+  .join('\n')}
 
 globalOptions:
-${Object.entries(report.globalOptions).map(([name, opt]) => `  ${name}: ${opt.description || 'No description'}`).join('\n')}`
+${Object.entries(report.globalOptions)
+  .map(([name, opt]) => `  ${name}: ${opt.description || 'No description'}`)
+  .join('\n')}`
 }

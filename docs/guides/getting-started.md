@@ -106,7 +106,7 @@ Your `package.json` should contain:
     "citty": "^1.0.0"
   },
   "devDependencies": {
-    "citty-test-utils": "^0.4.0",
+    "citty-test-utils": "^0.5.0",
     "vitest": "^1.0.0"
   }
 }
@@ -327,11 +327,11 @@ import { scenario } from 'citty-test-utils'
 
 const result = await scenario('Help and Version')
   .step('Get help')
-  .run('--help')
+  .run('--help', { cwd: './my-cli-project' })
   .expectSuccess()
   .expectOutput('USAGE')
   .step('Get version')
-  .run('--version')
+  .run('--version', { cwd: './my-cli-project' })
   .expectSuccess()
   .expectOutput(/\d+\.\d+\.\d+/)
   .execute('local')
@@ -339,21 +339,39 @@ const result = await scenario('Help and Version')
 
 ### 6. Use Pre-built Scenarios
 
-Leverage ready-to-use testing patterns:
+Leverage ready-to-use testing patterns (requires explicit cwd):
 
 ```javascript
-import { scenarios } from 'citty-test-utils'
+import { scenarios, runLocalCitty } from 'citty-test-utils'
 
-// Basic scenarios
-await scenarios.help('local').execute()
-await scenarios.version('local').execute()
-await scenarios.invalidCommand('nope', 'local').execute()
+// Basic scenarios with explicit cwd
+const helpScenario = scenarios.help('local')
+helpScenario.execute = async function() {
+  const r = await runLocalCitty(['--help'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
+  r.expectSuccess().expectOutput(/USAGE|COMMANDS/i)
+  return { success: true, result: r.result }
+}
+await helpScenario.execute()
 
-// JSON output testing
-await scenarios.jsonOutput(['greet', 'Alice', '--json'], 'local').execute()
+// Version scenario
+const versionScenario = scenarios.version('local')
+versionScenario.execute = async function() {
+  const r = await runLocalCitty(['--version'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
+  r.expectSuccess().expectOutput(/\d+\.\d+\.\d+/)
+  return { success: true, result: r.result }
+}
+await versionScenario.execute()
 
-// Robustness testing
-await scenarios.idempotent(['greet', 'Alice'], 'local').execute()
+// Invalid command scenario
+const invalidScenario = scenarios.invalidCommand('nope', 'local')
+invalidScenario.execute = async function() {
+  const r = await runLocalCitty(['nope'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
+  if (r.result.exitCode === 0) throw new Error('Expected failure but command succeeded')
+  const out = r.result.stdout + r.result.stderr
+  if (!/unknown|invalid|not found|error/i.test(out)) throw new Error(`Unexpected error text: ${out}`)
+  return { success: true }
+}
+await invalidScenario.execute()
 ```
 
 ## Common Issues

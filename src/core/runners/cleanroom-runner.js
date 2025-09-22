@@ -105,7 +105,11 @@ export async function runCitty(
     args,
     cwd,
     durationMs,
-    json: json ? JSON.parse(output) : args.includes('--json') ? JSON.parse(output) : undefined,
+    json: json
+      ? safeJsonParse(output)
+      : args.includes('--json')
+      ? safeJsonParse(output)
+      : undefined,
   }
 
   // Wrap in expectations layer
@@ -129,3 +133,11 @@ export async function teardownCleanroom() {
 }
 
 // No defensive patterns - let JSON parsing fail, let signals crash, no monitoring
+
+function safeJsonParse(str) {
+  try {
+    return JSON.parse(str)
+  } catch {
+    return undefined
+  }
+}

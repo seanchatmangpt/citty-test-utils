@@ -136,6 +136,11 @@ export class SnapshotManager {
     if (typeof data === 'object' && data !== null) {
       const normalized = { ...data }
 
+      // Always exclude cwd to avoid temporary directory path mismatches
+      if (normalized.cwd) {
+        delete normalized.cwd
+      }
+
       if (this.config.ignoreTimestamps) {
         // Remove timestamp fields
         const timestampFields = ['timestamp', 'createdAt', 'updatedAt', 'date', 'time']
@@ -471,7 +476,8 @@ export const snapshotUtils = {
           stdout: result.stdout,
           stderr: result.stderr,
           args: result.args,
-          cwd: result.cwd,
+          // Exclude cwd to avoid temporary directory path mismatches
+          // cwd: result.cwd,
           json: result.json,
         }
       case 'output':

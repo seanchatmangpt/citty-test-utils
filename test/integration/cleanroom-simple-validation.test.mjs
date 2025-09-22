@@ -158,7 +158,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
 
       // Verify results
       expect(cleanroomResult.stdout).toContain('Generated CLI template')
-      expect(localResult.stdout).toContain('0.4.0')
+      expect(localResult.stdout).toContain('0.5.0')
 
       // Should complete in reasonable time (proving concurrency)
       expect(totalTime).toBeLessThan(15000)
@@ -237,7 +237,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
       // Local environment should still work
       const localResult = await runLocalCitty(['--version'], { env: { TEST_CLI: 'true' } })
       expect(localResult.exitCode).toBe(0)
-      expect(localResult.stdout).toContain('0.4.0')
+      expect(localResult.stdout).toContain('0.5.0')
     })
 
     it('should prove cleanroom can recover from errors', async () => {
@@ -298,7 +298,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
 
       // Both should work independently
       expect(result1.stdout).toContain('Generated scenario template')
-      expect(result2.stdout).toContain('0.4.0')
+      expect(result2.stdout).toContain('0.5.0')
 
       // Both should have same working directory
       expect(result1.cwd).toBe('/app')

@@ -1,0 +1,65 @@
+@startuml Error Message Delta Analysis
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Error Message Delta: Test vs Production
+
+package "Test Environment Expectations" {
+  component [Test Expectations] as TestExpect {
+    + expectOutput(/Unknown operation/)
+    + expectStderr(/Generic error occurred/)
+    + Custom error message patterns
+  }
+}
+
+package "Production Environment Reality" {
+  component [Playground CLI Production] as PlaygroundProd {
+    + Citty framework error handling
+    + Standard help text output
+    + Different error message format
+  }
+}
+
+' Error Message Comparison
+note right of TestExpect
+  **Expected Error Messages:**
+  - "Unknown operation" for invalid math commands
+  - "Generic error occurred" for error simulation
+  - Custom playground-specific messages
+end note
+
+note right of PlaygroundProd
+  **Actual Error Messages:**
+  - "Unknown command invalid" (Citty framework)
+  - Help text instead of custom errors
+  - Standard Citty error format
+end note
+
+' Specific Error Cases
+component [Error Cases] as ErrorCases {
+  + math invalid 1 2
+  + error generic
+  + error validation
+}
+
+ErrorCases --> TestExpect : Expected custom messages
+ErrorCases --> PlaygroundProd : Citty framework messages
+
+' Message Format Differences
+note bottom of TestExpect
+  **Test Environment:**
+  - Custom error handling
+  - Playground-specific messages
+  - Direct error simulation
+end note
+
+note bottom of PlaygroundProd
+  **Production Environment:**
+  - Citty framework routing
+  - Standard command help
+  - Framework-level error handling
+end note
+
+@enduml

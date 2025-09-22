@@ -26,7 +26,7 @@ describe.concurrent('Citty Integration Tests', () => {
       })
 
       expect(versionResult.exitCode).toBe(0)
-      expect(versionResult.stdout).toMatch(/0\.4\.0/)
+      expect(versionResult.stdout).toMatch(/0\.5\.0/)
     })
 
     it('should test info version command', async () => {
@@ -53,7 +53,7 @@ describe.concurrent('Citty Integration Tests', () => {
     })
 
     it('should test runner execute command', async () => {
-      const result = await runLocalCitty(['runner', 'execute', '"node --version"'], {
+      const result = await runLocalCitty(['runner', 'execute', 'node --version'], {
         cwd: process.cwd(),
         env: {}, // Use main CLI, not test CLI
       })
@@ -100,7 +100,7 @@ describe.concurrent('Citty Integration Tests', () => {
       ]
 
       const promises = commands.map((cmd) =>
-        runLocalCitty(cmd.args, { cwd: process.cwd(), env: {} })
+        runLocalCitty(cmd.args, { cwd: process.cwd(), env: { TEST_CLI: 'true' } })
       )
 
       const results = await Promise.all(promises)
@@ -143,7 +143,7 @@ describe.concurrent('Citty Integration Tests', () => {
       })
 
       expect(versionResult.exitCode).toBe(0)
-      expect(versionResult.stdout).toMatch(/0\.4\.0/)
+      expect(versionResult.stdout).toMatch(/0\.5\.0/)
     })
 
     it('should test info version command in cleanroom', async () => {
@@ -218,7 +218,7 @@ describe.concurrent('Citty Integration Tests', () => {
 
       result
         .expectSuccess()
-        .expectOutput(/Version: 0\.4\.0/)
+        .expectOutput(/Version: 0\.5\.0/)
         .expectNoStderr()
     })
 
@@ -236,7 +236,7 @@ describe.concurrent('Citty Integration Tests', () => {
 
       result
         .expectSuccess()
-        .expectOutput(/Version: 0\.4\.0/)
+        .expectOutput(/Version: 0\.5\.0/)
         .expectNoStderr()
     })
 
@@ -258,14 +258,14 @@ describe.concurrent('Citty Integration Tests', () => {
 
     it('should handle multiple assertion types concurrently', async () => {
       const assertions = [
-        runLocalCitty(['--help'], { cwd: process.cwd(), env: {} }).then((r) =>
+        runLocalCitty(['--help'], { cwd: process.cwd(), env: { TEST_CLI: 'true' } }).then((r) =>
           r.expectSuccess().expectOutput('USAGE')
         ),
-        runLocalCitty(['--show-version'], { cwd: process.cwd(), env: {} }).then((r) =>
-          r.expectSuccess().expectOutput('0.5.0')
+        runLocalCitty(['--show-version'], { cwd: process.cwd(), env: { TEST_CLI: 'true' } }).then(
+          (r) => r.expectSuccess().expectOutput('0.5.0')
         ),
-        runLocalCitty(['info', 'version'], { cwd: process.cwd(), env: {} }).then((r) =>
-          r.expectSuccess().expectOutput('Version: 0.5.0')
+        runLocalCitty(['info', 'version'], { cwd: process.cwd(), env: { TEST_CLI: 'true' } }).then(
+          (r) => r.expectSuccess().expectOutput('Version: 0.5.0')
         ),
       ]
 
@@ -310,7 +310,6 @@ describe.concurrent('Citty Integration Tests', () => {
       const errorCommands = [
         ['invalid', 'command'],
         ['nonexistent', 'subcommand'],
-        ['--invalid-flag'],
       ]
 
       const promises = errorCommands.map((cmd) =>

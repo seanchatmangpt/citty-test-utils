@@ -77,11 +77,21 @@ export const statsCommand = defineCommand({
       console.log(`Total Options: ${report.metadata.totalOptions}`)
       console.log('')
       console.log('📈 Coverage Summary:')
-      console.log(
-        `  Commands: ${report.coverage.summary.commands.tested}/${
-          report.coverage.summary.commands.total
-        } (${report.coverage.summary.commands.percentage.toFixed(1)}%)`
-      )
+      
+      // Handle new hierarchy structure
+      if (report.coverage.summary.mainCommand) {
+        console.log(
+          `  Main Command: ${report.coverage.summary.mainCommand.tested}/${
+            report.coverage.summary.mainCommand.total
+          } (${report.coverage.summary.mainCommand.percentage.toFixed(1)}%)`
+        )
+      } else if (report.coverage.summary.commands) {
+        console.log(
+          `  Commands: ${report.coverage.summary.commands.tested}/${
+            report.coverage.summary.commands.total
+          } (${report.coverage.summary.commands.percentage.toFixed(1)}%)`
+        )
+      }
       if (report.coverage.summary.subcommands) {
         console.log(
           `  Subcommands: ${report.coverage.summary.subcommands.tested}/${

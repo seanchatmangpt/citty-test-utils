@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { scenario, setupCleanroom, teardownCleanroom } from 'citty-test-utils'
-import { scenarios } from '../../scenario-config.mjs'
+import { setupCleanroom, teardownCleanroom } from 'citty-test-utils'
+import { scenarios, scenario } from '../../scenario-config.mjs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -155,7 +155,7 @@ describe('Playground Scenario Tests', () => {
     it('should execute complex workflow', async () => {
       const complexScenario = scenario('Complex Workflow')
         .step('Get help')
-        .run(['--help'])
+        .run(['--show-help'])
         .expectSuccess()
         .expectOutput(/playground/)
         .step('Greet user')

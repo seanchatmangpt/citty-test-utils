@@ -186,8 +186,8 @@ describe.concurrent('Commands Consolidated Tests', () => {
         env: { TEST_CLI: 'true' },
       })
 
-      // Citty shows help for invalid commands but exits with code 0
-      expect(result.exitCode).toBe(0)
+      // Citty shows help for invalid commands but exits with code 1
+      expect(result.exitCode).toBe(1)
       expect(result.stdout).toContain('USAGE')
       expect(result.stdout).toContain('ctu')
     })

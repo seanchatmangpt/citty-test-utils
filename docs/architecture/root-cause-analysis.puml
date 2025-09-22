@@ -1,0 +1,84 @@
+@startuml Root Cause Analysis
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Root Cause Analysis: Production Issues
+
+package "Root Causes" {
+  component [JSON Parsing Issue] as JSONIssue {
+    + cleanroom-runner.js:108
+    + Direct JSON.parse() call
+    + No error handling
+    + Throws SyntaxError
+  }
+  
+  component [Error Message Issue] as ErrorIssue {
+    + Citty framework routing
+    + Different error messages
+    + Help text instead of errors
+    + Framework-level handling
+  }
+  
+  component [Environment Issue] as EnvIssue {
+    + Different execution paths
+    + Container vs local filesystem
+    + Production vs development deps
+    + Different assertion methods
+  }
+}
+
+' Impact Analysis
+component [Impact] as Impact {
+  + 3 failing production tests
+  + JSON parsing crashes
+  + Error message mismatches
+  + Environment inconsistencies
+}
+
+' Specific Failures
+component [Test Failures] as Failures {
+  + should handle playground JSON output
+  + should handle production error scenarios
+  + should work with production environment variables
+}
+
+' Solution Requirements
+component [Solutions] as Solutions {
+  + Fix JSON parsing in cleanroom runner
+  + Align error messages between environments
+  + Standardize execution paths
+  + Improve error handling
+}
+
+JSONIssue --> Impact : Primary cause
+ErrorIssue --> Impact : Secondary cause
+EnvIssue --> Impact : Tertiary cause
+
+Impact --> Failures : Results in
+Failures --> Solutions : Requires
+
+' Technical Details
+note right of JSONIssue
+  **Technical Details:**
+  - Line 108 in cleanroom-runner.js
+  - JSON.parse(output) without try/catch
+  - Should use safeJsonParse() like local runner
+end note
+
+note right of ErrorIssue
+  **Technical Details:**
+  - Citty framework handles invalid commands
+  - Shows help instead of custom errors
+  - Test expectations don't match reality
+end note
+
+note right of EnvIssue
+  **Technical Details:**
+  - Different file paths in containers
+  - Different dependency versions
+  - Different execution contexts
+end note
+
+@enduml

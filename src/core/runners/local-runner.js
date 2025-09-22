@@ -19,7 +19,7 @@ import {
  * @returns {Promise<Object>} Result with fluent assertions
  */
 export async function runLocalCitty(command, options = {}) {
-  const { cwd = process.cwd(), env = {}, timeout = 30000, json = false } = options
+  const { cwd = process.cwd(), env = {}, timeout = 30000, json = false, cliPath } = options
 
   const startTime = Date.now()
 
@@ -37,37 +37,101 @@ export async function runLocalCitty(command, options = {}) {
 
     // Mock responses based on command
     if (command.includes('--help')) {
-      stdout = `Test CLI for citty-test-utils integration testing (ctu v0.5.0)
+      stdout = `Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.0)
 
-USAGE ctu greet|math|error|info
+USAGE ctu [OPTIONS] test|gen|runner|info|analysis
+
+OPTIONS
+
+     --show-help    Show help information   
+  --show-version    Show version information
+          --json    Output in JSON format   
+       --verbose    Enable verbose output   
 
 COMMANDS
 
-  greet    Greet someone                     
-   math    Perform mathematical operations   
-  error    Simulate different types of errors
-   info    Show test CLI information         
+      test    Run tests and scenarios                         
+       gen    Generate test files and templates using nunjucks
+    runner    Custom runner functionality                     
+      info    Show CLI information                            
+  analysis    Analyze CLI test coverage and generate reports  
 
 Use ctu <command> --help for more information about a command.`
-    } else if (command.includes('--version')) {
+    } else if (command.includes('--version') || command.includes('--show-version')) {
       stdout = '0.5.0'
-    } else if (command.includes('invalid') || command.includes('unknown')) {
+    } else if (
+      command.includes('invalid') ||
+      command.includes('unknown') ||
+      command.includes('nonexistent')
+    ) {
       exitCode = 1
       stderr = 'Unknown command'
-    } else if (command.includes('greet')) {
-      stdout = 'Hello, World!'
+      stdout = `Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.0)
+
+USAGE ctu [OPTIONS] test|gen|runner|info|analysis
+
+OPTIONS
+
+     --show-help    Show help information   
+  --show-version    Show version information
+          --json    Output in JSON format   
+       --verbose    Enable verbose output   
+
+COMMANDS
+
+      test    Run tests and scenarios                         
+       gen    Generate test files and templates using nunjucks
+    runner    Custom runner functionality                     
+      info    Show CLI information                            
+  analysis    Analyze CLI test coverage and generate reports  
+
+Use ctu <command> --help for more information about a command.`
+    } else if (command.includes('info') && command.includes('version')) {
+      stdout = 'Version: 0.5.0'
     } else if (command.includes('info')) {
-      stdout = `Test CLI Information:
-Name: citty-test-utils-test-cli
+      stdout = `Citty Test Utils CLI Information:
+Name: citty-test-utils
 Version: 0.5.0
-Description: Test CLI for citty-test-utils integration testing
-Commands: greet, math, error, info
+Description: Comprehensive testing framework for CLI applications
+Commands: test, gen, runner, info, analysis
 Features:
-  - Basic command execution
-  - Subcommands
-  - JSON output support
-  - Error simulation
-  - Argument parsing`
+  - Local and cleanroom testing
+  - Fluent assertions
+  - Scenario DSL
+  - Template generation
+  - CLI coverage analysis`
+    } else if (command.includes('gen') && command.includes('project')) {
+      stdout = 'Generated complete project'
+    } else if (command.includes('runner') && command.includes('execute')) {
+      stdout = `Command: node --version
+Environment: local
+Exit Code: 0
+Success: ✅
+Output: v18.17.0`
+    } else if (command.includes('--json')) {
+      stdout = '{"name":"ctu","version":"0.5.0","description":"Test CLI"}'
+    } else {
+      // Default response for unknown commands
+      stdout = `Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.0)
+
+USAGE ctu [OPTIONS] test|gen|runner|info|analysis
+
+OPTIONS
+
+     --show-help    Show help information   
+  --show-version    Show version information
+          --json    Output in JSON format   
+       --verbose    Enable verbose output   
+
+COMMANDS
+
+      test    Run tests and scenarios                         
+       gen    Generate test files and templates using nunjucks
+    runner    Custom runner functionality                     
+      info    Show CLI information                            
+  analysis    Analyze CLI test coverage and generate reports  
+
+Use ctu <command> --help for more information about a command.`
     }
 
     // Add a small delay to simulate realistic execution time
@@ -89,16 +153,16 @@ Features:
     return wrapped
   }
 
-  // Use test CLI if TEST_CLI environment variable is set
-  const cliPath = env.TEST_CLI ? 'test-cli.mjs' : 'src/cli.mjs'
-  const escapedCommand = command.map(arg => {
+  // Use test CLI if TEST_CLI environment variable is set, or use provided cliPath
+  const actualCliPath = cliPath || (env.TEST_CLI ? 'test-cli.mjs' : 'src/cli.mjs')
+  const escapedCommand = command.map((arg) => {
     // If the argument contains spaces, wrap it in quotes
     if (arg.includes(' ')) {
       return `"${arg}"`
     }
     return arg
   })
-  const fullCommand = `node ${cliPath} ${escapedCommand.join(' ')}`
+  const fullCommand = `node ${actualCliPath} ${escapedCommand.join(' ')}`
 
   try {
     // Use execSync for simpler execution (works better with mocks)
@@ -328,7 +392,7 @@ function wrapWithAssertions(result) {
       const snapshotResult = matchSnapshot(snapshotData, testFile, snapshotName, {
         args: result.args,
         env: options.env,
-        cwd: result.cwd,
+        // Exclude cwd to avoid temporary directory path mismatches
         ...options,
       })
 
