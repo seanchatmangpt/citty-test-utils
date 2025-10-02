@@ -264,6 +264,34 @@ async function executeLocalMode(args, config) {
 }
 
 /**
+ * Check if Docker is available and running
+ *
+ * @throws {Error} If Docker is not available or not running
+ */
+function checkDockerAvailability() {
+  try {
+    // Try to run docker ps to check if Docker is running
+    execSync('docker ps', { stdio: 'pipe' })
+  } catch (error) {
+    throw new Error(
+      `Docker is not available or not running.\n\n` +
+      `Cleanroom testing requires Docker to create isolated test environments.\n\n` +
+      `To fix this:\n` +
+      `  1. Install Docker Desktop: https://www.docker.com/products/docker-desktop\n` +
+      `  2. Start Docker Desktop and wait for it to be ready\n` +
+      `  3. Verify Docker is running: docker ps\n\n` +
+      `Alternatively, disable cleanroom mode in your vitest.config.js:\n` +
+      `  test: {\n` +
+      `    citty: {\n` +
+      `      cleanroom: { enabled: false }\n` +
+      `    }\n` +
+      `  }\n\n` +
+      `Original error: ${error.message}`
+    )
+  }
+}
+
+/**
  * Execute CLI in cleanroom mode
  *
  * @param {string[]} args - CLI arguments
@@ -272,6 +300,9 @@ async function executeLocalMode(args, config) {
  */
 async function executeCleanroomMode(args, config) {
   const { cleanroom, cwd, env, timeout, json } = config
+
+  // Check Docker availability before attempting cleanroom setup
+  checkDockerAvailability()
 
   // Setup cleanroom if not already initialized
   await setupCleanroom({
