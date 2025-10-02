@@ -12,6 +12,7 @@ import { z } from 'zod'
 /**
  * Zod schema for runLocalCitty options
  * Defaults are read from environment variables set in test setup
+ * Note: Using z.any() for env due to Zod v4 record API limitations
  */
 const LocalRunnerOptionsSchema = z.object({
   cliPath: z.string().optional().default(
@@ -20,7 +21,7 @@ const LocalRunnerOptionsSchema = z.object({
   cwd: z.string().optional().default(
     process.env.TEST_CWD || process.cwd()
   ),
-  env: z.record(z.string()).optional().default({}),
+  env: z.any().optional().default({}), // Record<string, string>
   timeout: z.number().positive().optional().default(30000),
   args: z.array(z.string()).optional().default([]),
 })

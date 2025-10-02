@@ -1,12 +1,25 @@
-// Scenario DSL for building complex test scenarios
-import { runLocalCitty, runCitty } from '../runners/local-runner.js'
+// Scenario DSL v1.0.0 - Simplified API
+import { runLocalCitty, wrapWithAssertions } from '../runners/local-runner.js'
+import { runCitty } from '../runners/cleanroom-runner.js'
 import { matchSnapshot, snapshotUtils } from '../assertions/snapshot.js'
 
+/**
+ * Create a new test scenario with simplified v1.0.0 API
+ *
+ * @param {string} name - Scenario name
+ * @returns {Object} Scenario builder with chainable methods
+ *
+ * @example v1.0.0 API
+ * await scenario('Test')
+ *   .step('Help', '--help').expectSuccess()
+ *   .step('Build', ['build', '--prod']).expectSuccess()
+ *   .execute()
+ */
 export function scenario(name) {
   const steps = []
   let currentStep = null
   let concurrentMode = false
-  let concurrentSteps = []
+  let mode = null // 'local', 'cleanroom', or null (auto-detect)
 
   const builder = {
     // Expose steps for testing
@@ -14,78 +27,57 @@ export function scenario(name) {
       return steps
     },
 
-    // Enable concurrent execution mode
-    concurrent() {
-      concurrentMode = true
-      return this
-    },
+    /**
+     * v1.0.0 API: Define a step with args combined
+     * @param {string} stepName - Step description
+     * @param {string|string[]} args - Command arguments (string gets split, array used as-is)
+     * @param {Object} options - Optional execution options (cwd, env, timeout)
+     * @returns {Object} this for chaining
+     *
+     * @example
+     * .step('Run help', '--help')
+     * .step('Build prod', ['build', '--prod'])
+     * .step('Custom path', ['init'], { cwd: '/tmp/test' })
+     */
+    step(stepName, args, options = {}) {
+      // Parse args into array
+      const argsArray = typeof args === 'string'
+        ? args.trim().split(/\s+/)
+        : Array.isArray(args)
+          ? args
+          : []
 
-    // Disable concurrent execution mode (default)
-    sequential() {
-      concurrentMode = false
-      return this
-    },
-    step(description, action = null) {
       currentStep = {
-        description,
-        command: null,
-        action: null,
+        description: stepName,
+        args: argsArray,
+        options,
         expectations: [],
+        action: null,
       }
+
       steps.push(currentStep)
-
-      if (action) {
-        currentStep.action = action
-      }
       return this
     },
 
-    run(argsOrOptions, options = {}) {
-      if (!currentStep) {
-        throw new Error('Must call step() before run()')
+    /**
+     * Add custom action step (advanced usage)
+     */
+    action(stepName, actionFn) {
+      currentStep = {
+        description: stepName,
+        args: null,
+        options: {},
+        expectations: [],
+        action: actionFn,
       }
 
-      // Support 3 signatures for backward compatibility:
-      // 1. .run('--help') - string
-      // 2. .run(['--help'], { cwd: './path' }) - array + options
-      // 3. .run({ args: ['--help'], cwd: './path' }) - v0.6.0 object
-
-      let finalCommand
-      if (typeof argsOrOptions === 'string') {
-        // String: split into args array
-        finalCommand = {
-          args: argsOrOptions.split(' '),
-          options: { ...options }
-        }
-      } else if (Array.isArray(argsOrOptions)) {
-        // Array: use as args with separate options
-        finalCommand = {
-          args: argsOrOptions,
-          options: { ...options }
-        }
-      } else {
-        // Object: v0.6.0 API - already has args property
-        finalCommand = {
-          args: argsOrOptions.args || [],
-          options: { ...argsOrOptions }
-        }
-        // Remove args from options to avoid duplication
-        delete finalCommand.options.args
-      }
-
-      currentStep.command = finalCommand
+      steps.push(currentStep)
       return this
     },
 
-    runCommand(command) {
-      if (!currentStep) {
-        throw new Error('Must call step() before runCommand()')
-      }
-      const args = typeof command === 'string' ? command.split(' ') : command
-      currentStep.command = { args, options: {} }
-      return this
-    },
-
+    /**
+     * Add custom expectation function
+     */
     expect(expectationFn) {
       if (!currentStep) {
         throw new Error('Must call step() before expect()')
@@ -94,20 +86,56 @@ export function scenario(name) {
       return this
     },
 
-    async execute(runner = 'local') {
+    /**
+     * Enable concurrent execution mode
+     */
+    concurrent() {
+      concurrentMode = true
+      return this
+    },
+
+    /**
+     * Disable concurrent execution mode (default)
+     */
+    sequential() {
+      concurrentMode = false
+      return this
+    },
+
+    /**
+     * Set execution mode explicitly (optional, for backward compatibility)
+     * @param {'local'|'cleanroom'} executionMode
+     */
+    mode(executionMode) {
+      mode = executionMode
+      return this
+    },
+
+    /**
+     * v1.0.0 API: Execute all steps with auto-detected mode
+     * Mode auto-detection:
+     * 1. Uses explicitly set mode via .mode()
+     * 2. Checks TEST_RUNNER environment variable
+     * 3. Defaults to 'local'
+     *
+     * @returns {Promise<Object>} Execution results
+     */
+    async execute() {
+      // Auto-detect mode if not explicitly set
+      const executionMode = mode || process.env.TEST_RUNNER || 'local'
+
       const results = []
       let lastResult = null
 
       if (concurrentMode) {
         // Execute all steps concurrently
-        console.log(`🚀 Executing ${steps.length} steps concurrently`)
+        console.log(`🚀 Executing ${steps.length} steps concurrently (${executionMode} mode)`)
 
         const concurrentPromises = steps.map(async (step, index) => {
-          if (!step.command && !step.action) {
-            throw new Error(`Step "${step.description}" has no command or action`)
+          if (!step.args && !step.action) {
+            throw new Error(`Step "${step.description}" has no args or action`)
           }
 
-          // Check if step has expectations (unless it's an action step)
           if (!step.action && step.expectations.length === 0) {
             throw new Error(`Step "${step.description}" has no expectations`)
           }
@@ -120,32 +148,8 @@ export function scenario(name) {
             // Execute custom action
             result = await step.action({ lastResult, context: {} })
           } else {
-            // Execute the command
-            if (typeof runner === 'function') {
-              // Use provided runner function (for testing)
-              result = await runner(step.command.args, step.command.options)
-            } else {
-              // Use default runners
-              const options = {
-                args: step.command.args,
-                ...step.command.options
-              }
-              if (runner === 'local') {
-                options.env = { ...options.env, TEST_CLI: 'true' }
-                // Use provided cwd or default to process.cwd()
-                if (!options.cwd) {
-                  options.cwd = process.cwd()
-                }
-                // Add cliPath if not provided (v0.6.0 requirement)
-                if (!options.cliPath) {
-                  options.cliPath = process.env.TEST_CLI_PATH || './src/cli.mjs'
-                }
-              }
-              result =
-                runner === 'cleanroom'
-                  ? await runCitty(step.command.args, step.command.options)
-                  : await runLocalCitty(options)
-            }
+            // Execute using unified runner
+            result = await executeStep(step, executionMode)
           }
 
           // Apply expectations - let them crash if they fail
@@ -162,8 +166,6 @@ export function scenario(name) {
         // Sort results by original step order
         concurrentResults.sort((a, b) => a.index - b.index)
 
-        // No error handling - let failures crash
-
         // Extract results and lastResult
         for (const concurrentResult of concurrentResults) {
           results.push(concurrentResult)
@@ -174,13 +176,12 @@ export function scenario(name) {
 
         console.log(`🎉 All ${steps.length} concurrent steps completed`)
       } else {
-        // Execute steps sequentially - let failures crash
+        // Execute steps sequentially
         for (const step of steps) {
-          if (!step.command && !step.action) {
-            throw new Error(`Step "${step.description}" has no command or action`)
+          if (!step.args && !step.action) {
+            throw new Error(`Step "${step.description}" has no args or action`)
           }
 
-          // Check if step has expectations (unless it's an action step)
           if (!step.action && step.expectations.length === 0) {
             throw new Error(`Step "${step.description}" has no expectations`)
           }
@@ -193,32 +194,8 @@ export function scenario(name) {
             // Execute custom action
             result = await step.action({ lastResult, context: {} })
           } else {
-            // Execute the command
-            if (typeof runner === 'function') {
-              // Use provided runner function (for testing)
-              result = await runner(step.command.args, step.command.options)
-            } else {
-              // Use default runners
-              const options = {
-                args: step.command.args,
-                ...step.command.options
-              }
-              if (runner === 'local') {
-                options.env = { ...options.env, TEST_CLI: 'true' }
-                // Use provided cwd or default to process.cwd()
-                if (!options.cwd) {
-                  options.cwd = process.cwd()
-                }
-                // Add cliPath if not provided (v0.6.0 requirement)
-                if (!options.cliPath) {
-                  options.cliPath = process.env.TEST_CLI_PATH || './src/cli.mjs'
-                }
-              }
-              result =
-                runner === 'cleanroom'
-                  ? await runCitty(step.command.args, step.command.options)
-                  : await runLocalCitty(options)
-            }
+            // Execute using unified runner
+            result = await executeStep(step, executionMode)
           }
 
           lastResult = result
@@ -239,10 +216,11 @@ export function scenario(name) {
         success: results.every((r) => r.success),
         lastResult,
         concurrent: concurrentMode,
+        mode: executionMode,
       }
     },
 
-    // Convenience methods
+    // Convenience expectation methods
     expectSuccess() {
       return this.expect((result) => result.expectSuccess())
     },
@@ -302,7 +280,7 @@ export function scenario(name) {
 
     // Snapshot step - creates a snapshot without expectations
     snapshot(snapshotName, options = {}) {
-      return this.step(`Snapshot: ${snapshotName}`, async ({ lastResult }) => {
+      return this.action(`Snapshot: ${snapshotName}`, async ({ lastResult }) => {
         if (!lastResult) {
           throw new Error('No previous result available for snapshot')
         }
@@ -314,7 +292,6 @@ export function scenario(name) {
         const snapshotResult = matchSnapshot(snapshotData, testFile, snapshotName, {
           args: lastResult.args,
           env: options.env,
-          // Exclude cwd to avoid temporary directory path mismatches
           ...options,
         })
 
@@ -331,12 +308,36 @@ export function scenario(name) {
     },
   }
 
-  // Add static method to create concurrent scenarios by default
-  builder.constructor.concurrent = function (name) {
-    return scenario(name).concurrent()
-  }
-
   return builder
+}
+
+/**
+ * Execute a single step using the appropriate runner
+ * @private
+ */
+async function executeStep(step, executionMode) {
+  const { args, options } = step
+
+  if (executionMode === 'cleanroom') {
+    // Cleanroom execution
+    return await runCitty(args, {
+      cwd: options.cwd || '/app',
+      env: options.env || {},
+      timeout: options.timeout || 10000,
+    })
+  } else {
+    // Local execution (default)
+    const runOptions = {
+      args,
+      cliPath: options.cliPath || process.env.TEST_CLI_PATH || './src/cli.mjs',
+      cwd: options.cwd || process.env.TEST_CWD || process.cwd(),
+      env: { ...options.env, TEST_CLI: 'true' },
+      timeout: options.timeout || 30000,
+    }
+
+    const result = runLocalCitty(runOptions)
+    return wrapWithAssertions(result)
+  }
 }
 
 // Export concurrent scenario factory function
@@ -425,135 +426,111 @@ export const testUtils = {
 
 // Convenience functions for different runner types
 export function cleanroomScenario(name) {
-  const builder = scenario(name)
-  const originalExecute = builder.execute
-  builder.execute = () => originalExecute('cleanroom')
-  return builder
+  return scenario(name).mode('cleanroom')
 }
 
 export function localScenario(name) {
-  const builder = scenario(name)
-  const originalExecute = builder.execute
-  builder.execute = () => originalExecute('local')
-  return builder
+  return scenario(name).mode('local')
 }
 
-// Pre-built scenario templates
+// Pre-built scenario templates (v1.0.0 API)
 export const scenarioTemplates = {
   help: (options = {}) =>
     scenario('Help command')
-      .step('Show help')
-      .run('--help', options)
+      .step('Show help', '--help', options)
       .expectSuccess()
       .expectOutput(/USAGE/),
 
   version: (options = {}) =>
     scenario('Version check')
-      .step('Get version')
-      .run('--version', options)
+      .step('Get version', '--version', options)
       .expectSuccess()
       .expectOutput(/\d+\.\d+\.\d+/),
 
   invalidCommand: (options = {}) =>
     scenario('Invalid command handling')
-      .step('Run invalid command')
-      .run('invalid-command', options)
+      .step('Run invalid command', 'invalid-command', options)
       .expectFailure()
       .expectStderr(/Unknown command|not found/),
 
   initProject: (projectName = 'test-project', options = {}) =>
     scenario(`Initialize ${projectName}`)
-      .step('Initialize project')
-      .run('init', projectName, options)
+      .step('Initialize project', ['init', projectName], options)
       .expectSuccess()
       .expectOutput(/Initialized/)
-      .step('Check status')
-      .run('status', options)
+      .step('Check status', 'status', options)
       .expectSuccess(),
 
   buildAndTest: (options = {}) =>
     scenario('Build and test workflow')
-      .step('Build project')
-      .run('build', options)
+      .step('Build project', 'build', options)
       .expectSuccess()
       .expectOutput(/Build complete/)
-      .step('Run tests')
-      .run('test', options)
+      .step('Run tests', 'test', options)
       .expectSuccess()
       .expectOutput(/Tests passed/),
 
   // Cleanroom-specific scenarios
   cleanroomInit: (projectName = 'test-project') =>
     cleanroomScenario(`Cleanroom init ${projectName}`)
-      .step('Initialize in cleanroom')
-      .run('init', projectName)
+      .step('Initialize in cleanroom', ['init', projectName])
       .expectSuccess()
-      .step('List files')
-      .run('ls')
+      .step('List files', 'ls')
       .expectSuccess()
       .expectOutput(projectName),
 
   // Local development scenarios
   localDev: (options = {}) =>
     localScenario('Local development')
-      .step('Start dev server')
-      .run('dev', { ...options, env: { NODE_ENV: 'development' } })
+      .step('Start dev server', 'dev', { ...options, env: { NODE_ENV: 'development' } })
       .expectSuccess()
       .expectOutput(/Development server/),
 
   // Snapshot testing scenarios
   snapshotHelp: (options = {}) =>
     scenario('Snapshot help output')
-      .step('Get help')
-      .run('--help', options)
+      .step('Get help', '--help', options)
       .expectSuccess()
       .expectSnapshotStdout('help-output'),
 
   snapshotVersion: (options = {}) =>
     scenario('Snapshot version output')
-      .step('Get version')
-      .run('--version', options)
+      .step('Get version', '--version', options)
       .expectSuccess()
       .expectSnapshotStdout('version-output'),
 
   snapshotError: (options = {}) =>
     scenario('Snapshot error output')
-      .step('Run invalid command')
-      .run('invalid-command', options)
+      .step('Run invalid command', 'invalid-command', options)
       .expectFailure()
       .expectSnapshotStderr('error-output'),
 
   snapshotFull: (options = {}) =>
     scenario('Snapshot full result')
-      .step('Run command')
-      .run('status', options)
+      .step('Run command', 'status', options)
       .expectSuccess()
       .expectSnapshotFull('status-result'),
 
   snapshotWorkflow: (options = {}) =>
     scenario('Snapshot workflow')
-      .step('Initialize project')
-      .run('init', 'test-project', options)
+      .step('Initialize project', ['init', 'test-project'], options)
       .expectSuccess()
       .snapshot('init-output')
-      .step('Check status')
-      .run('status', options)
+      .step('Check status', 'status', options)
       .expectSuccess()
       .snapshot('status-output', { type: 'full' }),
 
   // Cleanroom snapshot scenarios
   cleanroomSnapshot: (options = {}) =>
     cleanroomScenario('Cleanroom snapshot')
-      .step('Run in cleanroom')
-      .run('--version', options)
+      .step('Run in cleanroom', '--version', options)
       .expectSuccess()
       .expectSnapshotStdout('cleanroom-version'),
 
   // Local snapshot scenarios
   localSnapshot: (options = {}) =>
     localScenario('Local snapshot')
-      .step('Run locally')
-      .run('--help', options)
+      .step('Run locally', '--help', options)
       .expectSuccess()
       .expectSnapshotStdout('local-help'),
 }

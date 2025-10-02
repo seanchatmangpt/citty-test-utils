@@ -1,652 +1,461 @@
 # citty-test-utils
 
-> A comprehensive testing framework for CLI applications built with Citty - featuring local & Docker cleanroom execution, fluent assertions, scenario DSL, and fail-fast validation.
+> **v1.0.0** - Unified testing framework for CLI applications with auto-detecting execution modes and vitest config integration
 
-[![npm version](https://badge.fury.io/js/citty-test-utils.svg)](https://www.npmjs.com/package/citty-test-utils)
+[![npm version](https://img.shields.io/npm/v/citty-test-utils.svg)](https://www.npmjs.com/package/citty-test-utils)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/node/v/citty-test-utils.svg)](https://nodejs.org/)
-
----
+[![Node.js Version](https://img.shields.io/node/v/citty-test-utils.svg)](https://nodejs.org)
 
 ## ✨ Features
 
-- 🚀 **Local Runner** - Execute any CLI locally with Zod validation
-- 🐳 **Cleanroom Testing** - Isolated Docker environments with testcontainers
-- 🎭 **Scenario DSL** - Build complex multi-step test workflows
-- ✅ **Fluent Assertions** - Chainable, expressive test assertions
-- 📸 **Snapshot Testing** - Capture and compare CLI output
-- 🔍 **AST Analysis** - Intelligent CLI command discovery
-- ⚡ **Fail-Fast** - Clear errors with actionable suggestions
-- 🔄 **Backward Compatible** - Supports v0.5.1 and v0.6.0 APIs
-
----
+- 🎯 **Unified API** - Single `runCitty()` function for local and cleanroom modes
+- ⚙️ **Config-First** - Configure once in `vitest.config.js`, use everywhere
+- 🔄 **Auto-Detection** - Automatically selects local vs Docker based on config
+- 📝 **Simplified DSL** - `.step(name, args)` - no more `.run()` calls
+- 🐳 **Auto Cleanroom** - Automatic Docker setup/teardown (no manual lifecycle)
+- 🧪 **Fluent Assertions** - Chainable test assertions
+- 📸 **Snapshot Testing** - Built-in snapshot support
+- 🔍 **CLI Coverage** - Analyze command coverage
 
 ## 📦 Installation
 
 ```bash
-npm install citty-test-utils --save-dev
+npm install --save-dev citty-test-utils vitest
 ```
 
 **Requirements:**
-- Node.js ≥ 18.0.0
-- Docker (required for cleanroom testing only)
-
----
+- Node.js 18+
+- Vitest 1.0+
+- Docker (optional, for cleanroom mode)
 
 ## 🚀 Quick Start
 
-### 1. Test Your CLI Locally
+### 1. Configure vitest.config.js
 
 ```javascript
-import { runLocalCitty } from 'citty-test-utils'
-
-// v0.6.0 API - Single options object
-const result = await runLocalCitty({
-  args: ['--help'],
-  cliPath: './src/cli.mjs',
-  cwd: './my-project'
-})
-
-// Fluent assertions
-result
-  .expectSuccess()
-  .expectOutput(/USAGE/)
-  .expectDuration(1000)
-
-console.log('Output:', result.result.stdout)
+// vitest.config.js
+export default {
+  test: {
+    citty: {
+      cliPath: './src/cli.mjs',  // Your CLI entry point
+      cleanroom: {
+        enabled: false  // Set true for Docker isolation
+      }
+    }
+  }
+}
 ```
 
-### 2. Build Multi-Step Scenarios
+### 2. Write Tests
+
+```javascript
+import { describe, it } from 'vitest'
+import { runCitty, scenario } from 'citty-test-utils'
+
+describe('CLI Tests', () => {
+  it('shows help', async () => {
+    // Config comes from vitest.config.js automatically!
+    const result = await runCitty(['--help'])
+
+    result
+      .expectSuccess()
+      .expectOutput(/USAGE/)
+  })
+
+  it('multi-step workflow', async () => {
+    await scenario('Build process')
+      .step('Check version', '--version').expectSuccess()
+      .step('Build prod', ['build', '--prod']).expectSuccess()
+      .execute()  // Auto-detects local vs cleanroom
+  })
+})
+```
+
+### 3. Run Tests
+
+```bash
+npm test
+```
+
+## 🎯 Core API
+
+### runCitty(args, options?)
+
+Unified runner that auto-detects local vs cleanroom mode.
+
+```javascript
+import { runCitty } from 'citty-test-utils'
+
+// Basic usage (uses vitest.config.js settings)
+const result = await runCitty(['--help'])
+
+// Override config
+const result = await runCitty(['test'], {
+  cliPath: './custom-cli.js',
+  timeout: 60000,
+  env: { NODE_ENV: 'production' }
+})
+
+// Force cleanroom mode
+const result = await runCitty(['build'], {
+  cleanroom: { enabled: true }
+})
+```
+
+**Options:**
+- `cliPath` - Path to CLI entry point (defaults from config)
+- `cwd` - Working directory (defaults to process.cwd())
+- `env` - Environment variables
+- `timeout` - Execution timeout in ms
+- `cleanroom.enabled` - Force cleanroom mode
+- `cleanroom.image` - Docker image (default: 'node:20-alpine')
+
+**Config Hierarchy:**
+1. `options` parameter (highest priority)
+2. `vitest.config.js` test.citty section
+3. Environment variables
+4. Smart defaults
+
+### scenario(name)
+
+Simplified scenario DSL for multi-step tests.
 
 ```javascript
 import { scenario } from 'citty-test-utils'
 
 await scenario('User workflow')
-  .step('Show help')
-  .run({ args: ['--help'], cliPath: './src/cli.mjs' })
+  // v1.0.0 API: args combined with step
+  .step('Show help', '--help')
   .expectSuccess()
-  .expectOutput('USAGE')
+  .expectOutput(/USAGE/)
 
-  .step('Initialize project')
-  .run({ args: ['init', 'my-app'], cliPath: './src/cli.mjs' })
-  .expectSuccess()
-  .expectOutput('initialized')
-
-  .execute('local')
-```
-
-### 3. Test in Cleanroom (Docker)
-
-```javascript
-import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
-
-// Setup isolated environment
-await setupCleanroom({ rootDir: '.' })
-
-// Run in Docker container
-const result = await runCitty(['--version'])
-result.expectSuccess()
-
-// Cleanup
-await teardownCleanroom()
-```
-
----
-
-## 📚 Core Concepts
-
-### Local Runner
-
-Execute any CLI file locally with full validation:
-
-```javascript
-const result = await runLocalCitty({
-  args: ['test', '--verbose'],      // CLI arguments
-  cliPath: './bin/cli.js',          // Path to CLI file (REQUIRED)
-  cwd: './my-project',              // Working directory
-  env: { DEBUG: 'true' },           // Environment variables
-  timeout: 30000                     // Timeout in ms (default: 30000)
-})
-```
-
-**Key Points:**
-- `cliPath` is **required** in v0.6.0
-- Uses Zod validation for fail-fast errors
-- Returns wrapped result with fluent assertions
-- Supports relative or absolute paths
-
-### Scenario DSL
-
-Build complex test workflows with the scenario DSL:
-
-```javascript
-await scenario('Complete workflow')
-  // String signature (simplest)
-  .step('Help')
-  .run('--help')
-  .expectSuccess()
-
-  // Array + options (v0.5.1 backward compatible)
-  .step('Version')
-  .run(['--version'], { cwd: './project' })
-  .expectSuccess()
-
-  // Object (v0.6.0 full control)
-  .step('Build')
-  .run({
-    args: ['build'],
-    cliPath: './bin/cli.js',
-    cwd: './project',
-    env: { NODE_ENV: 'production' }
-  })
+  .step('Build project', ['build', '--prod'])
   .expectSuccess()
   .expectOutput('Build complete')
 
-  .execute('local')
+  .step('Run tests', ['test', '--coverage'])
+  .expectSuccess()
+
+  .execute()  // Auto-detects mode from config
 ```
 
-**3 Signature Types Supported:**
-1. **String**: `.run('--help')` - Auto-splits arguments
-2. **Array + Options**: `.run(['--help'], { cwd: './path' })` - v0.5.1 style
-3. **Object**: `.run({ args: ['--help'], cliPath: 'cli.js' })` - v0.6.0 full control
+**Methods:**
+- `.step(name, args, options?)` - Define test step with args
+- `.expectSuccess()` - Assert exit code 0
+- `.expectFailure()` - Assert non-zero exit code
+- `.expectExit(code)` - Assert specific exit code
+- `.expectOutput(pattern)` - Assert stdout matches pattern
+- `.expectError(pattern)` - Assert stderr matches pattern
+- `.concurrent()` - Run steps in parallel
+- `.execute()` - Run scenario (auto-detects mode)
 
 ### Fluent Assertions
 
-Chain assertions for expressive tests:
+All results include chainable assertions:
 
 ```javascript
 result
-  .expectSuccess()              // Exit code 0
-  .expectFailure()              // Exit code non-zero
-  .expectExit(1)                // Specific exit code
-  .expectOutput('text')         // stdout contains text
-  .expectOutput(/regex/)        // stdout matches regex
-  .expectStderr('error')        // stderr contains text
-  .expectDuration(1000)         // Duration <= 1000ms
-  .expectJson(json => {         // Parse and validate JSON
-    expect(json.status).toBe('ok')
-  })
+  .expectSuccess()           // Exit code 0
+  .expectFailure()           // Exit code != 0
+  .expectExit(1)            // Specific exit code
+  .expectOutput(/pattern/)   // Stdout matches
+  .expectStderr(/error/)     // Stderr matches
+  .expectOutputLength(10)    // Min output length
 ```
 
----
-
-## 🎯 API Reference
-
-### runLocalCitty(options)
-
-Execute CLI locally with validation.
-
-**Options:**
-```typescript
-{
-  args: string[]           // CLI arguments (REQUIRED)
-  cliPath: string         // Path to CLI file (REQUIRED)
-  cwd?: string            // Working directory (default: process.cwd())
-  env?: Record<string, string>  // Environment variables
-  timeout?: number        // Timeout in ms (default: 30000)
-}
-```
-
-**Returns:** `AssertionResult` with fluent methods
-
-**Example:**
-```javascript
-const result = await runLocalCitty({
-  args: ['build', '--prod'],
-  cliPath: './dist/cli.js',
-  cwd: '/absolute/path/to/project',
-  env: { NODE_ENV: 'production' },
-  timeout: 60000
-})
-```
-
-### runLocalCittySafe(options)
-
-Same as `runLocalCitty` but catches errors and returns result object instead of throwing.
-
-**Use when:** You expect the command might fail and want to handle it gracefully.
-
-```javascript
-const result = await runLocalCittySafe({
-  args: ['might-fail'],
-  cliPath: './cli.js'
-})
-
-if (result.success) {
-  console.log('Success:', result.stdout)
-} else {
-  console.log('Failed:', result.stderr)
-}
-```
-
-### scenario(name)
-
-Create a multi-step test scenario.
-
-**Methods:**
-- `.step(description)` - Add a step
-- `.run(args, options?)` - Execute command (3 signatures)
-- `.expect(fn)` - Custom assertion
-- `.expectSuccess()` - Expect exit code 0
-- `.expectFailure()` - Expect non-zero exit code
-- `.expectOutput(pattern)` - Expect stdout matches
-- `.expectStderr(pattern)` - Expect stderr matches
-- `.execute(runner)` - Run scenario ('local' or 'cleanroom')
-- `.concurrent()` - Run steps in parallel
-- `.sequential()` - Run steps in sequence (default)
-
-**Example:**
-```javascript
-await scenario('E2E Test')
-  .step('Setup')
-  .run({ args: ['init'], cliPath: './cli.js' })
-  .expectSuccess()
-
-  .step('Build')
-  .run({ args: ['build'], cliPath: './cli.js' })
-  .expectSuccess()
-  .expectOutput('✓ Build complete')
-
-  .step('Test')
-  .run({ args: ['test'], cliPath: './cli.js' })
-  .expectSuccess()
-
-  .execute('local')
-```
-
-### setupCleanroom(options)
-
-Create isolated Docker environment for testing.
-
-**Options:**
-```typescript
-{
-  rootDir?: string        // Directory to copy (default: '.')
-  nodeImage?: string      // Docker image (default: 'node:20-alpine')
-  memoryLimit?: string    // Memory limit (default: '512m')
-  cpuLimit?: string       // CPU limit (default: '1.0')
-  timeout?: number        // Startup timeout (default: 60000)
-}
-```
-
-**Example:**
-```javascript
-await setupCleanroom({
-  rootDir: './my-app',
-  nodeImage: 'node:20-alpine',
-  memoryLimit: '1g'
-})
-```
-
-### runCitty(args, options)
-
-Execute CLI in cleanroom container.
-
-**Example:**
-```javascript
-const result = await runCitty(
-  ['build', '--prod'],
-  {
-    cwd: '/app',
-    env: { NODE_ENV: 'production' },
-    timeout: 30000
-  }
-)
-```
-
-### teardownCleanroom()
-
-Stop and remove cleanroom container.
-
-```javascript
-await teardownCleanroom()
-```
-
----
-
-## 🔧 Advanced Features
-
-### Snapshot Testing
-
-Capture and compare CLI output:
-
-```javascript
-import { scenario } from 'citty-test-utils'
-
-await scenario('Snapshot test')
-  .step('Capture help output')
-  .run({ args: ['--help'], cliPath: './cli.js' })
-  .expectSuccess()
-  .expectSnapshotStdout('help-output')
-  .execute('local')
-```
-
-**Snapshot Methods:**
-- `.expectSnapshot(name)` - Full result snapshot
-- `.expectSnapshotStdout(name)` - stdout only
-- `.expectSnapshotStderr(name)` - stderr only
-- `.expectSnapshotJson(name)` - JSON output
-- `.expectSnapshotFull(name)` - Complete result
-
-### Concurrent Execution
-
-Run steps in parallel for faster tests:
-
-```javascript
-await scenario('Parallel tests')
-  .concurrent()  // Enable parallel mode
-
-  .step('Test 1').run({ args: ['test1'], cliPath: './cli.js' })
-  .step('Test 2').run({ args: ['test2'], cliPath: './cli.js' })
-  .step('Test 3').run({ args: ['test3'], cliPath: './cli.js' })
-
-  .execute('local')
-```
-
-### Custom Assertions
-
-Add your own assertion logic:
-
-```javascript
-await scenario('Custom validation')
-  .step('Check output')
-  .run({ args: ['status'], cliPath: './cli.js' })
-  .expect(result => {
-    const lines = result.stdout.split('\n')
-    if (lines.length < 5) {
-      throw new Error('Expected at least 5 lines of output')
-    }
-  })
-  .execute('local')
-```
-
-### Pre-built Scenario Templates
-
-Use ready-made scenarios for common patterns:
-
-```javascript
-import { scenarioTemplates } from 'citty-test-utils'
-
-// Help command test
-await scenarioTemplates.help({ cliPath: './cli.js' }).execute('local')
-
-// Version check
-await scenarioTemplates.version({ cliPath: './cli.js' }).execute('local')
-
-// Invalid command handling
-await scenarioTemplates.invalidCommand({ cliPath: './cli.js' }).execute('local')
-```
-
----
-
-## 🎨 Usage Examples
+## 📖 Usage Examples
 
 ### Example 1: Basic CLI Testing
 
 ```javascript
-import { runLocalCitty } from 'citty-test-utils'
+import { describe, it } from 'vitest'
+import { runCitty } from 'citty-test-utils'
 
-describe('CLI Tests', () => {
-  test('shows help', async () => {
-    const result = await runLocalCitty({
-      args: ['--help'],
-      cliPath: './bin/my-cli.js'
-    })
+describe('CLI Basic Tests', () => {
+  it('displays version', async () => {
+    const result = await runCitty(['--version'])
 
     result
       .expectSuccess()
-      .expectOutput('Usage:')
-      .expectOutput('Commands:')
+      .expectOutput(/\d+\.\d+\.\d+/)
   })
 
-  test('handles errors', async () => {
-    const result = await runLocalCittySafe({
-      args: ['invalid-command'],
-      cliPath: './bin/my-cli.js'
-    })
+  it('shows help text', async () => {
+    const result = await runCitty(['--help'])
 
-    expect(result.exitCode).toBe(1)
-    expect(result.stderr).toContain('Unknown command')
+    result
+      .expectSuccess()
+      .expectOutput(/USAGE/)
+      .expectOutput(/OPTIONS/)
   })
 })
 ```
 
-### Example 2: E2E Workflow
+### Example 2: Multi-Step Scenarios
 
 ```javascript
 import { scenario } from 'citty-test-utils'
 
-test('complete user workflow', async () => {
-  const result = await scenario('User creates and builds project')
-    .step('Initialize project')
-    .run({
-      args: ['init', 'my-app'],
-      cliPath: './bin/cli.js',
-      cwd: '/tmp/test'
-    })
-    .expectSuccess()
-    .expectOutput('Project initialized')
-
-    .step('Install dependencies')
-    .run({
-      args: ['install'],
-      cliPath: './bin/cli.js',
-      cwd: '/tmp/test/my-app'
-    })
-    .expectSuccess()
-
-    .step('Build project')
-    .run({
-      args: ['build', '--prod'],
-      cliPath: './bin/cli.js',
-      cwd: '/tmp/test/my-app'
-    })
-    .expectSuccess()
-    .expectOutput('Build complete')
-    .expectDuration(10000)
-
-    .execute('local')
-
-  expect(result.success).toBe(true)
-})
-```
-
-### Example 3: Cleanroom Testing
-
-```javascript
-import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
-
-describe('Cleanroom Tests', () => {
-  beforeAll(async () => {
-    await setupCleanroom({ rootDir: '.' })
-  })
-
-  afterAll(async () => {
-    await teardownCleanroom()
-  })
-
-  test('builds in clean environment', async () => {
-    const result = await runCitty(['build'])
-
-    result
+describe('Project Workflow', () => {
+  it('initializes and builds project', async () => {
+    await scenario('Full workflow')
+      .step('Initialize', ['init', 'my-project'])
       .expectSuccess()
-      .expectOutput('Build successful')
-  })
+      .expectOutput('Created my-project')
 
-  test('tests pass in isolation', async () => {
-    const result = await runCitty(['test'])
-
-    result
+      .step('Install deps', ['install'], { cwd: './my-project' })
       .expectSuccess()
-      .expectOutput(/\d+ passing/)
+
+      .step('Build', ['build'], { cwd: './my-project' })
+      .expectSuccess()
+      .expectOutput('Build complete')
+
+      .execute()
   })
 })
 ```
 
-### Example 4: Monorepo Testing
+### Example 3: Cleanroom (Docker) Testing
 
 ```javascript
-import { runLocalCitty } from 'citty-test-utils'
+describe('Isolated Tests', () => {
+  it('runs in Docker container', async () => {
+    // Override config to force cleanroom
+    const result = await runCitty(['build', '--prod'], {
+      cleanroom: {
+        enabled: true,
+        image: 'node:20-alpine',
+        timeout: 60000
+      }
+    })
 
-// Test CLI in packages/cli
-const cliResult = await runLocalCitty({
-  args: ['build'],
-  cliPath: './packages/cli/bin/cli.js',
-  cwd: './packages/app'
-})
-
-// Test different package
-const adminResult = await runLocalCitty({
-  args: ['deploy'],
-  cliPath: './packages/admin/bin/admin-cli.js',
-  cwd: './packages/admin'
-})
-```
-
----
-
-## 🔄 Migration Guide
-
-### From v0.5.1 to v0.6.0/v0.6.1
-
-**Key Changes:**
-1. API signature changed to single options object
-2. `cliPath` is now required (with defaults)
-3. Scenario DSL supports 3 signature types for backward compatibility
-
-**Old API (v0.5.1):**
-```javascript
-// ❌ No longer works
-await runLocalCitty(['--help'], {
-  cwd: './project'
-})
-```
-
-**New API (v0.6.0+):**
-```javascript
-// ✅ Required in v0.6.0
-await runLocalCitty({
-  args: ['--help'],
-  cliPath: './src/cli.mjs',  // Now required
-  cwd: './project'
-})
-```
-
-**Scenario DSL - Still Works!**
-```javascript
-// ✅ Old v0.5.1 style still supported
-await scenario('Test')
-  .step('Help')
-  .run(['--help'], { cwd: './project' })
-  .execute('local')
-
-// ✅ New v0.6.0 style also works
-await scenario('Test')
-  .step('Help')
-  .run({
-    args: ['--help'],
-    cliPath: './cli.js',
-    cwd: './project'
+    result.expectSuccess()
   })
-  .execute('local')
+})
 ```
 
-**Auto-Configuration:**
+Or configure globally in `vitest.config.js`:
 
-v0.6.0+ auto-adds missing parameters:
-- `cliPath`: Uses `process.env.TEST_CLI_PATH` or `'./src/cli.mjs'`
-- `cwd`: Defaults to `process.cwd()`
-- `env.TEST_CLI`: Auto-set to `'true'` for local runner
+```javascript
+export default {
+  test: {
+    citty: {
+      cliPath: './src/cli.mjs',
+      cleanroom: {
+        enabled: true  // All tests use Docker
+      }
+    }
+  }
+}
+```
 
-**Set Defaults:**
+### Example 4: Snapshot Testing
+
+```javascript
+import { runCitty, matchSnapshot } from 'citty-test-utils'
+
+describe('Output Snapshots', () => {
+  it('matches help output snapshot', async () => {
+    const result = await runCitty(['--help'])
+
+    result.expectSuccess()
+    matchSnapshot(result.stdout, 'help-output')
+  })
+})
+```
+
+## ⚙️ Configuration
+
+### vitest.config.js
+
+```javascript
+export default {
+  test: {
+    // citty-test-utils configuration
+    citty: {
+      // Required: CLI entry point
+      cliPath: './src/cli.mjs',
+
+      // Optional: working directory
+      cwd: process.cwd(),
+
+      // Optional: cleanroom settings
+      cleanroom: {
+        enabled: false,          // Enable Docker isolation
+        image: 'node:20-alpine', // Docker image
+        timeout: 30000,          // Timeout in ms
+        env: {                   // Environment variables
+          NODE_ENV: 'test'
+        }
+      }
+    },
+
+    // Standard vitest config
+    globals: true,
+    testTimeout: 30000
+  }
+}
+```
+
+### Environment Variables
+
 ```bash
-# In your environment or package.json
-export TEST_CLI_PATH="./bin/my-cli.js"
+# Override cliPath
+export TEST_CLI_PATH=./custom-cli.js
+
+# Override working directory
+export TEST_CWD=/path/to/project
 ```
 
-See full [Migration Guide](./docs/MIGRATION-v0.5.1-to-v0.6.0.md) for details.
+### Config Priority
 
----
+1. Function `options` parameter (highest)
+2. `vitest.config.js` test.citty section
+3. Environment variables
+4. Defaults (lowest)
 
-## 🐛 Troubleshooting
+## 🔧 Advanced Features
 
-### Error: "CLI file not found"
+### Auto Cleanroom Lifecycle
 
-**Problem:** `cliPath` is incorrect or file doesn't exist
+No manual setup/teardown needed! Just enable in config:
 
-**Solution:**
 ```javascript
-// ✅ Use absolute path
-await runLocalCitty({
-  args: ['--help'],
-  cliPath: '/absolute/path/to/cli.js'
-})
+// vitest.config.js
+export default {
+  test: {
+    citty: {
+      cleanroom: { enabled: true }
+    }
+  }
+}
+```
 
-// ✅ Or verify relative path
+Tests automatically run in Docker with cleanup:
+
+```javascript
+// No beforeAll/afterAll needed!
+it('runs isolated', async () => {
+  const result = await runCitty(['test'])
+  result.expectSuccess()
+})
+```
+
+### Concurrent Scenarios
+
+```javascript
+await scenario('Parallel tests')
+  .concurrent()  // Enable parallel execution
+  .step('Test 1', 'test-1')
+  .step('Test 2', 'test-2')
+  .step('Test 3', 'test-3')
+  .execute()
+```
+
+### Custom Assertions
+
+```javascript
+result.expect(result => {
+  if (!result.stdout.includes('custom')) {
+    throw new Error('Custom check failed')
+  }
+})
+```
+
+## 📊 What's New in v1.0.0
+
+### Breaking Changes ⚠️
+
+1. **Unified API**: `runCitty()` replaces `runLocalCitty()` and cleanroom setup
+2. **Scenario DSL**: `.step(name, args)` instead of `.step(name).run(args)`
+3. **Config-First**: Configure in `vitest.config.js` instead of every test
+4. **Auto Cleanroom**: No manual setup/teardown needed
+
+### Migration from v0.6.x
+
+**Old API (v0.6.x):**
+```javascript
+import { runLocalCitty, setupCleanroom } from 'citty-test-utils'
+
 await runLocalCitty({
   args: ['--help'],
   cliPath: './src/cli.mjs',
-  cwd: '/absolute/path/to/project'
+  cwd: process.cwd()
 })
 ```
 
-### Error: "Invalid input: expected object, received array"
-
-**Problem:** Using old v0.5.1 API with runLocalCitty
-
-**Solution:**
+**New API (v1.0.0):**
 ```javascript
-// ❌ Old API (v0.5.1)
-await runLocalCitty(['--help'], { cwd: './path' })
+import { runCitty } from 'citty-test-utils'
 
-// ✅ New API (v0.6.0+)
-await runLocalCitty({
-  args: ['--help'],
-  cliPath: './cli.js',
-  cwd: './path'
+// Config from vitest.config.js
+await runCitty(['--help'])
+```
+
+See [Migration Guide](./docs/v1.0.0-MIGRATION.md) for complete details.
+
+## 🐛 Troubleshooting
+
+### Error: "CLI path not configured"
+
+**Solution:** Add `cliPath` to vitest.config.js:
+
+```javascript
+export default {
+  test: {
+    citty: {
+      cliPath: './src/cli.mjs'
+    }
+  }
+}
+```
+
+### Error: "Cannot find module"
+
+**Solution:** Check cliPath is correct:
+
+```javascript
+const result = await runCitty(['--help'], {
+  cliPath: './src/cli.mjs'  // Absolute or relative to cwd
 })
 ```
 
-### Error: "does not provide an export named 'runCitty'"
+### Cleanroom not working
 
-**Problem:** Using v0.6.0 (fixed in v0.6.1)
+**Solution:** Enable in config:
 
-**Solution:**
-```bash
-# Upgrade to v0.6.1
-npm install citty-test-utils@0.6.1
+```javascript
+export default {
+  test: {
+    citty: {
+      cleanroom: { enabled: true }
+    }
+  }
+}
 ```
 
-### Docker Issues
+Or per-test:
 
-**Problem:** Cleanroom tests fail with Docker errors
-
-**Solution:**
-```bash
-# Check Docker is running
-docker info
-
-# Verify Docker daemon
-docker ps
-
-# Check Docker version
-docker --version
+```javascript
+const result = await runCitty(['test'], {
+  cleanroom: { enabled: true }
+})
 ```
 
----
+## 📚 Documentation
+
+- [Migration Guide](./docs/v1.0.0-MIGRATION.md)
+- [Release Notes](./docs/v1.0.0-RELEASE.md)
+- [Changelog](./CHANGELOG.md)
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
-
-### Development Setup
-
 ```bash
-# Clone repository
-git clone https://github.com/seanchatmangpt/citty-test-utils.git
+# Clone repo
+git clone https://github.com/seanchatmangpt/citty-test-utils
 cd citty-test-utils
 
-# Install dependencies
+# Install deps
 npm install
 
 # Run tests
@@ -655,51 +464,22 @@ npm test
 # Run specific tests
 npm run test:unit
 npm run test:integration
-npm run test:cleanroom
 ```
 
----
-
-## 📖 Documentation
-
-- [API Documentation](./docs/api/README.md)
-- [Migration Guide](./docs/MIGRATION-v0.5.1-to-v0.6.0.md)
-- [Best Practices](./docs/guides/best-practices.md)
-- [Troubleshooting](./docs/guides/troubleshooting.md)
-- [Examples](./docs/examples/README.md)
-- [Changelog](./CHANGELOG.md)
-
----
-
-## 📄 License
+## 📝 License
 
 MIT © [GitVan Team](https://github.com/seanchatmangpt)
 
----
-
 ## 🙏 Acknowledgments
 
-- Built with [Citty](https://github.com/unjs/citty) - Modern CLI framework
-- Powered by [testcontainers](https://github.com/testcontainers/testcontainers-node) - Docker testing
-- Validated with [Zod](https://github.com/colinhacks/zod) - TypeScript-first schema validation
+Built with:
+- [Citty](https://github.com/unjs/citty) - CLI framework
+- [Vitest](https://vitest.dev) - Test framework
+- [Testcontainers](https://node.testcontainers.org/) - Docker integration
+- [Zod](https://zod.dev) - Schema validation
 
 ---
 
-## ⭐ Support
+**Need help?** [Open an issue](https://github.com/seanchatmangpt/citty-test-utils/issues)
 
-If you find this package helpful, please consider:
-
-- ⭐ Starring the [GitHub repository](https://github.com/seanchatmangpt/citty-test-utils)
-- 🐛 [Reporting issues](https://github.com/seanchatmangpt/citty-test-utils/issues)
-- 📝 [Contributing improvements](https://github.com/seanchatmangpt/citty-test-utils/pulls)
-- 📢 Sharing with the community
-
----
-
-<div align="center">
-
-**[Documentation](./docs/README.md)** • **[Examples](./docs/examples/README.md)** • **[API Reference](./docs/api/README.md)** • **[Changelog](./CHANGELOG.md)**
-
-Made with ❤️ by the GitVan Team
-
-</div>
+**Love citty-test-utils?** Give us a ⭐ on [GitHub](https://github.com/seanchatmangpt/citty-test-utils)!
