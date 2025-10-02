@@ -1,1195 +1,705 @@
 # citty-test-utils
 
-A comprehensive testing framework for CLI applications built with Citty, featuring Docker cleanroom support, fluent assertions, advanced scenario DSL, and intelligent AST-based analysis.
+> A comprehensive testing framework for CLI applications built with Citty - featuring local & Docker cleanroom execution, fluent assertions, scenario DSL, and fail-fast validation.
 
-[![npm version](https://badge.fury.io/js/citty-test-utils.svg)](https://badge.fury.io/js/citty-test-utils)
+[![npm version](https://badge.fury.io/js/citty-test-utils.svg)](https://www.npmjs.com/package/citty-test-utils)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/node/v/citty-test-utils.svg)](https://nodejs.org/)
 
-> **Tested environment**: macOS with Node.js v22.12 and Docker Desktop 28.0.4. All quick-start commands were executed from the repository root.
+---
 
-## ⚡ Quick Start
+## ✨ Features
 
-### Requirements
+- 🚀 **Local Runner** - Execute any CLI locally with Zod validation
+- 🐳 **Cleanroom Testing** - Isolated Docker environments with testcontainers
+- 🎭 **Scenario DSL** - Build complex multi-step test workflows
+- ✅ **Fluent Assertions** - Chainable, expressive test assertions
+- 📸 **Snapshot Testing** - Capture and compare CLI output
+- 🔍 **AST Analysis** - Intelligent CLI command discovery
+- ⚡ **Fail-Fast** - Clear errors with actionable suggestions
+- 🔄 **Backward Compatible** - Supports v0.5.1 and v0.6.0 APIs
+
+---
+
+## 📦 Installation
+
+```bash
+npm install citty-test-utils --save-dev
+```
+
+**Requirements:**
 - Node.js ≥ 18.0.0
-- Docker (required for cleanroom testing)
-
-### Install
-```bash
-npm install citty-test-utils
-```
-
-## 💡 Philosophy
-
-### Fail-Fast Behavior
-Citty Test Utils follows a strict fail-fast philosophy for reliable testing:
-
-- **No Silent Failures**: Errors are never hidden or suppressed
-- **Clear Error Messages**: Every failure includes actionable suggestions
-- **Immediate Exit**: Commands exit with code 1 on any error
-- **Full Context**: Verbose mode shows complete stack traces and debugging info
-- **No Graceful Degradation**: If something fails, you know immediately
-
-**Example Error:**
-```bash
-$ ctu analysis discover --entry-file ./missing.js
-❌ CLI entry file not found: /path/to/missing.js
-
-💡 Tip: Use --entry-file with a valid path:
-  $ ctu analyze --entry-file ./path/to/your/cli.js
-```
-
-### Flexible CLI Testing
-Test **ANY** file as your CLI entry point - no restrictions on file location:
-
-```bash
-# Auto-detection (from package.json or common paths)
-ctu analysis discover
-
-# Explicit file selection - works with ANY structure
-ctu analysis discover --entry-file ./my-cli.js
-ctu analysis discover --entry-file ./packages/cli/src/index.mjs
-ctu analysis discover --entry-file ./bin/custom-cli.mjs
-ctu analysis discover --entry-file ./dist/compiled-cli.js
-```
-
-**Supported Entry Points:**
-- Any JavaScript file: `.js`, `.mjs`, `.cjs`
-- TypeScript files: `.ts`, `.mts`, `.cts`
-- Relative or absolute paths
-- Anywhere in your project structure
-- Monorepo support
-
-**Auto-Detection Strategies:**
-1. **package.json bin field** (high confidence)
-2. **Common patterns**: `src/cli.mjs`, `cli.mjs`, `bin/cli.mjs`
-3. **Parent directory search** (up to 5 levels)
-4. **Validated fallback** to `src/cli.mjs`
-
-### Inspect the toolkit CLI
-```bash
-node src/cli.mjs --show-help
-```
-Lists nouns such as `test`, `gen`, `runner`, `info`, and `analysis`.
-
-### Drive the bundled playground locally
-```javascript
-import { runLocalCitty } from 'citty-test-utils'
-
-const help = await runLocalCitty(['--help'], {
-  cwd: './playground',
-  env: { TEST_CLI: 'true' },
-})
-
-help.expectSuccess().expectOutput('USAGE')
-console.log(help.result.stdout.split('
-')[0])
-```
-Expected first line: `Test CLI for citty-test-utils (test-cli v1.0.0)`.
-
-### Build a multi-step scenario
-```javascript
-import { scenario } from 'citty-test-utils'
-
-await scenario('Playground smoke test')
-  .step('Show help')
-  .run('--help', { cwd: './playground', env: { TEST_CLI: 'true' } })
-  .expectSuccess()
-  .expectOutput('USAGE')
-  .step('Reject invalid command')
-  .run('invalid-command', { cwd: './playground', env: { TEST_CLI: 'true' } })
-  .expectFailure()
-  .execute('local')
-```
-
-### Run inside Docker cleanroom
-```javascript
-import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
-
-await setupCleanroom({ rootDir: './playground' })
-const info = await runCitty(['--help'])
-info.expectSuccess().expectOutput('USAGE')
-console.log(info.result.stdout.split('
-')[0])
-await teardownCleanroom()
-```
-CLI shortcut (auto-starts the cleanroom):
-```bash
-node src/cli.mjs test run --environment cleanroom
-```
-
-### Generator commands
-```bash
-node src/cli.mjs gen project demo-project
-node src/cli.mjs gen test help-check
-```
-Generated files are written to a managed temporary directory (e.g. `~/.cache/tmp/...`). Copy what you need before the cleanup job runs.
-
-### Fast unit-test subset
-```bash
-npx vitest run test/unit/local-runner.test.mjs test/unit/scenario-dsl.test.mjs --reporter=verbose
-```
-`npm test` executes the full suite (integration, Docker, snapshot, analysis) and may require snapshot updates and additional resources.
-
-### Analysis commands (✅ Working with --entry-file)
-```bash
-# Auto-detection (recommended)
-node src/cli.mjs analysis discover --verbose
-node src/cli.mjs analysis coverage --test-dir test
-node src/cli.mjs analysis recommend --priority high
-
-# Explicit file selection (for flexibility)
-node src/cli.mjs analysis discover --entry-file ./custom/cli.js
-node src/cli.mjs analysis coverage --entry-file ./packages/cli/src/index.mjs
-node src/cli.mjs analysis recommend --entry-file ./bin/my-cli.mjs
-```
-All analysis commands support both auto-detection and explicit `--entry-file` flag.
-
-### Runner commands (✅ Working)
-```bash
-# Local runner - executes CLI commands locally
-node src/cli.mjs runner local "--help"
-node src/cli.mjs runner local "gen project test-app"
-
-# Cleanroom runner - executes in Docker container
-node src/cli.mjs runner cleanroom "--version"
-node src/cli.mjs runner cleanroom "info version"
-```
-Runner commands now fully implemented with fluent assertions and error handling.
-
-### CLI Auto-Detection with --entry-file
-
-All analysis commands support flexible CLI entry point selection:
-
-```bash
-# Auto-detection (recommended) - just run from your project root
-npx citty-test-utils analysis discover
-npx citty-test-utils analysis coverage
-npx citty-test-utils analysis recommend
-
-# Explicit file selection with --entry-file (for custom structures)
-npx citty-test-utils analysis discover --entry-file ./my-cli.js
-npx citty-test-utils analysis discover --entry-file ./packages/cli/src/index.mjs
-npx citty-test-utils analysis discover --entry-file ./bin/custom-cli.mjs
-
-# Legacy --cli-path also supported
-npx citty-test-utils analysis discover --cli-path custom/path/cli.mjs
-```
-
-**Why Use --entry-file?**
-- **Monorepo Support**: Analyze CLIs in packages subdirectory
-- **Custom Structure**: Works with any project organization
-- **Multiple CLIs**: Test different entry points in same project
-- **Dist Files**: Analyze compiled/bundled CLI files
-
-**Detection Strategies (tried in order):**
-
-1. **Explicit --entry-file flag** (Highest priority)
-   - Direct path to any CLI file in your project
-   - Validates file exists and is JavaScript/TypeScript
-   - Works with relative or absolute paths
-
-2. **package.json bin field** (High confidence)
-   - Reads your package.json and finds the bin entry
-   - Most reliable method for published CLIs
-
-3. **Common file patterns** (Medium confidence)
-   - Searches for: `src/cli.mjs`, `cli.mjs`, `bin/cli.mjs`, `index.mjs`
-   - Also checks `.js` extensions
-
-4. **Parent directory search** (Medium confidence)
-   - Traverses up to 5 parent directories looking for package.json
-   - Useful when running from subdirectories
-
-5. **Default with validation** (Low confidence)
-   - Falls back to `src/cli.mjs` but validates it exists
-   - Shows helpful error message if detection fails
-
-**Verbose Mode:**
-```bash
-# See the full detection process
-npx citty-test-utils analysis discover --verbose
-# Output:
-# 🔍 Resolving explicit CLI entry: src/cli.mjs
-# ✅ Resolved CLI entry: /path/to/src/cli.mjs
-# 🔍 Starting CLI structure discovery...
-```
-
-**Error Handling (Fail-Fast):**
-If file not found, you'll see a clear error with suggestions:
-```
-❌ CLI entry file not found: /path/to/missing.js
-
-Suggestion: Use --entry-file with a valid path:
-  $ ctu analyze --entry-file ./path/to/your/cli.js
-```
+- Docker (required for cleanroom testing only)
 
 ---
 
-## 🏗️ **Architecture**
+## 🚀 Quick Start
 
-citty-test-utils follows a clean, modular architecture with clear separation of concerns:
-
-### Core Components
-
-```
-src/
-├── core/                    # Core functionality (business logic)
-│   ├── runners/             # Test execution engines
-│   │   ├── local-runner.js      # Local CLI execution
-│   │   └── cleanroom-runner.js  # Docker container execution
-│   ├── coverage/            # Coverage analysis tools
-│   │   ├── ast-cli-analyzer.js      # AST-based analysis
-│   │   ├── cli-coverage-analyzer.js # Coverage computation
-│   │   └── discovery/               # Command & test discovery
-│   ├── scenarios/           # Test scenario library
-│   │   ├── scenario-dsl.js          # Scenario DSL builder
-│   │   └── scenarios.js             # Pre-built scenarios
-│   ├── assertions/          # Fluent assertion API
-│   │   ├── assertions.js            # Assertion methods
-│   │   └── snapshot.js              # Snapshot testing
-│   ├── utils/               # Shared utilities
-│   │   ├── smart-cli-detector.js    # Auto CLI detection
-│   │   ├── analysis-report-utils.js # Report generation
-│   │   └── context-manager.js       # Execution context
-│   └── cache/               # Performance caching
-│       └── ast-cache.js             # AST result caching
-│
-└── commands/                # CLI command layer (thin wrappers)
-    ├── runner/              # Runner command wrappers
-    │   ├── local.js             # Wraps core/runners/local-runner
-    │   └── cleanroom.js         # Wraps core/runners/cleanroom-runner
-    ├── analysis/            # Analysis command wrappers
-    │   ├── discover.js          # CLI structure discovery
-    │   ├── coverage.js          # Coverage analysis
-    │   └── recommend.js         # Test recommendations
-    ├── test/                # Test execution commands
-    ├── gen/                 # Template generation commands
-    └── info/                # Information commands
-```
-
-### Design Principles
-
-1. **Core vs Commands Separation**
-   - `core/`: Pure business logic, testable, reusable
-   - `commands/`: Thin CLI wrappers that call core functionality
-
-2. **Shared Utilities**
-   - Eliminate code duplication across commands
-   - Centralized error handling and validation
-   - Consistent reporting and output formatting
-
-3. **Modular Architecture**
-   - Each component has a single responsibility
-   - Easy to test, maintain, and extend
-   - Clear dependencies and interfaces
-
-4. **Performance Optimization**
-   - AST caching for faster analysis
-   - Lazy loading of heavy dependencies
-   - Efficient command detection strategies
-
----
-
-## 🧪 **Core Testing Framework**
-
-citty-test-utils provides a complete testing ecosystem for CLI applications with three powerful execution environments:
-
-### **🏃 Local Runner**
-Execute CLI commands locally with full control over environment and working directory.
+### 1. Test Your CLI Locally
 
 ```javascript
 import { runLocalCitty } from 'citty-test-utils'
 
-const result = await runLocalCitty(['--help'], {
-  cwd: './my-cli-project',
-  env: { DEBUG: 'true' },
-  timeout: 30000
-})
-
-result
-  .expectSuccess()
-  .expectOutput('USAGE')
-  .expectNoStderr()
-```
-
-### **🐳 Cleanroom Runner** 
-Execute commands in isolated Docker containers for consistent, reproducible testing.
-
-```javascript
-import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
-
-await setupCleanroom({ rootDir: './my-cli-project' })
-
-const result = await runCitty(['--version'])
-result.expectSuccess().expectOutput(/\d+\.\d+\.\d+/)
-
-await teardownCleanroom()
-```
-
-### **🔗 Fluent Assertions**
-Chainable expectation API with detailed error messages and comprehensive validation.
-
-```javascript
-result
-  .expectSuccess()                    // expectExit(0)
-  .expectFailure()                   // Expect non-zero exit code
-  .expectExit(0)                     // Check specific exit code
-  .expectOutput('Usage:')            // String match
-  .expectOutput(/playground/)        // Regex match
-  .expectOutputContains('commands')  // Contains text
-  .expectNoStderr()                  // Expect empty stderr
-  .expectOutputLength(10, 100)      // Check output length range
-  .expectJson(data => {              // JSON validation
-    expect(data.version).toBeDefined()
-  })
-```
-
-### **📋 Scenario DSL**
-Build complex multi-step test workflows with step-by-step execution and custom actions.
-
-```javascript
-import { scenario } from 'citty-test-utils'
-
-const result = await scenario('Complete workflow')
-  .step('Get help')
-  .run('--help')
-  .expectSuccess()
-  .expectOutput('USAGE')
-  .step('Get version')
-  .run('--version')
-  .expectSuccess()
-  .expectOutput(/\d+\.\d+\.\d+/)
-  .step('Test invalid command')
-  .run('invalid-command')
-  .expectFailure()
-  .expectStderr(/Unknown command/)
-  .execute('local')  // or 'cleanroom'
-```
-
-### **🎯 Pre-built Scenarios**
-Ready-to-use testing patterns for common CLI scenarios.
-
-```javascript
-import { scenarios } from 'citty-test-utils'
-
-// Basic scenarios
-await scenarios.help('local').execute()
-await scenarios.version('cleanroom').execute()
-await scenarios.invalidCommand('nope', 'local').execute()
-
-// JSON output testing
-await scenarios.jsonOutput(['greet', 'Alice', '--json'], 'local').execute()
-
-// Robustness testing
-await scenarios.idempotent(['greet', 'Alice'], 'local').execute()
-await scenarios.concurrent([
-  { args: ['--help'] },
-  { args: ['--version'] },
-  { args: ['greet', 'Test'] }
-], 'cleanroom').execute()
-```
-
-## 🚀 **What's New in v0.6.0**
-
-### Major Feature Additions
-- **🎯 Flexible CLI Entry**: New `--entry-file` flag for testing ANY CLI file in your project
-- **⚡ Fail-Fast Philosophy**: Strict error handling with clear, actionable messages
-- **🧪 Scenario Testing**: CLI commands for executing pre-built test scenarios
-- **❌ Error Testing**: CLI commands for validating error handling and edge cases
-- **🔧 Top-Level Error Handlers**: Graceful handling of unhandled rejections and exceptions
-
-### Enhanced Analysis
-- **📁 Multi-Entry Support**: Analyze any CLI file with `--entry-file ./path/to/cli.js`
-- **🔍 Smart Detection**: Auto-detects CLI from package.json or common patterns
-- **🎨 Flexible Paths**: Support for monorepos, custom structures, and any file location
-- **📊 Improved Validation**: Better error messages and fail-fast on invalid paths
-
-### Previous Features (v0.5.1)
-- **✅ Working Runner Commands**: Full implementation of `runner local` and `runner cleanroom` commands
-- **🏗️ Modular Architecture**: Clean separation between core runners and CLI commands
-- **🧠 AST-Based Analysis**: Revolutionary AST-first CLI coverage analysis
-- **🎯 Smart Recommendations**: AI-powered test improvement suggestions
-- **⚡ Performance Optimization**: Parallel processing and AST caching
-
-## 🚀 **Quick Start**
-
-### **Installation**
-```bash
-npm install citty-test-utils
-```
-
-### **Basic Testing**
-```javascript
-import { runLocalCitty } from 'citty-test-utils'
-
-// Test your CLI locally
-const result = await runLocalCitty(['--help'], {
-  cwd: './my-cli-project'
-})
-
-result
-  .expectSuccess()
-  .expectOutput('USAGE')
-  .expectNoStderr()
-```
-
-### **Cross-Environment Testing**
-```javascript
-import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
-
-// Test in isolated Docker environment
-await setupCleanroom({ rootDir: './my-cli-project' })
-
-const localResult = await runLocalCitty(['--version'])
-const cleanroomResult = await runCitty(['--version'])
-
-// Verify consistency across environments
-expect(localResult.result.stdout).toBe(cleanroomResult.result.stdout)
-
-await teardownCleanroom()
-```
-
-### **Complex Workflows**
-```javascript
-import { scenario } from 'citty-test-utils'
-
-const result = await scenario('User Registration Flow')
-  .step('Initialize project')
-  .run('init', 'my-project')
-  .expectSuccess()
-  .step('Verify status')
-  .run('status')
-  .expectSuccess()
-  .expectOutput(/project.*initialized/)
-  .step('Test error handling')
-  .run('invalid-command')
-  .expectFailure()
-  .execute('local')
-```
-
-## 🛠️ **Built-in CLI Tools**
-
-The framework includes powerful CLI tools for analysis and generation (secondary to the core testing utilities):
-
-```bash
-# AST-based CLI analysis (Auto-detection or --entry-file)
-npx citty-test-utils analysis discover
-npx citty-test-utils analysis discover --entry-file src/cli.mjs
-npx citty-test-utils analysis coverage --test-dir test --threshold 80
-npx citty-test-utils analysis recommend --priority high --entry-file ./my-cli.js
-
-# Runner commands (Fully implemented)
-npx citty-test-utils runner local "--help"
-npx citty-test-utils runner cleanroom "--version"
-npx citty-test-utils runner execute --command "node --version"
-
-# Template generation
-npx citty-test-utils gen project my-cli
-npx citty-test-utils gen test my-feature --test-type cleanroom
-
-# Test execution
-npx citty-test-utils test run --environment local
-npx citty-test-utils test scenario --name "user-workflow"
-```
-
-## 🎯 **Core Features**
-
-### **Testing Framework**
-- **🏃 Local Runner**: Execute CLI commands locally with timeout and environment support
-- **🐳 Docker Cleanroom**: Isolated testing in Docker containers using testcontainers
-- **🔗 Fluent Assertions**: Chainable expectation API with detailed error messages
-- **📋 Scenario DSL**: Complex multi-step test workflows with retry mechanisms
-- **🛠️ Test Utilities**: Wait conditions, retry logic, temporary files, and more
-- **📦 Pre-built Scenarios**: Ready-to-use test templates for common workflows
-- **🎯 Scenarios Pack**: Common CLI testing patterns with simple API
-- **⚡ TypeScript Support**: Complete type definitions for all APIs
-- **🔄 Cross-Environment**: Test consistency between local and cleanroom environments
-
-### **Analysis & Intelligence**
-- **🧠 AST-Based Analysis**: Revolutionary AST-first CLI coverage analysis
-- **🎯 Smart Recommendations**: AI-powered test improvement suggestions
-- **📊 Multi-Dimensional Coverage**: Commands, subcommands, flags, and options
-- **🔍 CLI Discovery**: Automatic CLI structure discovery via AST parsing
-- **📈 Coverage Trends**: Historical coverage tracking and analysis
-- **⚡ Performance Optimization**: Parallel processing and AST caching
-
-### **Developer Tools**
-- **🎯 Noun-Verb CLI**: Complete CLI with `ctu <noun> <verb>` structure
-- **📝 Template Generation**: Generate tests, scenarios, CLIs, and projects
-- **🔧 Custom Runner**: Execute external commands with isolation
-- **📊 Info System**: Get version, features, and configuration info
-- **🧪 Test Commands**: Run scenarios and test CLI functionality
-- **🎮 Playground Project**: Complete example implementation with comprehensive tests
-- **📸 Snapshot Testing**: Comprehensive snapshot coverage for all CLI outputs
-
-## 📚 **Testing API Reference**
-
-### **Local Runner**
-Execute CLI commands locally with full environment control.
-
-```javascript
-import { runLocalCitty } from 'citty-test-utils'
-
-const result = await runLocalCitty(['--help'], {
-  cwd: './my-cli-project',    // Working directory for CLI execution
-  json: false,                // Parse stdout as JSON
-  timeout: 30000,             // Timeout in milliseconds
-  env: {                      // Environment variables
-    DEBUG: 'true',
-    NODE_ENV: 'test'
-  }
+// v0.6.0 API - Single options object
+const result = await runLocalCitty({
+  args: ['--help'],
+  cliPath: './src/cli.mjs',
+  cwd: './my-project'
 })
 
 // Fluent assertions
 result
-  .expectSuccess()                    // Shorthand for expectExit(0)
-  .expectOutput('USAGE')              // String match
-  .expectOutput(/my-cli/i)             // Regex match (case-insensitive)
-  .expectNoStderr()                    // Expect empty stderr
-  .expectOutputLength(100, 5000)       // Length range validation
-```
-
-### **Cleanroom Runner**
-Execute commands in isolated Docker containers for consistent testing.
-
-```javascript
-import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
-
-// Setup (run once per test suite)
-await setupCleanroom({ 
-  rootDir: './my-cli-project',        // Directory to copy into container
-  nodeImage: 'node:20-alpine',        // Docker image to use
-  timeout: 60000                      // Container startup timeout
-})
-
-// Run commands in cleanroom
-const result = await runCitty(['--help'], {
-  json: false,    // Parse stdout as JSON
-  cwd: '/app',    // Working directory in container
-  timeout: 30000, // Timeout in milliseconds
-  env: {          // Environment variables
-    DEBUG: 'true'
-  }
-})
-
-// Cleanup (run once per test suite)
-await teardownCleanroom()
-```
-
-### **Fluent Assertions**
-Comprehensive chainable expectation API with detailed error messages and context.
-
-```javascript
-const result = await runLocalCitty(['--help'])
-
-result
-  .expectSuccess()                    // expectExit(0)
-  .expectFailure()                   // Expect non-zero exit code
-  .expectExit(0)                     // Check specific exit code
-  .expectExitCodeIn([0, 1, 2])       // Check exit code is in array
-  .expectOutput('Usage:')            // String match
-  .expectOutput(/my-cli/)            // Regex match
-  .expectOutputContains('commands')  // Contains text
-  .expectOutputNotContains('error')  // Does not contain text
-  .expectStderr('')                  // Check stderr
-  .expectNoOutput()                  // Expect empty stdout
-  .expectNoStderr()                  // Expect empty stderr
-  .expectOutputLength(10, 100)       // Check output length range
-  .expectStderrLength(0, 50)         // Check stderr length range
-  .expectDuration(5000)              // Check execution time
-  .expectJson(data => {              // JSON validation
-    expect(data.version).toBeDefined()
-    expect(data.commands).toBeArray()
-  })
-```
-
-### **Scenario DSL**
-Build complex multi-step test workflows with step-by-step execution and custom actions.
-
-```javascript
-import { scenario, scenarios, cleanroomScenario, localScenario } from 'citty-test-utils'
-
-// Basic scenario with multiple steps
-const result = await scenario('Complete workflow')
-  .step('Get help')
-  .run('--help')
   .expectSuccess()
-  .expectOutput('USAGE')
-  .step('Get version')
-  .run(['--version'])
-  .expectSuccess()
-  .expectOutput(/\d+\.\d+\.\d+/)
-  .step('Test invalid command')
-  .run('invalid-command')
-  .expectFailure()
-  .expectStderr(/Unknown command/)
-  .execute('local')  // or 'cleanroom'
+  .expectOutput(/USAGE/)
+  .expectDuration(1000)
 
-// Pre-built scenarios
-await scenarios.help('local').execute()
-await scenarios.version('local').execute()
-await scenarios.invalidCommand('nonexistent', 'local').execute()
-await scenarios.jsonOutput(['greet', 'Alice', '--json'], 'local').execute()
-await scenarios.subcommand('math', ['add', '5', '3'], 'local').execute()
-
-// Environment-specific scenarios
-await cleanroomScenario('Cleanroom test')
-  .step('Test help')
-  .run('--help')
-  .expectSuccess()
-  .execute()
-
-await localScenario('Local test')
-  .step('Test greet command')
-  .run(['greet', 'Alice'], { env: { DEBUG: 'true' } })
-  .expectSuccess()
-  .execute()
+console.log('Output:', result.result.stdout)
 ```
 
-### **Test Utilities**
-Utility functions for common testing patterns, edge cases, and advanced scenarios.
+### 2. Build Multi-Step Scenarios
 
-```javascript
-import { testUtils } from 'citty-test-utils'
-
-// Wait for conditions with timeout
-await testUtils.waitFor(
-  () => checkCondition(), 
-  5000,    // timeout
-  100      // interval
-)
-
-// Retry with exponential backoff
-await testUtils.retry(
-  () => flakyOperation(), 
-  3,       // max attempts
-  1000     // delay between attempts
-)
-
-// Temporary files for testing
-const tempFile = await testUtils.createTempFile('test content', '.txt')
-await testUtils.cleanupTempFiles([tempFile])
-
-// Snapshot testing
-import { matchSnapshot } from 'citty-test-utils'
-const result = await runLocalCitty(['--help'])
-await matchSnapshot(result.stdout, 'help-output')
-```
-
-## 🧪 **Testing Patterns**
-
-### **Unit Tests**
-```javascript
-import { describe, it } from 'vitest'
-import { runLocalCitty } from 'citty-test-utils'
-
-describe('CLI Commands', () => {
-  it('should show help', async () => {
-    const result = await runLocalCitty(['--help'])
-    result.expectSuccess().expectOutput('USAGE')
-  })
-})
-```
-
-### **Integration Tests**
 ```javascript
 import { scenario } from 'citty-test-utils'
 
-const result = await scenario('Integration Test')
-  .step('Setup')
-  .run('init', 'test-project')
+await scenario('User workflow')
+  .step('Show help')
+  .run({ args: ['--help'], cliPath: './src/cli.mjs' })
   .expectSuccess()
-  .step('Verify')
-  .run('status')
+  .expectOutput('USAGE')
+
+  .step('Initialize project')
+  .run({ args: ['init', 'my-app'], cliPath: './src/cli.mjs' })
   .expectSuccess()
+  .expectOutput('initialized')
+
   .execute('local')
 ```
 
-### **E2E Tests**
+### 3. Test in Cleanroom (Docker)
+
 ```javascript
 import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
 
+// Setup isolated environment
 await setupCleanroom({ rootDir: '.' })
 
-const result = await runCitty(['--help'])
-result.expectSuccess().expectOutput('USAGE')
+// Run in Docker container
+const result = await runCitty(['--version'])
+result.expectSuccess()
 
+// Cleanup
 await teardownCleanroom()
 ```
 
-## 🛠️ **CLI Analysis Tools**
+---
 
-The framework includes powerful CLI tools for analysis and generation (secondary to the core testing utilities):
+## 📚 Core Concepts
 
-### **AST-Based Analysis**
-```bash
-# Discover CLI structure using AST parsing
-npx citty-test-utils analysis discover --entry-file src/cli.mjs --format json
-npx citty-test-utils analysis discover --format json  # Auto-detect
+### Local Runner
 
-# Analyze test coverage with AST-based accuracy
-npx citty-test-utils analysis coverage --test-dir test --threshold 80
-npx citty-test-utils analysis coverage --entry-file ./custom/cli.js --test-dir test
-
-# Get smart recommendations for improving test coverage
-npx citty-test-utils analysis recommend --priority high --actionable
-npx citty-test-utils analysis recommend --entry-file ./packages/cli/index.mjs --priority high
-```
-
-### **Template Generation**
-```bash
-# Generate complete project structure
-npx citty-test-utils gen project my-cli --description "My CLI"
-
-# Generate test file templates
-npx citty-test-utils gen test my-feature --test-type cleanroom
-
-# Generate scenario templates
-npx citty-test-utils gen scenario user-workflow --environment local
-```
-
-### **Test Execution**
-```bash
-# Run test scenarios
-npx citty-test-utils test run --environment local
-
-# Execute pre-built scenarios (NEW in v0.6.0)
-npx citty-test-utils test scenario help --environment local
-npx citty-test-utils test scenario version --environment cleanroom
-npx citty-test-utils test scenario invalidCommand --args "nonexistent" --environment local
-
-# Error testing (NEW in v0.6.0)
-npx citty-test-utils test error "bad-command" --message "Unknown" --environment local
-npx citty-test-utils test error "missing-arg" --message "required" --environment cleanroom
-
-# Test specific CLI functionality
-npx citty-test-utils test help --environment cleanroom
-npx citty-test-utils test version --environment local
-```
-
-## 📚 **Complete Example**
-
-Here's a comprehensive example showing the full testing framework in action:
+Execute any CLI file locally with full validation:
 
 ```javascript
-import { 
-  runLocalCitty, 
-  setupCleanroom, 
-  runCitty, 
-  teardownCleanroom,
-  scenario,
-  scenarios,
-  testUtils
-} from 'citty-test-utils'
+const result = await runLocalCitty({
+  args: ['test', '--verbose'],      // CLI arguments
+  cliPath: './bin/cli.js',          // Path to CLI file (REQUIRED)
+  cwd: './my-project',              // Working directory
+  env: { DEBUG: 'true' },           // Environment variables
+  timeout: 30000                     // Timeout in ms (default: 30000)
+})
+```
 
-async function testMyCLI() {
-  // Test local runner
-  const localResult = await runLocalCitty(['--help'], {
-    cwd: './my-cli-project',
-    env: { DEBUG: 'true' }
+**Key Points:**
+- `cliPath` is **required** in v0.6.0
+- Uses Zod validation for fail-fast errors
+- Returns wrapped result with fluent assertions
+- Supports relative or absolute paths
+
+### Scenario DSL
+
+Build complex test workflows with the scenario DSL:
+
+```javascript
+await scenario('Complete workflow')
+  // String signature (simplest)
+  .step('Help')
+  .run('--help')
+  .expectSuccess()
+
+  // Array + options (v0.5.1 backward compatible)
+  .step('Version')
+  .run(['--version'], { cwd: './project' })
+  .expectSuccess()
+
+  // Object (v0.6.0 full control)
+  .step('Build')
+  .run({
+    args: ['build'],
+    cliPath: './bin/cli.js',
+    cwd: './project',
+    env: { NODE_ENV: 'production' }
   })
-  localResult
-    .expectSuccess()
-    .expectOutput('USAGE')
-    .expectOutput(/my-cli/)
-    .expectNoStderr()
+  .expectSuccess()
+  .expectOutput('Build complete')
 
-  // Test scenario
-  const scenarioResult = await scenario('Complete workflow')
-    .step('Get help')
-    .run('--help')
-    .expectSuccess()
-    .expectOutput('USAGE')
-    .step('Get version')
-    .run('--version')
-    .expectSuccess()
-    .expectOutput(/\d+\.\d+\.\d+/)
-    .step('Test invalid command')
-    .run('invalid-command')
-    .expectFailure()
-    .expectStderr(/Unknown command/)
-    .execute('local')
-  
-  console.log('Scenario success:', scenarioResult.success)
+  .execute('local')
+```
 
-  // Test pre-built scenarios
-  const helpResult = await scenarios.help('local').execute()
-  const versionResult = await scenarios.version('local').execute()
-  
-  console.log('Help success:', helpResult.success)
-  console.log('Version success:', versionResult.success)
+**3 Signature Types Supported:**
+1. **String**: `.run('--help')` - Auto-splits arguments
+2. **Array + Options**: `.run(['--help'], { cwd: './path' })` - v0.5.1 style
+3. **Object**: `.run({ args: ['--help'], cliPath: 'cli.js' })` - v0.6.0 full control
 
-  // Test flaky operations with retry
-  await testUtils.retry(async () => {
-    const result = await runLocalCitty(['--help'], {
-      cwd: './my-cli-project',
-      env: { DEBUG: 'true' }
-    })
-    result.expectSuccess()
-  }, 3, 1000)
+### Fluent Assertions
+
+Chain assertions for expressive tests:
+
+```javascript
+result
+  .expectSuccess()              // Exit code 0
+  .expectFailure()              // Exit code non-zero
+  .expectExit(1)                // Specific exit code
+  .expectOutput('text')         // stdout contains text
+  .expectOutput(/regex/)        // stdout matches regex
+  .expectStderr('error')        // stderr contains text
+  .expectDuration(1000)         // Duration <= 1000ms
+  .expectJson(json => {         // Parse and validate JSON
+    expect(json.status).toBe('ok')
+  })
+```
+
+---
+
+## 🎯 API Reference
+
+### runLocalCitty(options)
+
+Execute CLI locally with validation.
+
+**Options:**
+```typescript
+{
+  args: string[]           // CLI arguments (REQUIRED)
+  cliPath: string         // Path to CLI file (REQUIRED)
+  cwd?: string            // Working directory (default: process.cwd())
+  env?: Record<string, string>  // Environment variables
+  timeout?: number        // Timeout in ms (default: 30000)
 }
+```
 
-// For Vitest users
-import { describe, it, beforeAll, afterAll } from 'vitest'
+**Returns:** `AssertionResult` with fluent methods
 
-describe('My CLI Tests', () => {
+**Example:**
+```javascript
+const result = await runLocalCitty({
+  args: ['build', '--prod'],
+  cliPath: './dist/cli.js',
+  cwd: '/absolute/path/to/project',
+  env: { NODE_ENV: 'production' },
+  timeout: 60000
+})
+```
+
+### runLocalCittySafe(options)
+
+Same as `runLocalCitty` but catches errors and returns result object instead of throwing.
+
+**Use when:** You expect the command might fail and want to handle it gracefully.
+
+```javascript
+const result = await runLocalCittySafe({
+  args: ['might-fail'],
+  cliPath: './cli.js'
+})
+
+if (result.success) {
+  console.log('Success:', result.stdout)
+} else {
+  console.log('Failed:', result.stderr)
+}
+```
+
+### scenario(name)
+
+Create a multi-step test scenario.
+
+**Methods:**
+- `.step(description)` - Add a step
+- `.run(args, options?)` - Execute command (3 signatures)
+- `.expect(fn)` - Custom assertion
+- `.expectSuccess()` - Expect exit code 0
+- `.expectFailure()` - Expect non-zero exit code
+- `.expectOutput(pattern)` - Expect stdout matches
+- `.expectStderr(pattern)` - Expect stderr matches
+- `.execute(runner)` - Run scenario ('local' or 'cleanroom')
+- `.concurrent()` - Run steps in parallel
+- `.sequential()` - Run steps in sequence (default)
+
+**Example:**
+```javascript
+await scenario('E2E Test')
+  .step('Setup')
+  .run({ args: ['init'], cliPath: './cli.js' })
+  .expectSuccess()
+
+  .step('Build')
+  .run({ args: ['build'], cliPath: './cli.js' })
+  .expectSuccess()
+  .expectOutput('✓ Build complete')
+
+  .step('Test')
+  .run({ args: ['test'], cliPath: './cli.js' })
+  .expectSuccess()
+
+  .execute('local')
+```
+
+### setupCleanroom(options)
+
+Create isolated Docker environment for testing.
+
+**Options:**
+```typescript
+{
+  rootDir?: string        // Directory to copy (default: '.')
+  nodeImage?: string      // Docker image (default: 'node:20-alpine')
+  memoryLimit?: string    // Memory limit (default: '512m')
+  cpuLimit?: string       // CPU limit (default: '1.0')
+  timeout?: number        // Startup timeout (default: 60000)
+}
+```
+
+**Example:**
+```javascript
+await setupCleanroom({
+  rootDir: './my-app',
+  nodeImage: 'node:20-alpine',
+  memoryLimit: '1g'
+})
+```
+
+### runCitty(args, options)
+
+Execute CLI in cleanroom container.
+
+**Example:**
+```javascript
+const result = await runCitty(
+  ['build', '--prod'],
+  {
+    cwd: '/app',
+    env: { NODE_ENV: 'production' },
+    timeout: 30000
+  }
+)
+```
+
+### teardownCleanroom()
+
+Stop and remove cleanroom container.
+
+```javascript
+await teardownCleanroom()
+```
+
+---
+
+## 🔧 Advanced Features
+
+### Snapshot Testing
+
+Capture and compare CLI output:
+
+```javascript
+import { scenario } from 'citty-test-utils'
+
+await scenario('Snapshot test')
+  .step('Capture help output')
+  .run({ args: ['--help'], cliPath: './cli.js' })
+  .expectSuccess()
+  .expectSnapshotStdout('help-output')
+  .execute('local')
+```
+
+**Snapshot Methods:**
+- `.expectSnapshot(name)` - Full result snapshot
+- `.expectSnapshotStdout(name)` - stdout only
+- `.expectSnapshotStderr(name)` - stderr only
+- `.expectSnapshotJson(name)` - JSON output
+- `.expectSnapshotFull(name)` - Complete result
+
+### Concurrent Execution
+
+Run steps in parallel for faster tests:
+
+```javascript
+await scenario('Parallel tests')
+  .concurrent()  // Enable parallel mode
+
+  .step('Test 1').run({ args: ['test1'], cliPath: './cli.js' })
+  .step('Test 2').run({ args: ['test2'], cliPath: './cli.js' })
+  .step('Test 3').run({ args: ['test3'], cliPath: './cli.js' })
+
+  .execute('local')
+```
+
+### Custom Assertions
+
+Add your own assertion logic:
+
+```javascript
+await scenario('Custom validation')
+  .step('Check output')
+  .run({ args: ['status'], cliPath: './cli.js' })
+  .expect(result => {
+    const lines = result.stdout.split('\n')
+    if (lines.length < 5) {
+      throw new Error('Expected at least 5 lines of output')
+    }
+  })
+  .execute('local')
+```
+
+### Pre-built Scenario Templates
+
+Use ready-made scenarios for common patterns:
+
+```javascript
+import { scenarioTemplates } from 'citty-test-utils'
+
+// Help command test
+await scenarioTemplates.help({ cliPath: './cli.js' }).execute('local')
+
+// Version check
+await scenarioTemplates.version({ cliPath: './cli.js' }).execute('local')
+
+// Invalid command handling
+await scenarioTemplates.invalidCommand({ cliPath: './cli.js' }).execute('local')
+```
+
+---
+
+## 🎨 Usage Examples
+
+### Example 1: Basic CLI Testing
+
+```javascript
+import { runLocalCitty } from 'citty-test-utils'
+
+describe('CLI Tests', () => {
+  test('shows help', async () => {
+    const result = await runLocalCitty({
+      args: ['--help'],
+      cliPath: './bin/my-cli.js'
+    })
+
+    result
+      .expectSuccess()
+      .expectOutput('Usage:')
+      .expectOutput('Commands:')
+  })
+
+  test('handles errors', async () => {
+    const result = await runLocalCittySafe({
+      args: ['invalid-command'],
+      cliPath: './bin/my-cli.js'
+    })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr).toContain('Unknown command')
+  })
+})
+```
+
+### Example 2: E2E Workflow
+
+```javascript
+import { scenario } from 'citty-test-utils'
+
+test('complete user workflow', async () => {
+  const result = await scenario('User creates and builds project')
+    .step('Initialize project')
+    .run({
+      args: ['init', 'my-app'],
+      cliPath: './bin/cli.js',
+      cwd: '/tmp/test'
+    })
+    .expectSuccess()
+    .expectOutput('Project initialized')
+
+    .step('Install dependencies')
+    .run({
+      args: ['install'],
+      cliPath: './bin/cli.js',
+      cwd: '/tmp/test/my-app'
+    })
+    .expectSuccess()
+
+    .step('Build project')
+    .run({
+      args: ['build', '--prod'],
+      cliPath: './bin/cli.js',
+      cwd: '/tmp/test/my-app'
+    })
+    .expectSuccess()
+    .expectOutput('Build complete')
+    .expectDuration(10000)
+
+    .execute('local')
+
+  expect(result.success).toBe(true)
+})
+```
+
+### Example 3: Cleanroom Testing
+
+```javascript
+import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
+
+describe('Cleanroom Tests', () => {
   beforeAll(async () => {
-    await setupCleanroom({ rootDir: './my-cli-project' })
+    await setupCleanroom({ rootDir: '.' })
   })
 
   afterAll(async () => {
     await teardownCleanroom()
   })
 
-  it('should work locally', async () => {
-    const result = await runLocalCitty(['--help'], {
-      cwd: './my-cli-project',
-      env: { DEBUG: 'true' }
-    })
+  test('builds in clean environment', async () => {
+    const result = await runCitty(['build'])
+
     result
       .expectSuccess()
-      .expectOutput('USAGE')
-      .expectOutput(/my-cli/)
-      .expectNoStderr()
+      .expectOutput('Build successful')
   })
 
-  it('should work in cleanroom', async () => {
-    const result = await runCitty(['--help'], {
-      env: { DEBUG: 'true' }
-    })
+  test('tests pass in isolation', async () => {
+    const result = await runCitty(['test'])
+
     result
       .expectSuccess()
-      .expectOutput('USAGE')
-      .expectOutput(/my-cli/)
-      .expectNoStderr()
-  })
-
-  it('should handle complex workflow', async () => {
-    const result = await scenario('Complete workflow')
-      .step('Get help')
-      .run('--help')
-      .expectSuccess()
-      .expectOutput('USAGE')
-      .step('Get version')
-      .run('--version')
-      .expectSuccess()
-      .expectOutput(/\d+\.\d+\.\d+/)
-      .step('Test invalid command')
-      .run('invalid-command')
-      .expectFailure()
-      .expectStderr(/Unknown command/)
-      .execute('local')
-    
-    expect(result.success).toBe(true)
-  })
-
-  it('should use pre-built scenarios', async () => {
-    const helpResult = await scenarios.help('local').execute()
-    const versionResult = await scenarios.version('local').execute()
-    
-    expect(helpResult.success).toBe(true)
-    expect(versionResult.success).toBe(true)
-  })
-
-  it('should handle flaky operations', async () => {
-    await testUtils.retry(async () => {
-      const result = await runLocalCitty(['--help'], {
-        cwd: './my-cli-project',
-        env: { DEBUG: 'true' }
-      })
-      result.expectSuccess()
-    }, 3, 1000)
+      .expectOutput(/\d+ passing/)
   })
 })
 ```
 
-## 🔧 **Advanced Testing Features**
-
-### **Cross-Environment Testing**
-Test consistency between local and cleanroom environments:
+### Example 4: Monorepo Testing
 
 ```javascript
-const localResult = await runLocalCitty(['--version'], {
-  cwd: './my-cli-project',
-  env: { DEBUG: 'true' }
-})
-const cleanroomResult = await runCitty(['--version'], {
-  env: { DEBUG: 'true' }
+import { runLocalCitty } from 'citty-test-utils'
+
+// Test CLI in packages/cli
+const cliResult = await runLocalCitty({
+  args: ['build'],
+  cliPath: './packages/cli/bin/cli.js',
+  cwd: './packages/app'
 })
 
-expect(localResult.result.stdout).toBe(cleanroomResult.result.stdout)
+// Test different package
+const adminResult = await runLocalCitty({
+  args: ['deploy'],
+  cliPath: './packages/admin/bin/admin-cli.js',
+  cwd: './packages/admin'
+})
 ```
 
-### **Custom Actions in Scenarios**
-Execute custom logic within scenarios:
+---
 
+## 🔄 Migration Guide
+
+### From v0.5.1 to v0.6.0/v0.6.1
+
+**Key Changes:**
+1. API signature changed to single options object
+2. `cliPath` is now required (with defaults)
+3. Scenario DSL supports 3 signature types for backward compatibility
+
+**Old API (v0.5.1):**
 ```javascript
-const result = await scenario('Custom workflow')
-  .step('Custom action', async ({ lastResult, context }) => {
-    // Custom logic here
-    return { success: true, data: 'processed' }
+// ❌ No longer works
+await runLocalCitty(['--help'], {
+  cwd: './project'
+})
+```
+
+**New API (v0.6.0+):**
+```javascript
+// ✅ Required in v0.6.0
+await runLocalCitty({
+  args: ['--help'],
+  cliPath: './src/cli.mjs',  // Now required
+  cwd: './project'
+})
+```
+
+**Scenario DSL - Still Works!**
+```javascript
+// ✅ Old v0.5.1 style still supported
+await scenario('Test')
+  .step('Help')
+  .run(['--help'], { cwd: './project' })
+  .execute('local')
+
+// ✅ New v0.6.0 style also works
+await scenario('Test')
+  .step('Help')
+  .run({
+    args: ['--help'],
+    cliPath: './cli.js',
+    cwd: './project'
   })
-  .step('Run command')
-  .run('--help')
-  .expectSuccess()
-  .execute()
+  .execute('local')
 ```
 
-### **Environment-Specific Configuration**
+**Auto-Configuration:**
+
+v0.6.0+ auto-adds missing parameters:
+- `cliPath`: Uses `process.env.TEST_CLI_PATH` or `'./src/cli.mjs'`
+- `cwd`: Defaults to `process.cwd()`
+- `env.TEST_CLI`: Auto-set to `'true'` for local runner
+
+**Set Defaults:**
+```bash
+# In your environment or package.json
+export TEST_CLI_PATH="./bin/my-cli.js"
+```
+
+See full [Migration Guide](./docs/MIGRATION-v0.5.1-to-v0.6.0.md) for details.
+
+---
+
+## 🐛 Troubleshooting
+
+### Error: "CLI file not found"
+
+**Problem:** `cliPath` is incorrect or file doesn't exist
+
+**Solution:**
 ```javascript
-// Local development with custom environment
-const result = await runLocalCitty(['greet', 'Alice'], {
-  cwd: './my-cli-project',
-  env: {
-    DEBUG: 'true',
-    NODE_ENV: 'test'
-  },
-  timeout: 60000
+// ✅ Use absolute path
+await runLocalCitty({
+  args: ['--help'],
+  cliPath: '/absolute/path/to/cli.js'
 })
 
-// Cleanroom with specific Docker image
-await setupCleanroom({ 
-  rootDir: './my-cli-project',
-  nodeImage: 'node:18-alpine'
+// ✅ Or verify relative path
+await runLocalCitty({
+  args: ['--help'],
+  cliPath: './src/cli.mjs',
+  cwd: '/absolute/path/to/project'
 })
 ```
 
-### **Error Handling**
-The framework provides detailed error messages with full context:
+### Error: "Invalid input: expected object, received array"
 
+**Problem:** Using old v0.5.1 API with runLocalCitty
+
+**Solution:**
+```javascript
+// ❌ Old API (v0.5.1)
+await runLocalCitty(['--help'], { cwd: './path' })
+
+// ✅ New API (v0.6.0+)
+await runLocalCitty({
+  args: ['--help'],
+  cliPath: './cli.js',
+  cwd: './path'
+})
 ```
-Expected exit code 0, got 1
-Command: node src/cli.mjs --help
-Working directory: /app
-Stdout: 
-Stderr: Error: Command not found
+
+### Error: "does not provide an export named 'runCitty'"
+
+**Problem:** Using v0.6.0 (fixed in v0.6.1)
+
+**Solution:**
+```bash
+# Upgrade to v0.6.1
+npm install citty-test-utils@0.6.1
 ```
 
-## 📋 **Requirements**
+### Docker Issues
 
-- **Node.js**: >= 18.0.0
-- **Docker**: Required for cleanroom testing
-- **Citty Project**: Required for CLI testing
+**Problem:** Cleanroom tests fail with Docker errors
 
-## 🚀 **Project Setup**
+**Solution:**
+```bash
+# Check Docker is running
+docker info
 
-To use `citty-test-utils` with your CLI project:
+# Verify Docker daemon
+docker ps
 
-1. **Install citty-test-utils**: `npm install citty-test-utils`
-2. **Create test files**: Use the testing framework in your test suite
-3. **Run tests**: Execute your tests with the framework
+# Check Docker version
+docker --version
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+### Development Setup
 
 ```bash
-# Example project structure
-my-citty-project/
-├── src/
-│   └── cli.mjs          # Citty CLI
-├── package.json         # Contains citty dependency
-└── tests/
-    └── my-tests.mjs     # Your tests using citty-test-utils
-```
+# Clone repository
+git clone https://github.com/seanchatmangpt/citty-test-utils.git
+cd citty-test-utils
 
-## 🎮 **Playground Project**
-
-The included playground project (`./playground/`) serves as a complete example:
-
-- **Full Citty CLI**: Demonstrates commands, subcommands, and options
-- **Comprehensive Tests**: Unit, integration, and scenario tests
-- **All Features**: Shows every aspect of `citty-test-utils`
-- **Best Practices**: Demonstrates proper usage patterns
-
-```bash
-# Run playground tests
-cd playground
+# Install dependencies
 npm install
+
+# Run tests
 npm test
 
-# Run playground CLI
-npm start
-```
-
-## 📚 **Documentation**
-
-- **[Getting Started Guide](docs/guides/getting-started.md)** - Quick start and basic usage
-- **[API Reference](docs/api/README.md)** - Complete API documentation
-- **[Cleanroom TDD Guide](docs/guides/cleanroom-tdd-guide.md)** - Advanced testing patterns
-- **[Best Practices](docs/guides/best-practices.md)** - Recommended testing patterns
-- **[Troubleshooting](docs/guides/troubleshooting.md)** - Common issues and solutions
-
-## ⚡ **TypeScript Support**
-
-Full TypeScript definitions are included:
-
-```typescript
-import type { 
-  CliResult, 
-  CliExpectation, 
-  RunOptions, 
-  ScenarioBuilder,
-  ScenarioResult 
-} from 'citty-test-utils'
-
-const result: CliResult = await runLocalCitty(['--help'])
-const expectation: CliExpectation = result.expectExit(0)
-const scenario: ScenarioBuilder = scenario('My Test')
-```
-
-## 🧪 **Testing Configuration**
-
-The package includes comprehensive test configuration with Vitest:
-
-```bash
-# Run all tests
-npm test
-
-# Run specific test types
+# Run specific tests
 npm run test:unit
 npm run test:integration
-npm run test:bdd
-
-# Run with coverage
-npm run test:coverage
-
-# Interactive UI
-npm run test:ui
+npm run test:cleanroom
 ```
 
-## 🔧 **Troubleshooting**
+---
 
-### CLI Detection Issues
+## 📖 Documentation
 
-**Problem:** `CLI file not found: src/cli.mjs`
+- [API Documentation](./docs/api/README.md)
+- [Migration Guide](./docs/MIGRATION-v0.5.1-to-v0.6.0.md)
+- [Best Practices](./docs/guides/best-practices.md)
+- [Troubleshooting](./docs/guides/troubleshooting.md)
+- [Examples](./docs/examples/README.md)
+- [Changelog](./CHANGELOG.md)
 
-**Solutions:**
-1. Run from project root directory: `cd /path/to/your/project`
-2. Use explicit path with `--entry-file`: `ctu analysis discover --entry-file ./path/to/cli.js`
-3. Check package.json has `bin` field pointing to your CLI
-4. Enable verbose mode to see detection process: `ctu analysis discover --verbose`
+---
 
-**Problem:** `CLI entry file must be JavaScript/TypeScript`
+## 📄 License
 
-**Solutions:**
-- Ensure file has valid extension: `.js`, `.mjs`, `.cjs`, `.ts`, `.mts`, `.cts`
-- Check file actually exists at the specified path
-- Verify file path is correct (typos, wrong directory)
+MIT © [GitVan Team](https://github.com/seanchatmangpt)
 
-**Problem:** `CLI entry path is not a file`
+---
 
-**Solutions:**
-- Ensure you're pointing to a file, not a directory
-- Check the path: `ls -la /path/to/file.js`
-- Use `--entry-file` with full path to the CLI file
+## 🙏 Acknowledgments
 
-### Analysis Command Failures
+- Built with [Citty](https://github.com/unjs/citty) - Modern CLI framework
+- Powered by [testcontainers](https://github.com/testcontainers/testcontainers-node) - Docker testing
+- Validated with [Zod](https://github.com/colinhacks/zod) - TypeScript-first schema validation
 
-**Problem:** Analysis commands fail with "Cannot find module"
+---
 
-**Solutions:**
-1. Verify CLI file exists and is executable: `node /path/to/cli.js --help`
-2. Check all imports in CLI file are resolvable
-3. Run from project root or use `--entry-file` with absolute path
-4. Install dependencies: `npm install`
+## ⭐ Support
 
-**Problem:** "Unknown command" when running analysis
+If you find this package helpful, please consider:
 
-**Solutions:**
-- Ensure you're using the correct syntax: `ctu analysis discover` (not `ctu analyze discover`)
-- Check available commands: `ctu analysis --help`
-- Update to latest version: `npm install citty-test-utils@latest`
+- ⭐ Starring the [GitHub repository](https://github.com/seanchatmangpt/citty-test-utils)
+- 🐛 [Reporting issues](https://github.com/seanchatmangpt/citty-test-utils/issues)
+- 📝 [Contributing improvements](https://github.com/seanchatmangpt/citty-test-utils/pulls)
+- 📢 Sharing with the community
 
-### Docker/Cleanroom Issues
+---
 
-**Problem:** Cleanroom tests fail with timeout
+<div align="center">
 
-**Solutions:**
-1. Ensure Docker is running: `docker ps`
-2. Check Docker has internet access for image pulls
-3. Increase timeout in your test: `{ timeout: 120000 }`
-4. Pull the node image manually: `docker pull node:20-alpine`
+**[Documentation](./docs/README.md)** • **[Examples](./docs/examples/README.md)** • **[API Reference](./docs/api/README.md)** • **[Changelog](./CHANGELOG.md)**
 
-**Problem:** `Permission denied` in cleanroom
+Made with ❤️ by the GitVan Team
 
-**Solutions:**
-- Ensure files have read permissions: `chmod -R +r ./project`
-- Check Docker volume mounts are correct
-- Try running with elevated privileges (not recommended)
-
-**Problem:** "Cannot connect to Docker daemon"
-
-**Solutions:**
-- Start Docker Desktop or Docker daemon
-- Check Docker socket: `docker info`
-- Ensure your user is in the docker group (Linux)
-
-### Test Execution Issues
-
-**Problem:** Scenario tests fail with "Unknown scenario"
-
-**Solutions:**
-- Check available scenarios: `ctu test scenario --help`
-- Use correct scenario names: `help`, `version`, `invalidCommand`, etc.
-- View scenario source code: `src/core/scenarios/scenarios.js`
-
-**Problem:** Error tests fail unexpectedly
-
-**Solutions:**
-- Verify error message matches: Use regex patterns for flexibility
-- Check command actually fails (exit code ≠ 0)
-- Use `--verbose` to see detailed error output
-
-### Common Error Messages
-
-**Error:** `Process exited with code 1`
-
-**Meaning:** Command failed (this is often expected in error tests)
-
-**Action:** Check if failure is expected, review error message for details
-
-**Error:** `Timeout exceeded`
-
-**Meaning:** Command took too long to execute
-
-**Action:**
-- Increase timeout value
-- Check command isn't hanging
-- Verify Docker/network connectivity
-
-**Error:** `Expected exit code 0, got 1`
-
-**Meaning:** Command failed when success was expected
-
-**Action:**
-- Run command manually to debug: `node cli.js <args>`
-- Check error output in stderr
-- Enable verbose mode for more context
-
-### Debugging Tips
-
-1. **Use Verbose Mode**: Add `--verbose` to any command for detailed output
-2. **Check Exit Codes**: Commands exit with code 1 on failure (fail-fast)
-3. **Read Error Messages**: All errors include actionable suggestions
-4. **Test Manually**: Run commands outside the framework to isolate issues
-5. **Check Dependencies**: Ensure citty and all dependencies are installed
-
-### Getting Help
-
-If you encounter issues not covered here:
-
-1. **Check Documentation**: Review API docs and examples
-2. **Search Issues**: Check GitHub issues for similar problems
-3. **Enable Verbose**: Run with `--verbose` for debugging info
-4. **Provide Context**: Include error messages, command, and environment
-5. **Minimal Reproduction**: Create minimal example that reproduces the issue
-
-## 🤝 **Contributing**
-
-Contributions are welcome! Please see the project repository for contribution guidelines.
-
-## 📄 **License**
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 📝 **Changelog**
-
-See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
+</div>
