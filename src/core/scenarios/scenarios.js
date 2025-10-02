@@ -1,17 +1,25 @@
 // vendors/citty-test-utils/scenarios.js
-import { runLocalCitty, runCitty } from '../runners/local-runner.js'
+import { runLocalCitty } from '../runners/local-runner.js'
+import { runCitty } from '../runners/cleanroom-runner.js'
 
 // tiny runner selector
 async function exec(env, args, opts = {}) {
-  const options = { ...opts }
+  const options = {
+    args: Array.isArray(args) ? args : [args],
+    ...opts
+  }
   if (env === 'local') {
     options.env = { ...options.env, TEST_CLI: 'true' }
     // Use provided cwd or default to process.cwd()
     if (!options.cwd) {
       options.cwd = process.cwd()
     }
+    // Add cliPath if not provided
+    if (!options.cliPath) {
+      options.cliPath = process.env.TEST_CLI_PATH || './src/cli.mjs'
+    }
   }
-  return env === 'cleanroom' ? runCitty(args, options) : runLocalCitty(args, options)
+  return env === 'cleanroom' ? runCitty(options.args, options) : runLocalCitty(options)
 }
 
 export const scenarios = {

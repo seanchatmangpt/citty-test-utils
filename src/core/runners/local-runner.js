@@ -233,6 +233,12 @@ export function wrapWithAssertions(result) {
 }
 
 /**
+ * Re-export runCitty from cleanroom-runner for convenience
+ * This allows importing both runners from the same module
+ */
+export { runCitty } from './cleanroom-runner.js'
+
+/**
  * Execute with error handling (catches execSync errors and returns result object)
  * Use this when you expect the command might fail and want to handle it gracefully
  *

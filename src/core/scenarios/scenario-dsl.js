@@ -40,13 +40,40 @@ export function scenario(name) {
       return this
     },
 
-    run(args, options = {}) {
+    run(argsOrOptions, options = {}) {
       if (!currentStep) {
         throw new Error('Must call step() before run()')
       }
-      // Convert string to array if needed
-      const commandArgs = Array.isArray(args) ? args : args.split(' ')
-      currentStep.command = { args: commandArgs, options }
+
+      // Support 3 signatures for backward compatibility:
+      // 1. .run('--help') - string
+      // 2. .run(['--help'], { cwd: './path' }) - array + options
+      // 3. .run({ args: ['--help'], cwd: './path' }) - v0.6.0 object
+
+      let finalCommand
+      if (typeof argsOrOptions === 'string') {
+        // String: split into args array
+        finalCommand = {
+          args: argsOrOptions.split(' '),
+          options: { ...options }
+        }
+      } else if (Array.isArray(argsOrOptions)) {
+        // Array: use as args with separate options
+        finalCommand = {
+          args: argsOrOptions,
+          options: { ...options }
+        }
+      } else {
+        // Object: v0.6.0 API - already has args property
+        finalCommand = {
+          args: argsOrOptions.args || [],
+          options: { ...argsOrOptions }
+        }
+        // Remove args from options to avoid duplication
+        delete finalCommand.options.args
+      }
+
+      currentStep.command = finalCommand
       return this
     },
 
@@ -99,18 +126,25 @@ export function scenario(name) {
               result = await runner(step.command.args, step.command.options)
             } else {
               // Use default runners
-              const options = { ...step.command.options }
+              const options = {
+                args: step.command.args,
+                ...step.command.options
+              }
               if (runner === 'local') {
                 options.env = { ...options.env, TEST_CLI: 'true' }
                 // Use provided cwd or default to process.cwd()
                 if (!options.cwd) {
                   options.cwd = process.cwd()
                 }
+                // Add cliPath if not provided (v0.6.0 requirement)
+                if (!options.cliPath) {
+                  options.cliPath = process.env.TEST_CLI_PATH || './src/cli.mjs'
+                }
               }
               result =
                 runner === 'cleanroom'
-                  ? await runCitty(step.command.args, options)
-                  : await runLocalCitty(step.command.args, options)
+                  ? await runCitty(step.command.args, step.command.options)
+                  : await runLocalCitty(options)
             }
           }
 
@@ -165,18 +199,25 @@ export function scenario(name) {
               result = await runner(step.command.args, step.command.options)
             } else {
               // Use default runners
-              const options = { ...step.command.options }
+              const options = {
+                args: step.command.args,
+                ...step.command.options
+              }
               if (runner === 'local') {
                 options.env = { ...options.env, TEST_CLI: 'true' }
                 // Use provided cwd or default to process.cwd()
                 if (!options.cwd) {
                   options.cwd = process.cwd()
                 }
+                // Add cliPath if not provided (v0.6.0 requirement)
+                if (!options.cliPath) {
+                  options.cliPath = process.env.TEST_CLI_PATH || './src/cli.mjs'
+                }
               }
               result =
                 runner === 'cleanroom'
-                  ? await runCitty(step.command.args, options)
-                  : await runLocalCitty(step.command.args, options)
+                  ? await runCitty(step.command.args, step.command.options)
+                  : await runLocalCitty(options)
             }
           }
 
