@@ -6,6 +6,143 @@ A comprehensive testing framework for CLI applications built with Citty, featuri
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/node/v/citty-test-utils.svg)](https://nodejs.org/)
 
+> **Tested environment**: macOS with Node.js v22.12 and Docker Desktop 28.0.4. All quick-start commands were executed from the repository root.
+
+## ⚡ Quick Start
+
+### Requirements
+- Node.js ≥ 18.0.0
+- Docker (required for cleanroom testing)
+
+### Install
+```bash
+npm install citty-test-utils
+```
+
+### Inspect the toolkit CLI
+```bash
+node src/cli.mjs --show-help
+```
+Lists nouns such as `test`, `gen`, `runner`, `info`, and `analysis`.
+
+### Drive the bundled playground locally
+```javascript
+import { runLocalCitty } from 'citty-test-utils'
+
+const help = await runLocalCitty(['--help'], {
+  cwd: './playground',
+  env: { TEST_CLI: 'true' },
+})
+
+help.expectSuccess().expectOutput('USAGE')
+console.log(help.result.stdout.split('
+')[0])
+```
+Expected first line: `Test CLI for citty-test-utils (test-cli v1.0.0)`.
+
+### Build a multi-step scenario
+```javascript
+import { scenario } from 'citty-test-utils'
+
+await scenario('Playground smoke test')
+  .step('Show help')
+  .run('--help', { cwd: './playground', env: { TEST_CLI: 'true' } })
+  .expectSuccess()
+  .expectOutput('USAGE')
+  .step('Reject invalid command')
+  .run('invalid-command', { cwd: './playground', env: { TEST_CLI: 'true' } })
+  .expectFailure()
+  .execute('local')
+```
+
+### Run inside Docker cleanroom
+```javascript
+import { setupCleanroom, runCitty, teardownCleanroom } from 'citty-test-utils'
+
+await setupCleanroom({ rootDir: './playground' })
+const info = await runCitty(['--help'])
+info.expectSuccess().expectOutput('USAGE')
+console.log(info.result.stdout.split('
+')[0])
+await teardownCleanroom()
+```
+CLI shortcut (auto-starts the cleanroom):
+```bash
+node src/cli.mjs test run --environment cleanroom
+```
+
+### Generator commands
+```bash
+node src/cli.mjs gen project demo-project
+node src/cli.mjs gen test help-check
+```
+Generated files are written to a managed temporary directory (e.g. `~/.cache/tmp/...`). Copy what you need before the cleanup job runs.
+
+### Fast unit-test subset
+```bash
+npx vitest run test/unit/local-runner.test.mjs test/unit/scenario-dsl.test.mjs --reporter=verbose
+```
+`npm test` executes the full suite (integration, Docker, snapshot, analysis) and may require snapshot updates and additional resources.
+
+### Analysis status
+```bash
+node src/cli.mjs analysis recommend --priority high
+```
+Recommendation commands work today. `analysis coverage` remains experimental and can exit with `Cannot convert undefined or null to object` for complex projects.
+
+### CLI Auto-Detection
+
+All analysis commands now automatically detect your CLI entry point using multiple strategies:
+
+```bash
+# Auto-detection (recommended) - just run from your project root
+npx citty-test-utils analysis discover
+npx citty-test-utils analysis coverage
+npx citty-test-utils analysis recommend
+
+# Or provide explicit path if needed
+npx citty-test-utils analysis discover --cli-path custom/path/cli.mjs
+```
+
+**Detection Strategies (tried in order):**
+
+1. **package.json bin field** (High confidence)
+   - Reads your package.json and finds the bin entry
+   - Most reliable method for published CLIs
+
+2. **Common file patterns** (Medium confidence)
+   - Searches for: `src/cli.mjs`, `cli.mjs`, `bin/cli.mjs`, `index.mjs`
+   - Also checks `.js` extensions
+
+3. **Parent directory search** (Medium confidence)
+   - Traverses up to 5 parent directories looking for package.json
+   - Useful when running from subdirectories
+
+4. **Default with validation** (Low confidence)
+   - Falls back to `src/cli.mjs` but validates it exists
+   - Shows helpful error message if detection fails
+
+**Verbose Mode:**
+```bash
+# See the full detection process
+npx citty-test-utils analysis discover --verbose
+# Output:
+# 🔍 Starting smart CLI detection...
+# ✅ Auto-detected CLI: /path/to/src/cli.mjs
+#    Detection method: package-json-bin
+#    Confidence: high
+```
+
+**Error Handling:**
+If auto-detection fails, you'll see a helpful error:
+```
+❌ CLI file not found: src/cli.mjs
+💡 Tip: Run from project root or use --cli-path <path>
+📁 Looking for: src/cli.mjs, cli.mjs, or bin/cli.mjs
+```
+
+---
+
 ## 🧪 **Core Testing Framework**
 
 citty-test-utils provides a complete testing ecosystem for CLI applications with three powerful execution environments:
@@ -68,15 +205,15 @@ import { scenario } from 'citty-test-utils'
 
 const result = await scenario('Complete workflow')
   .step('Get help')
-  .run('--help', { cwd: './my-cli-project' })
+  .run('--help')
   .expectSuccess()
   .expectOutput('USAGE')
   .step('Get version')
-  .run('--version', { cwd: './my-cli-project' })
+  .run('--version')
   .expectSuccess()
   .expectOutput(/\d+\.\d+\.\d+/)
   .step('Test invalid command')
-  .run('invalid-command', { cwd: './my-cli-project' })
+  .run('invalid-command')
   .expectFailure()
   .expectStderr(/Unknown command/)
   .execute('local')  // or 'cleanroom'
@@ -88,38 +225,24 @@ Ready-to-use testing patterns for common CLI scenarios.
 ```javascript
 import { scenarios } from 'citty-test-utils'
 
-// Basic scenarios (requires explicit cwd for playground)
-const helpScenario = scenarios.help('local')
-helpScenario.execute = async function() {
-  const r = await runLocalCitty(['--help'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
-  r.expectSuccess().expectOutput(/USAGE|COMMANDS/i)
-  return { success: true, result: r.result }
-}
-await helpScenario.execute()
+// Basic scenarios
+await scenarios.help('local').execute()
+await scenarios.version('cleanroom').execute()
+await scenarios.invalidCommand('nope', 'local').execute()
 
 // JSON output testing
-const jsonScenario = scenarios.jsonOutput(['greet', 'Alice', '--json'], 'local')
-jsonScenario.execute = async function() {
-  const r = await runLocalCitty(['greet', 'Alice', '--json'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
-  r.expectSuccess().expectJson(data => expect(data.message).toBeDefined())
-  return { success: true, result: r.result }
-}
-await jsonScenario.execute()
+await scenarios.jsonOutput(['greet', 'Alice', '--json'], 'local').execute()
 
 // Robustness testing
-const idempotentScenario = scenarios.idempotent(['greet', 'Alice'], 'local')
-idempotentScenario.execute = async function() {
-  const r1 = await runLocalCitty(['greet', 'Alice'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
-  const r2 = await runLocalCitty(['greet', 'Alice'], { cwd: './my-cli-project', env: { TEST_CLI: 'true' } })
-  r1.expectSuccess()
-  r2.expectSuccess()
-  expect(r1.result.stdout).toBe(r2.result.stdout)
-  return { success: true, result: r1.result }
-}
-await idempotentScenario.execute()
+await scenarios.idempotent(['greet', 'Alice'], 'local').execute()
+await scenarios.concurrent([
+  { args: ['--help'] },
+  { args: ['--version'] },
+  { args: ['greet', 'Test'] }
+], 'cleanroom').execute()
 ```
 
-## 🚀 **What's New in v0.5.0**
+## 🚀 **What's New in v0.4.0**
 
 - **🧠 AST-Based Analysis**: Revolutionary AST-first CLI coverage analysis
 - **🎯 Smart Recommendations**: AI-powered test improvement suggestions
@@ -127,8 +250,6 @@ await idempotentScenario.execute()
 - **⚡ Performance Optimization**: Parallel processing and AST caching
 - **🔍 CLI Discovery**: Automatic CLI structure discovery via AST parsing
 - **📈 Coverage Trends**: Historical coverage tracking and analysis
-- **🔧 Enhanced Documentation**: Testing-first documentation architecture
-- **✅ Functional Examples**: All examples verified and working
 
 ## 🚀 **Quick Start**
 
@@ -257,7 +378,7 @@ const result = await runLocalCitty(['--help'], {
 result
   .expectSuccess()                    // Shorthand for expectExit(0)
   .expectOutput('USAGE')              // String match
-  .expectOutput(/my-cli/)              // Regex match
+  .expectOutput(/my-cli/i)             // Regex match (case-insensitive)
   .expectNoStderr()                    // Expect empty stderr
   .expectOutputLength(100, 5000)       // Length range validation
 ```
@@ -500,15 +621,15 @@ async function testMyCLI() {
   // Test scenario
   const scenarioResult = await scenario('Complete workflow')
     .step('Get help')
-    .run('--help', { cwd: './my-cli-project' })
+    .run('--help')
     .expectSuccess()
     .expectOutput('USAGE')
     .step('Get version')
-    .run('--version', { cwd: './my-cli-project' })
+    .run('--version')
     .expectSuccess()
     .expectOutput(/\d+\.\d+\.\d+/)
     .step('Test invalid command')
-    .run('invalid-command', { cwd: './my-cli-project' })
+    .run('invalid-command')
     .expectFailure()
     .expectStderr(/Unknown command/)
     .execute('local')
@@ -570,15 +691,15 @@ describe('My CLI Tests', () => {
   it('should handle complex workflow', async () => {
     const result = await scenario('Complete workflow')
       .step('Get help')
-      .run('--help', { cwd: './my-cli-project' })
+      .run('--help')
       .expectSuccess()
       .expectOutput('USAGE')
       .step('Get version')
-      .run('--version', { cwd: './my-cli-project' })
+      .run('--version')
       .expectSuccess()
       .expectOutput(/\d+\.\d+\.\d+/)
       .step('Test invalid command')
-      .run('invalid-command', { cwd: './my-cli-project' })
+      .run('invalid-command')
       .expectFailure()
       .expectStderr(/Unknown command/)
       .execute('local')
@@ -694,13 +815,12 @@ my-citty-project/
 
 ## 🎮 **Playground Project**
 
-The included playground project (`./playground/`) serves as a complete example and testing environment:
+The included playground project (`./playground/`) serves as a complete example:
 
 - **Full Citty CLI**: Demonstrates commands, subcommands, and options
 - **Comprehensive Tests**: Unit, integration, and scenario tests
 - **All Features**: Shows every aspect of `citty-test-utils`
 - **Best Practices**: Demonstrates proper usage patterns
-- **Ready-to-Test**: All examples in this README work with `cwd: './playground'`
 
 ```bash
 # Run playground tests
@@ -710,15 +830,6 @@ npm test
 
 # Run playground CLI
 npm start
-
-# Test examples from this README
-cd ..
-node -e "
-import { runLocalCitty } from './index.js';
-const result = await runLocalCitty(['--help'], { cwd: './playground', env: { TEST_CLI: 'true' } });
-result.expectSuccess().expectOutput('USAGE');
-console.log('✅ Playground example works!');
-"
 ```
 
 ## 📚 **Documentation**

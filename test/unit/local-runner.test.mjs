@@ -90,7 +90,7 @@ describe.concurrent('Local Runner Unit Tests', () => {
       await runLocalCitty(['--help'], { env: { TEST_VAR: 'test_value', TEST_CLI: 'true' } })
 
       expect(execSync).toHaveBeenCalledWith(
-        expect.stringContaining('node test-cli.mjs --help'),
+        expect.stringMatching(/node .+test-cli\.mjs --help/),
         expect.objectContaining({
           env: expect.objectContaining({
             TEST_VAR: 'test_value',

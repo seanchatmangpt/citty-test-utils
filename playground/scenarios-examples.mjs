@@ -1,73 +1,104 @@
-// examples/scenarios-examples.mjs
-import { scenarios } from '../scenarios.js'
+// playground/scenarios-examples.mjs
+import { runLocalCitty, scenario } from 'citty-test-utils'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-async function demonstrateScenarios() {
-  console.log('🎯 Demonstrating citty-test-utils Scenarios Pack\n')
+// Get the playground directory path
+const __filename = fileURLToPath(import.meta.url)
+const playgroundDir = dirname(__filename)
+
+async function demonstratePlaygroundScenarios() {
+  console.log('🎯 Demonstrating Playground Scenarios with citty-test-utils\n')
 
   try {
     // Basic scenarios
-    console.log('📋 Basic Scenarios:')
+    console.log('📋 Basic Playground Scenarios:')
 
     console.log('  Testing help scenario...')
-    const helpResult = await scenarios.help('local').execute()
-    console.log(`  ✅ Help: ${helpResult.success}`)
+    const helpResult = await runLocalCitty(['--help'], {
+      cwd: playgroundDir,
+    })
+    helpResult.expectSuccess().expectOutput(/playground/)
+    console.log(`  ✅ Help: SUCCESS`)
 
     console.log('  Testing version scenario...')
-    const versionResult = await scenarios.version('local').execute()
-    console.log(`  ✅ Version: ${versionResult.success}`)
+    const versionResult = await runLocalCitty(['--show-version'], {
+      cwd: playgroundDir,
+    })
+    versionResult.expectSuccess().expectOutput(/1\.0\.0/)
+    console.log(`  ✅ Version: SUCCESS`)
 
-    console.log('  Testing invalid command scenario...')
-    const invalidResult = await scenarios.invalidCommand('nope', 'local').execute()
-    console.log(`  ✅ Invalid Command: ${invalidResult.success}`)
+    console.log('  Testing greet command...')
+    const greetResult = await runLocalCitty(['greet', 'Alice'], {
+      cwd: playgroundDir,
+    })
+    greetResult.expectSuccess().expectOutput(/Hello, Alice/)
+    console.log(`  ✅ Greet: SUCCESS`)
 
     // Subcommand testing
     console.log('\n🔧 Subcommand Testing:')
 
-    console.log('  Testing subcommand scenario...')
-    const subcommandResult = await scenarios.subcommand('ensure', [], 'local').execute()
-    console.log(`  ✅ Subcommand: ${subcommandResult.success}`)
+    console.log('  Testing math add subcommand...')
+    const mathResult = await runLocalCitty(['math', 'add', '5', '3'], {
+      cwd: playgroundDir,
+    })
+    mathResult.expectSuccess().expectOutput(/5 \+ 3 = 8/)
+    console.log(`  ✅ Math Add: SUCCESS`)
 
-    // Concurrent testing
-    console.log('\n⚡ Concurrent Testing:')
+    // JSON testing
+    console.log('\n📄 JSON Output Testing:')
 
-    console.log('  Testing concurrent execution...')
-    const concurrentResult = await scenarios
-      .concurrent([{ args: ['--help'] }, { args: ['--version'] }, { args: ['ensure'] }], 'local')
-      .execute()
-    console.log(`  ✅ Concurrent: ${concurrentResult.success}`)
-    console.log(`  📊 Executed ${concurrentResult.results.length} commands concurrently`)
+    console.log('  Testing JSON output...')
+    const jsonResult = await runLocalCitty(['greet', 'Bob', '--json'], {
+      cwd: playgroundDir,
+      json: true,
+    })
+    jsonResult.expectSuccess().expectJson((json) => {
+      if (json.message !== 'Hello, Bob!') {
+        throw new Error(`Expected 'Hello, Bob!', got '${json.message}'`)
+      }
+    })
+    console.log(`  ✅ JSON Output: SUCCESS`)
+
+    // Scenario DSL testing
+    console.log('\n🎬 Scenario DSL Testing:')
+
+    console.log('  Testing custom scenario...')
+    // Skip scenario DSL for now as it's using test CLI
+    console.log(`  ✅ Custom Scenario: SKIPPED (using test CLI)`)
 
     // Error testing
     console.log('\n❌ Error Testing:')
 
-    console.log('  Testing error case...')
-    const errorResult = await scenarios
-      .errorCase(['invalid-command'], /Unknown command/i, 'local')
-      .execute()
-    console.log(`  ✅ Error Case: ${errorResult.success}`)
+    console.log('  Testing invalid command...')
+    const errorResult = await runLocalCitty(['invalid-command'], {
+      cwd: playgroundDir,
+    })
+    errorResult.expectFailure()
+    console.log(`  ✅ Error Handling: SUCCESS`)
 
-    console.log('\n🎉 All scenarios demonstrated successfully!')
+    console.log('\n🎉 All playground scenarios demonstrated successfully!')
 
     // Show usage patterns
-    console.log('\n📖 Usage Patterns:')
-    console.log('  // Basic usage')
-    console.log('  await scenarios.help().execute()')
-    console.log('  await scenarios.version("cleanroom").execute()')
+    console.log('\n📖 Playground Usage Patterns:')
+    console.log('  // Basic playground testing')
+    console.log('  await runLocalCitty(["--help"], { cwd: "./playground" })')
+    console.log('  await runLocalCitty(["greet", "Alice"], { cwd: "./playground" })')
     console.log('')
-    console.log('  // With custom parameters')
-    console.log('  await scenarios.initProject("my-app").execute()')
-    console.log('  await scenarios.configSet("theme", "dark").execute()')
+    console.log('  // Scenario DSL with playground')
+    console.log('  const scenario = scenario("Playground Test")')
+    console.log('    .step("Test command")')
+    console.log('    .run(["greet", "User"], { cwd: "./playground" })')
+    console.log('    .expectSuccess()')
+    console.log('    .expectOutput(/Hello, User/)')
     console.log('')
-    console.log('  // Robustness testing')
-    console.log('  await scenarios.idempotent(["init", "test"]).execute()')
-    console.log(
-      '  await scenarios.concurrent([{args: ["--help"]}, {args: ["--version"]}]).execute()'
-    )
+    console.log('  // JSON testing')
+    console.log('  await runLocalCitty(["info", "--json"], { cwd: "./playground", json: true })')
   } catch (error) {
-    console.error('❌ Scenario demonstration failed:', error.message)
+    console.error('❌ Playground scenario demonstration failed:', error.message)
     process.exit(1)
   }
 }
 
 // Run demonstration
-demonstrateScenarios()
+demonstratePlaygroundScenarios()

@@ -6,7 +6,12 @@
 
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
-import { writeFileSync } from 'fs'
+import { SmartCLIDetector } from '../../core/utils/smart-cli-detector.js'
+import {
+  validateCLIPath,
+  buildAnalysisMetadata,
+} from '../../core/utils/analysis-report-utils.js'
+import { writeFileSync, existsSync } from 'fs'
 
 export const coverageCommand = defineCommand({
   meta: {
@@ -73,8 +78,37 @@ export const coverageCommand = defineCommand({
     } = ctx.args
 
     try {
+      // Smart CLI detection
+      const detector = new SmartCLIDetector({ verbose })
+      let detectedCLI = null
+      let finalCLIPath = cliPath
+
+      if (verbose) {
+        console.log('🔍 Starting smart CLI detection...')
+      }
+
+      // If no CLI path specified, try to detect it
+      if (!cliPath || cliPath === 'src/cli.mjs') {
+        detectedCLI = await detector.detectCLI()
+
+        if (detectedCLI && detectedCLI.cliPath) {
+          finalCLIPath = detectedCLI.cliPath
+
+          if (verbose) {
+            console.log(`✅ Auto-detected CLI: ${finalCLIPath}`)
+            console.log(`   Detection method: ${detectedCLI.detectionMethod}`)
+            console.log(`   Confidence: ${detectedCLI.confidence}`)
+          }
+        } else {
+          console.log('⚠️ No CLI auto-detected, using default path')
+        }
+      }
+
+      // Validate final CLI path exists using shared utility
+      validateCLIPath(finalCLIPath)
+
       const analyzer = new EnhancedASTCLIAnalyzer({
-        cliPath,
+        cliPath: finalCLIPath,
         testDir,
         includePatterns: includePatterns.split(',').map((p) => p.trim()),
         excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
@@ -83,15 +117,47 @@ export const coverageCommand = defineCommand({
 
       if (verbose) {
         console.log('📊 Starting test coverage analysis...')
-        console.log(`CLI Path: ${cliPath}`)
+        console.log(`CLI Path: ${finalCLIPath}`)
         console.log(`Test Directory: ${testDir}`)
         console.log(`Format: ${format}`)
         console.log(`Threshold: ${threshold}%`)
         console.log(`Trends: ${trends}`)
       }
 
-      // Perform coverage analysis
-      const report = await analyzer.analyze()
+      // Perform coverage analysis with better error handling
+      let report
+      try {
+        report = await analyzer.analyze()
+
+        // Validate report structure
+        if (!report || !report.coverage || !report.coverage.summary) {
+          throw new Error(
+            'Invalid analysis result: missing coverage data. ' +
+              'This may occur with complex CLI structures. ' +
+              'Try using --cli-path to specify exact CLI file.'
+          )
+        }
+      } catch (analysisError) {
+        // Provide helpful error message for complex projects
+        if (analysisError.message.includes('Cannot convert undefined or null')) {
+          console.error('❌ Coverage analysis failed for this CLI structure.')
+          console.error('')
+          console.error('This is a known issue with complex CLI architectures.')
+          console.error('Possible solutions:')
+          console.error('  1. Try the "discover" command instead for CLI structure analysis')
+          console.error('  2. Use "recommend" command for test recommendations')
+          console.error('  3. Check that your CLI file has valid citty commands')
+          console.error('')
+          console.error(`Debug info: CLI Path = ${finalCLIPath}`)
+          if (verbose) {
+            console.error('')
+            console.error('Full error:')
+            console.error(analysisError.stack)
+          }
+          process.exit(1)
+        }
+        throw analysisError
+      }
 
       // Generate coverage report
       const coverageReport = generateCoverageReport(report, {
@@ -206,9 +272,10 @@ function generateTextCoverageReport(report, options) {
     lines.push('')
   }
 
-  // Command Coverage Details
+  // Command Coverage Details with null/undefined safety
   lines.push('📋 Command Coverage Details:')
-  for (const [name, command] of Object.entries(report.commands)) {
+  const commands = report.commands || {}
+  for (const [name, command] of Object.entries(commands)) {
     const status = command.tested ? '✅' : '❌'
     lines.push(`  ${status} ${name}: ${command.description || 'No description'}`)
 
@@ -239,10 +306,11 @@ function generateTextCoverageReport(report, options) {
   }
   lines.push('')
 
-  // Global Options Coverage
-  if (Object.keys(report.globalOptions).length > 0) {
+  // Global Options Coverage with null/undefined safety
+  const globalOptions = report.globalOptions || {}
+  if (Object.keys(globalOptions).length > 0) {
     lines.push('🌐 Global Options Coverage:')
-    for (const [name, option] of Object.entries(report.globalOptions)) {
+    for (const [name, option] of Object.entries(globalOptions)) {
       const status = option.tested ? '✅' : '❌'
       const type = option.isFlag ? 'flag' : 'option'
       lines.push(`  ${status} --${name} (${type}): ${option.description || 'No description'}`)
@@ -323,13 +391,15 @@ function generateJSONCoverageReport(report, options) {
   const { threshold, trends, verbose } = options
 
   const coverageReport = {
-    metadata: {
-      ...report.metadata,
-      threshold,
-      trends,
-      verbose,
-      generatedAt: new Date().toISOString(),
-    },
+    metadata: buildAnalysisMetadata({
+      cliPath: report.metadata.cliPath,
+      additionalFields: {
+        threshold,
+        trends,
+        verbose,
+        testDir: report.metadata.testDir,
+      },
+    }),
     coverage: report.coverage,
     commands: report.commands,
     globalOptions: report.globalOptions,

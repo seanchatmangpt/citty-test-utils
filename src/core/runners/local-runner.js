@@ -5,6 +5,8 @@
  */
 
 import { execSync } from 'child_process'
+import { existsSync } from 'node:fs'
+import { resolve as resolvePath } from 'node:path'
 import { matchSnapshot } from '../assertions/snapshot.js'
 import {
   setupCleanroom as setupCleanroomCore,
@@ -23,19 +25,21 @@ export async function runLocalCitty(command, options = {}) {
 
   const startTime = Date.now()
 
-  // Check if we're in vitest environment and use mock responses
+  // Only use unit test mocks when execSync is explicitly mocked (unit tests)
+  // Integration tests should execute real CLI to validate actual behavior
   const isVitestEnv = process.env.VITEST === 'true' || process.env.VITEST_MODE === 'RUN'
   const isUnitTest = isVitestEnv && typeof execSync.mockImplementation === 'function'
-  const isIntegrationTest = isVitestEnv && env.TEST_CLI && !isUnitTest
 
-  if (isIntegrationTest) {
-    // Provide mock responses for vitest environment
+  // Unit tests with mocked execSync get mock responses
+  if (isUnitTest) {
+    // This block only executes for unit tests with mocked execSync
+    // Integration tests will skip this and execute the real CLI below
     const startTime = Date.now()
     let stdout = ''
     let stderr = ''
     let exitCode = 0
 
-    // Mock responses based on command
+    // Mock responses for unit tests only
     if (command.includes('--help')) {
       stdout = `Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.0)
 
@@ -43,18 +47,18 @@ USAGE ctu [OPTIONS] test|gen|runner|info|analysis
 
 OPTIONS
 
-     --show-help    Show help information   
+     --show-help    Show help information
   --show-version    Show version information
-          --json    Output in JSON format   
-       --verbose    Enable verbose output   
+          --json    Output in JSON format
+       --verbose    Enable verbose output
 
 COMMANDS
 
-      test    Run tests and scenarios                         
+      test    Run tests and scenarios
        gen    Generate test files and templates using nunjucks
-    runner    Custom runner functionality                     
-      info    Show CLI information                            
-  analysis    Analyze CLI test coverage and generate reports  
+    runner    Custom runner functionality
+      info    Show CLI information
+  analysis    Analyze CLI test coverage and generate reports
 
 Use ctu <command> --help for more information about a command.`
     } else if (command.includes('--version') || command.includes('--show-version')) {
@@ -72,18 +76,18 @@ USAGE ctu [OPTIONS] test|gen|runner|info|analysis
 
 OPTIONS
 
-     --show-help    Show help information   
+     --show-help    Show help information
   --show-version    Show version information
-          --json    Output in JSON format   
-       --verbose    Enable verbose output   
+          --json    Output in JSON format
+       --verbose    Enable verbose output
 
 COMMANDS
 
-      test    Run tests and scenarios                         
+      test    Run tests and scenarios
        gen    Generate test files and templates using nunjucks
-    runner    Custom runner functionality                     
-      info    Show CLI information                            
-  analysis    Analyze CLI test coverage and generate reports  
+    runner    Custom runner functionality
+      info    Show CLI information
+  analysis    Analyze CLI test coverage and generate reports
 
 Use ctu <command> --help for more information about a command.`
     } else if (command.includes('info') && command.includes('version')) {
@@ -111,30 +115,29 @@ Output: v18.17.0`
     } else if (command.includes('--json')) {
       stdout = '{"name":"ctu","version":"0.5.0","description":"Test CLI"}'
     } else {
-      // Default response for unknown commands
+      // Default response for unknown commands in unit tests
       stdout = `Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.0)
 
 USAGE ctu [OPTIONS] test|gen|runner|info|analysis
 
 OPTIONS
 
-     --show-help    Show help information   
+     --show-help    Show help information
   --show-version    Show version information
-          --json    Output in JSON format   
-       --verbose    Enable verbose output   
+          --json    Output in JSON format
+       --verbose    Enable verbose output
 
 COMMANDS
 
-      test    Run tests and scenarios                         
+      test    Run tests and scenarios
        gen    Generate test files and templates using nunjucks
-    runner    Custom runner functionality                     
-      info    Show CLI information                            
-  analysis    Analyze CLI test coverage and generate reports  
+    runner    Custom runner functionality
+      info    Show CLI information
+  analysis    Analyze CLI test coverage and generate reports
 
 Use ctu <command> --help for more information about a command.`
     }
 
-    // Add a small delay to simulate realistic execution time
     await new Promise((resolve) => setTimeout(resolve, 10))
 
     const durationMs = Date.now() - startTime
@@ -154,7 +157,21 @@ Use ctu <command> --help for more information about a command.`
   }
 
   // Use test CLI if TEST_CLI environment variable is set, or use provided cliPath
-  const actualCliPath = cliPath || (env.TEST_CLI ? 'test-cli.mjs' : 'src/cli.mjs')
+  const resolvedCliPath = (() => {
+    if (cliPath) return resolvePath(cliPath)
+
+    if (env.TEST_CLI) {
+      if (existsSync('test-cli.mjs')) {
+        return resolvePath('test-cli.mjs')
+      }
+      if (existsSync('playground/test-cli.mjs')) {
+        return resolvePath('playground/test-cli.mjs')
+      }
+    }
+
+    return resolvePath('src/cli.mjs')
+  })()
+
   const escapedCommand = command.map((arg) => {
     // If the argument contains spaces, wrap it in quotes
     if (arg.includes(' ')) {
@@ -162,7 +179,7 @@ Use ctu <command> --help for more information about a command.`
     }
     return arg
   })
-  const fullCommand = `node ${actualCliPath} ${escapedCommand.join(' ')}`
+  const fullCommand = `node ${resolvedCliPath} ${escapedCommand.join(' ')}`
 
   try {
     // Use execSync for simpler execution (works better with mocks)

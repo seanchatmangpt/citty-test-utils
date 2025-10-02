@@ -156,6 +156,54 @@ const versionResult = await scenarios.version('cleanroom').execute()
 const errorResult = await scenarios.invalidCommand('nonexistent', 'local').execute()
 ```
 
+### Analysis Commands
+
+```javascript
+import { runLocalCitty } from 'citty-test-utils'
+
+// Discover CLI structure
+const discoverResult = await runLocalCitty([
+  'analysis', 'discover',
+  '--cli-path', 'playground/src/cli.mjs',
+  '--format', 'json'
+], { json: true })
+
+// Analyze test coverage
+const coverageResult = await runLocalCitty([
+  'analysis', 'analyze',
+  '--cli-path', 'playground/src/cli.mjs',
+  '--test-dir', 'playground/test'
+])
+
+// Get recommendations
+const recommendResult = await runLocalCitty([
+  'analysis', 'recommend',
+  '--cli-path', 'playground/src/cli.mjs',
+  '--test-dir', 'playground/test',
+  '--priority', 'high'
+])
+
+// Export coverage data in Turtle format (RDF)
+const turtleResult = await runLocalCitty([
+  'analysis', 'export',
+  '--cli-path', 'playground/src/cli.mjs',
+  '--test-dir', 'playground/test',
+  '--format', 'turtle',
+  '--output', 'coverage.ttl',
+  '--base-uri', 'http://example.org/playground',
+  '--cli-name', 'playground'
+])
+
+// Export coverage data in JSON format
+const jsonResult = await runLocalCitty([
+  'analysis', 'export',
+  '--cli-path', 'playground/src/cli.mjs',
+  '--test-dir', 'playground/test',
+  '--format', 'json',
+  '--output', 'coverage.json'
+])
+```
+
 ## Running Tests
 
 ### Install Dependencies
@@ -195,6 +243,19 @@ npm start
 
 # Or run directly
 node src/cli.mjs greet Alice
+```
+
+### Run Demo Examples
+
+```bash
+# Run scenarios examples
+npm run demo
+
+# Run snapshot examples
+npm run demo:snapshots
+
+# Run analysis examples
+npm run demo:analysis
 ```
 
 ## Test Structure

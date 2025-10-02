@@ -15,7 +15,16 @@
     "test:unit": "vitest run test/unit",
     "test:integration": "vitest run test/integration",
     "test:watch": "vitest watch",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:comprehensive": "node test-comprehensive.mjs",
+    "test:fluent": "vitest run test/integration/fluent-assertions.test.mjs",
+    "test:utils": "vitest run test/integration/test-utils.test.mjs",
+    "test:scenarios": "vitest run test/integration/advanced-scenarios.test.mjs",
+    "test:analysis": "vitest run test/integration/analysis-tools.test.mjs",
+    "test:snapshots": "vitest run test/integration/snapshot-testing.test.mjs",
+    "demo": "node scenarios-examples.mjs",
+    "demo:snapshots": "node snapshot-examples.mjs",
+    "demo:analysis": "node analysis-examples.mjs"
   },
   "keywords": [
     "citty",
@@ -28,7 +37,7 @@
   "license": "MIT",
   "dependencies": {
     "citty": "^0.1.6",
-    "citty-test-utils": "^0.5.0"
+    "citty-test-utils": "^0.5.1"
   },
   "devDependencies": {
     "vitest": "^1.0.0"

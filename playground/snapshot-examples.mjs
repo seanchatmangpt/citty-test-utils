@@ -7,7 +7,7 @@
  * Run with: node snapshot-examples.mjs
  */
 
-import { runLocalCitty, scenario, scenarios, SnapshotManagerUtils } from '../src/index.js'
+import { runLocalCitty, scenario, scenarios, SnapshotManager } from 'citty-test-utils'
 import { writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -233,7 +233,7 @@ console.log('  --version  Show version')
     result2.expectSuccess().expectSnapshotStdout('management-version')
 
     // Test snapshot management utilities
-    const manager = new SnapshotManagerUtils()
+    const manager = new SnapshotManager()
 
     // List snapshots
     const snapshots = manager.listSnapshots(tempDir)

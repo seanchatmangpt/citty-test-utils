@@ -7,7 +7,13 @@
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
 import { SmartCLIDetector } from '../../core/utils/smart-cli-detector.js'
-import { writeFileSync } from 'fs'
+import {
+  validateCLIPath,
+  buildAnalysisMetadata,
+  formatCLIDetection,
+  buildReportHeader,
+} from '../../core/utils/analysis-report-utils.js'
+import { writeFileSync, existsSync } from 'fs'
 
 export const discoverCommand = defineCommand({
   meta: {
@@ -99,6 +105,9 @@ export const discoverCommand = defineCommand({
           console.log('⚠️ No CLI auto-detected, using default path')
         }
       }
+
+      // Validate final CLI path exists using shared utility
+      validateCLIPath(finalCLIPath)
 
       const analyzer = new EnhancedASTCLIAnalyzer({
         cliPath: finalCLIPath,
@@ -347,23 +356,15 @@ function generateJSONReport(cliStructure, options) {
   const { cliPath, includeImports, validate, verbose, detectedCLI } = options
 
   const report = {
-    metadata: {
-      discoveredAt: new Date().toISOString(),
+    metadata: buildAnalysisMetadata({
       cliPath,
-      analysisMethod: 'AST-based',
-      includeImports,
-      validation: validate,
-      verbose,
-    },
-    cliDetection: detectedCLI
-      ? {
-          method: detectedCLI.detectionMethod,
-          confidence: detectedCLI.confidence,
-          packageName: detectedCLI.packageName,
-          binName: detectedCLI.binName,
-          packageJson: detectedCLI.packageJson,
-        }
-      : null,
+      additionalFields: {
+        includeImports,
+        validation: validate,
+        verbose,
+      },
+    }),
+    cliDetection: formatCLIDetection(detectedCLI),
     summary: {
       commands: cliStructure.commands.size,
       globalOptions: cliStructure.globalOptions.size,

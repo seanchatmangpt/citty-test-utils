@@ -114,7 +114,9 @@ export async function runCitty(
 
   // Wrap in expectations layer
   const { wrapExpectation } = await import('../assertions/assertions.js')
-  return wrapExpectation(result)
+  const wrapped = wrapExpectation(result)
+  wrapped.result = result
+  return wrapped
 }
 
 export async function teardownCleanroom() {

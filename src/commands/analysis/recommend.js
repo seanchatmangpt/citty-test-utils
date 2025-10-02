@@ -6,7 +6,13 @@
 
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
-import { writeFileSync } from 'fs'
+import { SmartCLIDetector } from '../../core/utils/smart-cli-detector.js'
+import {
+  validateCLIPath,
+  buildAnalysisMetadata,
+  getPriorityEmoji,
+} from '../../core/utils/analysis-report-utils.js'
+import { writeFileSync, existsSync } from 'fs'
 
 export const recommendCommand = defineCommand({
   meta: {
@@ -73,8 +79,38 @@ export const recommendCommand = defineCommand({
     } = ctx.args
 
     try {
+      // Smart CLI detection
+      const detector = new SmartCLIDetector({ verbose })
+      let detectedCLI = null
+      let finalCLIPath = cliPath
+
+      if (verbose) {
+        console.log('🔍 Starting smart CLI detection...')
+      }
+
+      // If no CLI path specified, try to detect it
+      if (!cliPath || cliPath === 'src/cli.mjs') {
+        detectedCLI = await detector.detectCLI()
+
+        if (detectedCLI && detectedCLI.cliPath) {
+          finalCLIPath = detectedCLI.cliPath
+
+          if (verbose) {
+            console.log(`✅ Auto-detected CLI: ${finalCLIPath}`)
+            console.log(`   Detection method: ${detectedCLI.detectionMethod}`)
+            console.log(`   Confidence: ${detectedCLI.confidence}`)
+          }
+        } else {
+          console.log('⚠️ No CLI auto-detected, using default path')
+        }
+      }
+
+      // Validate final CLI path exists
+      // Validate final CLI path exists using shared utility
+      validateCLIPath(finalCLIPath)
+
       const analyzer = new EnhancedASTCLIAnalyzer({
-        cliPath,
+        cliPath: finalCLIPath,
         testDir,
         includePatterns: includePatterns.split(',').map((p) => p.trim()),
         excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
@@ -83,7 +119,7 @@ export const recommendCommand = defineCommand({
 
       if (verbose) {
         console.log('💡 Starting smart recommendations generation...')
-        console.log(`CLI Path: ${cliPath}`)
+        console.log(`CLI Path: ${finalCLIPath}`)
         console.log(`Test Directory: ${testDir}`)
         console.log(`Format: ${format}`)
         console.log(`Priority: ${priority}`)

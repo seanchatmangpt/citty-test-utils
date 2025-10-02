@@ -3,6 +3,7 @@
 
 import { defineCommand } from 'citty'
 import { scenarios } from '../../core/scenarios/scenarios.js'
+import { setupCleanroom } from '../../core/runners/cleanroom-runner.js'
 
 export const runCommand = defineCommand({
   meta: {
@@ -35,6 +36,10 @@ export const runCommand = defineCommand({
 
     try {
       let result
+
+      if (environment === 'cleanroom') {
+        await setupCleanroom({ rootDir: process.cwd() })
+      }
 
       if (scenarioName === 'all') {
         // Run all scenarios
