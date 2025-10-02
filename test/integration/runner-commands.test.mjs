@@ -80,7 +80,8 @@ if (args.includes('--slow')) {
 
   describe('Basic Command Execution', () => {
     it('should execute --help command successfully', async () => {
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -92,7 +93,8 @@ if (args.includes('--slow')) {
     })
 
     it('should execute --version command successfully', async () => {
-      const result = await runLocalCitty(['--version'], {
+      const result = await runLocalCitty({
+        args: ['--version'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -102,7 +104,8 @@ if (args.includes('--slow')) {
     })
 
     it('should handle unknown commands gracefully', async () => {
-      const result = await runLocalCitty(['--unknown'], {
+      const result = await runLocalCitty({
+        args: ['--unknown'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -114,7 +117,8 @@ if (args.includes('--slow')) {
 
   describe('Command Failures', () => {
     it('should handle command failures gracefully', async () => {
-      const result = await runLocalCitty(['--fail'], {
+      const result = await runLocalCitty({
+        args: ['--fail'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -124,7 +128,8 @@ if (args.includes('--slow')) {
     })
 
     it('should return proper error information on failure', async () => {
-      const result = await runLocalCitty(['--fail'], {
+      const result = await runLocalCitty({
+        args: ['--fail'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -140,7 +145,8 @@ if (args.includes('--slow')) {
 
   describe('Timeout Handling', () => {
     it('should timeout long-running commands', async () => {
-      const result = await runLocalCitty(['--slow'], {
+      const result = await runLocalCitty({
+        args: ['--slow'],
         cliPath: testCliPath,
         timeout: 100, // Very short timeout
       })
@@ -151,7 +157,8 @@ if (args.includes('--slow')) {
     }, 10000) // Increase test timeout
 
     it('should not timeout fast commands', async () => {
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -163,7 +170,8 @@ if (args.includes('--slow')) {
 
   describe('Environment Variables', () => {
     it('should pass environment variables to command', async () => {
-      const result = await runLocalCitty(['--env'], {
+      const result = await runLocalCitty({
+        args: ['--env'],
         cliPath: testCliPath,
         env: {
           TEST_VAR: 'test_value',
@@ -179,7 +187,8 @@ if (args.includes('--slow')) {
     })
 
     it('should handle missing environment variables', async () => {
-      const result = await runLocalCitty(['--env'], {
+      const result = await runLocalCitty({
+        args: ['--env'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -192,7 +201,8 @@ if (args.includes('--slow')) {
 
   describe('JSON Output Parsing', () => {
     it('should parse valid JSON output', async () => {
-      const result = await runLocalCitty(['--json'], {
+      const result = await runLocalCitty({
+        args: ['--json'],
         cliPath: testCliPath,
         json: true,
         timeout: 5000,
@@ -205,7 +215,8 @@ if (args.includes('--slow')) {
     })
 
     it('should handle non-JSON output when json flag is set', async () => {
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: testCliPath,
         json: true,
         timeout: 5000,
@@ -218,7 +229,8 @@ if (args.includes('--slow')) {
 
   describe('Fluent Assertions', () => {
     it('should support expectSuccess assertion', async () => {
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -227,7 +239,8 @@ if (args.includes('--slow')) {
     })
 
     it('should support expectFailure assertion', async () => {
-      const result = await runLocalCitty(['--fail'], {
+      const result = await runLocalCitty({
+        args: ['--fail'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -236,7 +249,8 @@ if (args.includes('--slow')) {
     })
 
     it('should support expectOutput assertion', async () => {
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -246,7 +260,8 @@ if (args.includes('--slow')) {
     })
 
     it('should support expectDuration assertion', async () => {
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -259,10 +274,10 @@ if (args.includes('--slow')) {
   describe('Concurrent Command Execution', () => {
     it('should handle multiple concurrent commands', async () => {
       const commands = [
-        runLocalCitty(['--help'], { cliPath: testCliPath, timeout: 5000 }),
-        runLocalCitty(['--version'], { cliPath: testCliPath, timeout: 5000 }),
-        runLocalCitty(['--json'], { cliPath: testCliPath, timeout: 5000 }),
-        runLocalCitty(['--fail'], { cliPath: testCliPath, timeout: 5000 }),
+        runLocalCitty({ args: ['--help'], cliPath: testCliPath, timeout: 5000 }),
+        runLocalCitty({ args: ['--version'], cliPath: testCliPath, timeout: 5000 }),
+        runLocalCitty({ args: ['--json'], cliPath: testCliPath, timeout: 5000 }),
+        runLocalCitty({ args: ['--fail'], cliPath: testCliPath, timeout: 5000 }),
       ]
 
       const results = await Promise.all(commands)
@@ -276,9 +291,9 @@ if (args.includes('--slow')) {
 
     it('should handle concurrent commands with different timeouts', async () => {
       const commands = [
-        runLocalCitty(['--help'], { cliPath: testCliPath, timeout: 1000 }),
-        runLocalCitty(['--version'], { cliPath: testCliPath, timeout: 2000 }),
-        runLocalCitty(['--json'], { cliPath: testCliPath, timeout: 3000 }),
+        runLocalCitty({ args: ['--help'], cliPath: testCliPath, timeout: 1000 }),
+        runLocalCitty({ args: ['--version'], cliPath: testCliPath, timeout: 2000 }),
+        runLocalCitty({ args: ['--json'], cliPath: testCliPath, timeout: 3000 }),
       ]
 
       const results = await Promise.all(commands)
@@ -291,7 +306,8 @@ if (args.includes('--slow')) {
 
   describe('Edge Cases', () => {
     it('should handle empty command array', async () => {
-      const result = await runLocalCitty([], {
+      const result = await runLocalCitty({
+        args: [],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -302,7 +318,8 @@ if (args.includes('--slow')) {
     })
 
     it('should handle commands with special characters', async () => {
-      const result = await runLocalCitty(['--json'], {
+      const result = await runLocalCitty({
+        args: ['--json'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -311,7 +328,8 @@ if (args.includes('--slow')) {
     })
 
     it('should handle very long command output', async () => {
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: testCliPath,
         timeout: 5000,
       })
@@ -323,7 +341,8 @@ if (args.includes('--slow')) {
 
   describe('Error Recovery', () => {
     it('should recover from non-existent CLI path', async () => {
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: '/nonexistent/cli.mjs',
         timeout: 5000,
       })
@@ -337,7 +356,8 @@ if (args.includes('--slow')) {
       const noExecPath = join(testDir, 'no-exec.mjs')
       writeFileSync(noExecPath, '#!/usr/bin/env node\nconsole.log("test")', { mode: 0o644 })
 
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty({
+        args: ['--help'],
         cliPath: noExecPath,
         timeout: 5000,
       })

@@ -1,258 +1,130 @@
 #!/usr/bin/env node
 /**
  * @fileoverview Local Runner for Citty Testing
- * @description Execute Citty CLI commands locally with fluent assertions
+ * @description Execute ANY CLI locally with proper validation and fail-fast behavior
  */
 
 import { execSync } from 'child_process'
 import { existsSync } from 'node:fs'
-import { resolve as resolvePath } from 'node:path'
-import { matchSnapshot } from '../assertions/snapshot.js'
-import {
-  setupCleanroom as setupCleanroomCore,
-  runCitty as runCittyCore,
-  teardownCleanroom as teardownCleanroomCore,
-} from './cleanroom-runner.js'
+import { resolve } from 'node:path'
+import { z } from 'zod'
 
 /**
- * Execute Citty CLI commands locally
- * @param {string[]} command - Command array (e.g., ['--help'] or ['gen', 'project'])
- * @param {Object} options - Execution options
- * @returns {Promise<Object>} Result with fluent assertions
+ * Zod schema for runLocalCitty options
+ * Defaults are read from environment variables set in test setup
  */
-export async function runLocalCitty(command, options = {}) {
-  const { cwd = process.cwd(), env = {}, timeout = 30000, json = false, cliPath } = options
+const LocalRunnerOptionsSchema = z.object({
+  cliPath: z.string().optional().default(
+    process.env.TEST_CLI_PATH || './src/cli.mjs'
+  ),
+  cwd: z.string().optional().default(
+    process.env.TEST_CWD || process.cwd()
+  ),
+  env: z.record(z.string()).optional().default({}),
+  timeout: z.number().positive().optional().default(30000),
+  args: z.array(z.string()).optional().default([]),
+})
+
+/**
+ * Execute ANY CLI command locally with full user control
+ *
+ * @param {Object} options - Execution options (validated with Zod)
+ * @param {string} options.cliPath - REQUIRED: Path to CLI file to execute
+ * @param {string} [options.cwd=process.cwd()] - Working directory for execution
+ * @param {Object} [options.env={}] - Environment variables
+ * @param {number} [options.timeout=30000] - Timeout in milliseconds
+ * @param {string[]} [options.args=[]] - CLI arguments to pass
+ * @returns {Object} Execution result with stdout, stderr, exitCode, durationMs
+ *
+ * @example
+ * // Execute with explicit CLI path
+ * const result = runLocalCitty({
+ *   cliPath: './src/cli.mjs',
+ *   args: ['--help'],
+ *   cwd: '/path/to/project'
+ * })
+ *
+ * @example
+ * // Execute custom CLI in monorepo
+ * const result = runLocalCitty({
+ *   cliPath: './packages/my-cli/bin/cli.js',
+ *   args: ['test', '--verbose'],
+ *   env: { DEBUG: '1' }
+ * })
+ */
+export function runLocalCitty(options) {
+  // Validate options with Zod - throws immediately if invalid
+  const validated = LocalRunnerOptionsSchema.parse(options)
+  const { cliPath, cwd, env, timeout, args } = validated
+
+  // Resolve CLI path to absolute
+  const resolvedCliPath = resolve(cwd, cliPath)
+
+  // Fail-fast: CLI file must exist
+  if (!existsSync(resolvedCliPath)) {
+    throw new Error(
+      `CLI file not found: ${resolvedCliPath}\n` +
+      `Expected path: ${cliPath}\n` +
+      `Working directory: ${cwd}\n` +
+      `Resolved to: ${resolvedCliPath}\n\n` +
+      `Possible fixes:\n` +
+      `  1. Check the cliPath is correct\n` +
+      `  2. Ensure the file exists at the specified location\n` +
+      `  3. Use an absolute path: cliPath: '/absolute/path/to/cli.js'\n` +
+      `  4. Check your working directory (cwd) is correct`
+    )
+  }
 
   const startTime = Date.now()
 
-  // Only use unit test mocks when execSync is explicitly mocked (unit tests)
-  // Integration tests should execute real CLI to validate actual behavior
-  const isVitestEnv = process.env.VITEST === 'true' || process.env.VITEST_MODE === 'RUN'
-  const isUnitTest = isVitestEnv && typeof execSync.mockImplementation === 'function'
+  // Escape arguments containing spaces
+  const escapedArgs = args.map(arg =>
+    arg.includes(' ') ? `"${arg}"` : arg
+  )
 
-  // Unit tests with mocked execSync get mock responses
-  if (isUnitTest) {
-    // This block only executes for unit tests with mocked execSync
-    // Integration tests will skip this and execute the real CLI below
-    const startTime = Date.now()
-    let stdout = ''
-    let stderr = ''
-    let exitCode = 0
+  const fullCommand = `node "${resolvedCliPath}" ${escapedArgs.join(' ')}`
 
-    // Mock responses for unit tests only
-    if (command.includes('--help')) {
-      stdout = `Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.0)
-
-USAGE ctu [OPTIONS] test|gen|runner|info|analysis
-
-OPTIONS
-
-     --show-help    Show help information
-  --show-version    Show version information
-          --json    Output in JSON format
-       --verbose    Enable verbose output
-
-COMMANDS
-
-      test    Run tests and scenarios
-       gen    Generate test files and templates using nunjucks
-    runner    Custom runner functionality
-      info    Show CLI information
-  analysis    Analyze CLI test coverage and generate reports
-
-Use ctu <command> --help for more information about a command.`
-    } else if (command.includes('--version') || command.includes('--show-version')) {
-      stdout = '0.5.0'
-    } else if (
-      command.includes('invalid') ||
-      command.includes('unknown') ||
-      command.includes('nonexistent')
-    ) {
-      exitCode = 1
-      stderr = 'Unknown command'
-      stdout = `Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.0)
-
-USAGE ctu [OPTIONS] test|gen|runner|info|analysis
-
-OPTIONS
-
-     --show-help    Show help information
-  --show-version    Show version information
-          --json    Output in JSON format
-       --verbose    Enable verbose output
-
-COMMANDS
-
-      test    Run tests and scenarios
-       gen    Generate test files and templates using nunjucks
-    runner    Custom runner functionality
-      info    Show CLI information
-  analysis    Analyze CLI test coverage and generate reports
-
-Use ctu <command> --help for more information about a command.`
-    } else if (command.includes('info') && command.includes('version')) {
-      stdout = 'Version: 0.5.0'
-    } else if (command.includes('info')) {
-      stdout = `Citty Test Utils CLI Information:
-Name: citty-test-utils
-Version: 0.5.0
-Description: Comprehensive testing framework for CLI applications
-Commands: test, gen, runner, info, analysis
-Features:
-  - Local and cleanroom testing
-  - Fluent assertions
-  - Scenario DSL
-  - Template generation
-  - CLI coverage analysis`
-    } else if (command.includes('gen') && command.includes('project')) {
-      stdout = 'Generated complete project'
-    } else if (command.includes('runner') && command.includes('execute')) {
-      stdout = `Command: node --version
-Environment: local
-Exit Code: 0
-Success: ✅
-Output: v18.17.0`
-    } else if (command.includes('--json')) {
-      stdout = '{"name":"ctu","version":"0.5.0","description":"Test CLI"}'
-    } else {
-      // Default response for unknown commands in unit tests
-      stdout = `Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.0)
-
-USAGE ctu [OPTIONS] test|gen|runner|info|analysis
-
-OPTIONS
-
-     --show-help    Show help information
-  --show-version    Show version information
-          --json    Output in JSON format
-       --verbose    Enable verbose output
-
-COMMANDS
-
-      test    Run tests and scenarios
-       gen    Generate test files and templates using nunjucks
-    runner    Custom runner functionality
-      info    Show CLI information
-  analysis    Analyze CLI test coverage and generate reports
-
-Use ctu <command> --help for more information about a command.`
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 10))
-
-    const durationMs = Date.now() - startTime
-    const result = {
-      exitCode,
-      stdout: stdout.trim(),
-      stderr: stderr.trim(),
-      args: command,
-      cwd,
-      durationMs,
-      json: json || command.includes('--json') ? safeJsonParse(stdout) : undefined,
-    }
-
-    const wrapped = wrapWithAssertions(result)
-    wrapped.result = result
-    return wrapped
-  }
-
-  // Use test CLI if TEST_CLI environment variable is set, or use provided cliPath
-  const resolvedCliPath = (() => {
-    if (cliPath) return resolvePath(cliPath)
-
-    if (env.TEST_CLI) {
-      if (existsSync('test-cli.mjs')) {
-        return resolvePath('test-cli.mjs')
-      }
-      if (existsSync('playground/test-cli.mjs')) {
-        return resolvePath('playground/test-cli.mjs')
-      }
-    }
-
-    return resolvePath('src/cli.mjs')
-  })()
-
-  const escapedCommand = command.map((arg) => {
-    // If the argument contains spaces, wrap it in quotes
-    if (arg.includes(' ')) {
-      return `"${arg}"`
-    }
-    return arg
+  // Execute - no try-catch, let errors bubble (fail-fast!)
+  const stdout = execSync(fullCommand, {
+    cwd,
+    env: { ...process.env, ...env },
+    timeout,
+    encoding: 'utf8',
+    // Capture both stdout and stderr
+    stdio: ['pipe', 'pipe', 'pipe']
   })
-  const fullCommand = `node ${resolvedCliPath} ${escapedCommand.join(' ')}`
 
-  try {
-    // Use execSync for simpler execution (works better with mocks)
-    const stdout = execSync(fullCommand, {
-      cwd,
-      env: { ...process.env, ...env },
-      timeout,
-      encoding: 'utf8',
-    })
+  const durationMs = Date.now() - startTime
 
-    const durationMs = Date.now() - startTime
-    const result = {
-      exitCode: 0,
-      stdout: stdout.trim(),
-      stderr: '',
-      args: command,
-      cwd,
-      durationMs,
-      json: json || command.includes('--json') ? safeJsonParse(stdout) : undefined,
-    }
-
-    const wrapped = wrapWithAssertions(result)
-    wrapped.result = result
-    return wrapped
-  } catch (error) {
-    const durationMs = Date.now() - startTime
-    const result = {
-      exitCode: error.status || 1,
-      stdout: error.stdout || '',
-      stderr: error.stderr || error.message,
-      args: command,
-      cwd,
-      durationMs,
-      json: undefined,
-    }
-
-    const wrapped = wrapWithAssertions(result)
-    wrapped.result = result
-    return wrapped
+  return {
+    success: true,
+    exitCode: 0,
+    stdout: stdout.trim(),
+    stderr: '',
+    args,
+    cliPath: resolvedCliPath,
+    cwd,
+    durationMs,
+    command: fullCommand
   }
 }
 
 /**
- * Execute Citty CLI commands in cleanroom environment
- * @param {string[]} command - Command array (e.g., ['--help'] or ['gen', 'project'])
- * @param {Object} options - Execution options
- * @returns {Promise<Object>} Result with fluent assertions
+ * Fluent assertion wrapper for test results
+ * Use this to chain assertions on execution results
+ *
+ * @param {Object} result - Execution result from runLocalCitty
+ * @returns {Object} Result with fluent assertion methods
+ *
+ * @example
+ * const result = runLocalCitty({ cliPath: './cli.js', args: ['--help'] })
+ * const assertions = wrapWithAssertions(result)
+ * assertions
+ *   .expectSuccess()
+ *   .expectOutput('Usage:')
+ *   .expectDuration(1000)
  */
-export async function runCitty(command, options = {}) {
-  return await runCittyCore(command, options)
-}
-
-/**
- * Setup cleanroom environment
- * @param {Object} options - Setup options
- */
-export async function setupCleanroom(options = {}) {
-  return await setupCleanroomCore(options)
-}
-
-/**
- * Teardown cleanroom environment
- */
-export async function teardownCleanroom() {
-  return await teardownCleanroomCore()
-}
-
-/**
- * Wrap result with fluent assertion methods
- * @param {Object} result - Execution result
- * @returns {Object} Result with assertion methods
- */
-function wrapWithAssertions(result) {
+export function wrapWithAssertions(result) {
   return {
     ...result,
 
@@ -260,11 +132,11 @@ function wrapWithAssertions(result) {
     expectSuccess() {
       if (result.exitCode !== 0) {
         throw new Error(
-          `Expected success (exit code 0), got ${
-            result.exitCode
-          }\nCommand: node src/cli.mjs ${result.args.join(' ')}\nWorking directory: ${
-            result.cwd
-          }\nStdout: ${result.stdout}\nStderr: ${result.stderr}`
+          `Expected success (exit code 0), got ${result.exitCode}\n` +
+          `Command: ${result.command}\n` +
+          `Working directory: ${result.cwd}\n` +
+          `Stdout: ${result.stdout}\n` +
+          `Stderr: ${result.stderr}`
         )
       }
       return this
@@ -272,22 +144,19 @@ function wrapWithAssertions(result) {
 
     expectFailure() {
       if (result.exitCode === 0) {
-        throw new Error(`Expected failure (non-zero exit code), got ${result.exitCode}`)
+        throw new Error(
+          `Expected failure (non-zero exit code), got ${result.exitCode}`
+        )
       }
       return this
     },
 
     expectExit(code) {
       if (result.exitCode !== code) {
-        throw new Error(`Expected exit code ${code}, got ${result.exitCode}`)
-      }
-      return this
-    },
-
-    expectExitCodeIn(codes) {
-      if (!codes.includes(result.exitCode)) {
         throw new Error(
-          `Expected exit code to be one of [${codes.join(', ')}], got ${result.exitCode}`
+          `Expected exit code ${code}, got ${result.exitCode}\n` +
+          `Stdout: ${result.stdout}\n` +
+          `Stderr: ${result.stderr}`
         )
       }
       return this
@@ -297,26 +166,18 @@ function wrapWithAssertions(result) {
     expectOutput(pattern) {
       if (typeof pattern === 'string') {
         if (!result.stdout.includes(pattern)) {
-          throw new Error(`Expected output to contain "${pattern}", got: ${result.stdout}`)
+          throw new Error(
+            `Expected output to contain "${pattern}"\n` +
+            `Got: ${result.stdout}`
+          )
         }
       } else if (pattern instanceof RegExp) {
         if (!pattern.test(result.stdout)) {
-          throw new Error(`Expected output to match ${pattern}, got: ${result.stdout}`)
+          throw new Error(
+            `Expected output to match ${pattern}\n` +
+            `Got: ${result.stdout}`
+          )
         }
-      }
-      return this
-    },
-
-    expectOutputContains(text) {
-      if (!result.stdout.includes(text)) {
-        throw new Error(`Expected output to contain "${text}", got: ${result.stdout}`)
-      }
-      return this
-    },
-
-    expectOutputNotContains(text) {
-      if (result.stdout.includes(text)) {
-        throw new Error(`Expected output not to contain "${text}", got: ${result.stdout}`)
       }
       return this
     },
@@ -324,43 +185,18 @@ function wrapWithAssertions(result) {
     expectStderr(pattern) {
       if (typeof pattern === 'string') {
         if (!result.stderr.includes(pattern)) {
-          throw new Error(`Expected stderr to contain "${pattern}", got: ${result.stderr}`)
+          throw new Error(
+            `Expected stderr to contain "${pattern}"\n` +
+            `Got: ${result.stderr}`
+          )
         }
       } else if (pattern instanceof RegExp) {
         if (!pattern.test(result.stderr)) {
-          throw new Error(`Expected stderr to match ${pattern}, got: ${result.stderr}`)
+          throw new Error(
+            `Expected stderr to match ${pattern}\n` +
+            `Got: ${result.stderr}`
+          )
         }
-      }
-      return this
-    },
-
-    expectNoOutput() {
-      if (result.stdout.trim() !== '') {
-        throw new Error(`Expected no output, got: ${result.stdout}`)
-      }
-      return this
-    },
-
-    expectNoStderr() {
-      if (result.stderr.trim() !== '') {
-        throw new Error(`Expected no stderr, got: ${result.stderr}`)
-      }
-      return this
-    },
-
-    // Length assertions
-    expectOutputLength(min, max) {
-      const length = result.stdout.length
-      if (length < min || length > max) {
-        throw new Error(`Expected output length between ${min} and ${max}, got ${length}`)
-      }
-      return this
-    },
-
-    expectStderrLength(min, max) {
-      const length = result.stderr.length
-      if (length < min || length > max) {
-        throw new Error(`Expected stderr length between ${min} and ${max}, got ${length}`)
       }
       return this
     },
@@ -368,119 +204,98 @@ function wrapWithAssertions(result) {
     // Performance assertions
     expectDuration(maxMs) {
       if (result.durationMs > maxMs) {
-        throw new Error(`Expected duration <= ${maxMs}ms, got ${result.durationMs}ms`)
+        throw new Error(
+          `Expected duration <= ${maxMs}ms, got ${result.durationMs}ms`
+        )
       }
       return this
     },
 
     // JSON assertions
     expectJson(validator) {
-      try {
-        const json = JSON.parse(result.stdout)
-        if (validator && typeof validator === 'function') {
-          try {
-            validator(json)
-          } catch (validationError) {
-            throw new Error(`JSON validation failed: ${validationError.message}`)
-          }
-        }
-        return this
-      } catch (error) {
-        if (error.message.includes('JSON validation failed')) {
-          throw error
-        }
-        throw new Error(`Expected valid JSON output, got: ${result.stdout}`)
+      const json = JSON.parse(result.stdout) // Throws if invalid JSON
+
+      if (validator && typeof validator === 'function') {
+        validator(json) // Throws if validation fails
       }
+
+      return this
     },
 
-    // JSON property getter for convenience
     get json() {
       try {
         return JSON.parse(result.stdout)
       } catch {
         return undefined
       }
-    },
-
-    // Snapshot assertion methods
-    expectSnapshot(snapshotName, options = {}) {
-      const testFile = options.testFile || getCallerFile()
-      const snapshotData = options.data || result.stdout
-      const snapshotResult = matchSnapshot(snapshotData, testFile, snapshotName, {
-        args: result.args,
-        env: options.env,
-        // Exclude cwd to avoid temporary directory path mismatches
-        ...options,
-      })
-
-      if (!snapshotResult.match) {
-        throw new Error(snapshotResult.error || `Snapshot mismatch: ${snapshotName}`)
-      }
-      return this
-    },
-
-    expectSnapshotStdout(snapshotName, options = {}) {
-      return this.expectSnapshot(snapshotName, { ...options, data: result.stdout })
-    },
-
-    expectSnapshotStderr(snapshotName, options = {}) {
-      return this.expectSnapshot(snapshotName, { ...options, data: result.stderr })
-    },
-
-    expectSnapshotJson(snapshotName, options = {}) {
-      const jsonData = this.json
-      if (!jsonData) {
-        throw new Error('Expected JSON output for snapshot, but output is not valid JSON')
-      }
-      return this.expectSnapshot(snapshotName, { ...options, data: jsonData })
-    },
-
-    expectSnapshotFull(snapshotName, options = {}) {
-      const fullData = {
-        exitCode: result.exitCode,
-        stdout: result.stdout,
-        stderr: result.stderr,
-        args: result.args,
-        cwd: result.cwd,
-        json: this.json,
-      }
-      return this.expectSnapshot(snapshotName, { ...options, data: fullData })
-    },
-
-    expectSnapshotOutput(snapshotName, options = {}) {
-      const outputData = {
-        stdout: result.stdout,
-        stderr: result.stderr,
-      }
-      return this.expectSnapshot(snapshotName, { ...options, data: outputData })
-    },
+    }
   }
 }
 
-// Helper function to get caller file for snapshot testing
-function getCallerFile() {
-  const stack = new Error().stack
-  const lines = stack.split('\n')
+/**
+ * Execute with error handling (catches execSync errors and returns result object)
+ * Use this when you expect the command might fail and want to handle it gracefully
+ *
+ * @param {Object} options - Same options as runLocalCitty
+ * @returns {Object} Result object (never throws, captures errors in result)
+ */
+export function runLocalCittySafe(options) {
+  const validated = LocalRunnerOptionsSchema.parse(options)
+  const { cliPath, cwd, env, timeout, args } = validated
 
-  // Find the first line that's not from this file
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (line.includes('.test.') || line.includes('.spec.')) {
-      const match = line.match(/\((.+):\d+:\d+\)/)
-      if (match) {
-        return match[1]
-      }
+  const resolvedCliPath = resolve(cwd, cliPath)
+
+  if (!existsSync(resolvedCliPath)) {
+    return {
+      success: false,
+      exitCode: 1,
+      stdout: '',
+      stderr: `CLI file not found: ${resolvedCliPath}`,
+      args,
+      cliPath: resolvedCliPath,
+      cwd,
+      durationMs: 0,
+      command: `node "${resolvedCliPath}" ${args.join(' ')}`
     }
   }
 
-  // Fallback to current working directory
-  return process.cwd()
-}
+  const startTime = Date.now()
+  const escapedArgs = args.map(arg =>
+    arg.includes(' ') ? `"${arg}"` : arg
+  )
+  const fullCommand = `node "${resolvedCliPath}" ${escapedArgs.join(' ')}`
 
-function safeJsonParse(str) {
   try {
-    return JSON.parse(str)
-  } catch {
-    return undefined
+    const stdout = execSync(fullCommand, {
+      cwd,
+      env: { ...process.env, ...env },
+      timeout,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe']
+    })
+
+    return {
+      success: true,
+      exitCode: 0,
+      stdout: stdout.trim(),
+      stderr: '',
+      args,
+      cliPath: resolvedCliPath,
+      cwd,
+      durationMs: Date.now() - startTime,
+      command: fullCommand
+    }
+  } catch (error) {
+    return {
+      success: false,
+      exitCode: error.status || 1,
+      stdout: error.stdout ? error.stdout.toString().trim() : '',
+      stderr: error.stderr ? error.stderr.toString().trim() : error.message,
+      args,
+      cliPath: resolvedCliPath,
+      cwd,
+      durationMs: Date.now() - startTime,
+      command: fullCommand
+    }
   }
 }

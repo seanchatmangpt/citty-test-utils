@@ -28,7 +28,7 @@ process.on('uncaughtException', (error) => {
 const cittyTestUtils = defineCommand({
   meta: {
     name: 'ctu',
-    version: '0.5.1',
+    version: '0.6.0',
     description: 'Citty Test Utils CLI - Comprehensive testing framework for CLI applications',
   },
   args: {
@@ -57,7 +57,7 @@ const cittyTestUtils = defineCommand({
     const { 'show-help': showHelp, 'show-version': showVersion, json, verbose } = ctx.args
 
     if (showVersion) {
-      const version = '0.5.1'
+      const version = '0.6.0'
       if (json) {
         console.log(JSON.stringify({ version, name: 'ctu' }))
       } else {
@@ -69,7 +69,7 @@ const cittyTestUtils = defineCommand({
     if (showHelp || ctx.args._.length === 0) {
       const help = {
         name: 'ctu',
-        version: '0.5.1',
+        version: '0.6.0',
         description: 'Citty Test Utils CLI - Comprehensive testing framework for CLI applications',
         usage: 'ctu <noun> <verb> [options]',
         nouns: [
@@ -85,7 +85,7 @@ const cittyTestUtils = defineCommand({
         console.log(JSON.stringify(help, null, 2))
       } else {
         console.log(
-          'Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.5.1)'
+          'Citty Test Utils CLI - Comprehensive testing framework for CLI applications (ctu v0.6.0)'
         )
         console.log('')
         console.log('USAGE ctu <noun> <verb> [options]')

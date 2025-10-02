@@ -725,13 +725,16 @@ The framework includes powerful CLI tools for analysis and generation (secondary
 ### **AST-Based Analysis**
 ```bash
 # Discover CLI structure using AST parsing
-npx citty-test-utils analysis discover --cli-path src/cli.mjs --format json
+npx citty-test-utils analysis discover --entry-file src/cli.mjs --format json
+npx citty-test-utils analysis discover --format json  # Auto-detect
 
 # Analyze test coverage with AST-based accuracy
 npx citty-test-utils analysis coverage --test-dir test --threshold 80
+npx citty-test-utils analysis coverage --entry-file ./custom/cli.js --test-dir test
 
 # Get smart recommendations for improving test coverage
 npx citty-test-utils analysis recommend --priority high --actionable
+npx citty-test-utils analysis recommend --entry-file ./packages/cli/index.mjs --priority high
 ```
 
 ### **Template Generation**
@@ -751,11 +754,18 @@ npx citty-test-utils gen scenario user-workflow --environment local
 # Run test scenarios
 npx citty-test-utils test run --environment local
 
-# Execute custom scenarios
-npx citty-test-utils test scenario --name "user-workflow"
+# Execute pre-built scenarios (NEW in v0.6.0)
+npx citty-test-utils test scenario help --environment local
+npx citty-test-utils test scenario version --environment cleanroom
+npx citty-test-utils test scenario invalidCommand --args "nonexistent" --environment local
+
+# Error testing (NEW in v0.6.0)
+npx citty-test-utils test error "bad-command" --message "Unknown" --environment local
+npx citty-test-utils test error "missing-arg" --message "required" --environment cleanroom
 
 # Test specific CLI functionality
 npx citty-test-utils test help --environment cleanroom
+npx citty-test-utils test version --environment local
 ```
 
 ## 📚 **Complete Example**
@@ -1044,6 +1054,133 @@ npm run test:coverage
 # Interactive UI
 npm run test:ui
 ```
+
+## 🔧 **Troubleshooting**
+
+### CLI Detection Issues
+
+**Problem:** `CLI file not found: src/cli.mjs`
+
+**Solutions:**
+1. Run from project root directory: `cd /path/to/your/project`
+2. Use explicit path with `--entry-file`: `ctu analysis discover --entry-file ./path/to/cli.js`
+3. Check package.json has `bin` field pointing to your CLI
+4. Enable verbose mode to see detection process: `ctu analysis discover --verbose`
+
+**Problem:** `CLI entry file must be JavaScript/TypeScript`
+
+**Solutions:**
+- Ensure file has valid extension: `.js`, `.mjs`, `.cjs`, `.ts`, `.mts`, `.cts`
+- Check file actually exists at the specified path
+- Verify file path is correct (typos, wrong directory)
+
+**Problem:** `CLI entry path is not a file`
+
+**Solutions:**
+- Ensure you're pointing to a file, not a directory
+- Check the path: `ls -la /path/to/file.js`
+- Use `--entry-file` with full path to the CLI file
+
+### Analysis Command Failures
+
+**Problem:** Analysis commands fail with "Cannot find module"
+
+**Solutions:**
+1. Verify CLI file exists and is executable: `node /path/to/cli.js --help`
+2. Check all imports in CLI file are resolvable
+3. Run from project root or use `--entry-file` with absolute path
+4. Install dependencies: `npm install`
+
+**Problem:** "Unknown command" when running analysis
+
+**Solutions:**
+- Ensure you're using the correct syntax: `ctu analysis discover` (not `ctu analyze discover`)
+- Check available commands: `ctu analysis --help`
+- Update to latest version: `npm install citty-test-utils@latest`
+
+### Docker/Cleanroom Issues
+
+**Problem:** Cleanroom tests fail with timeout
+
+**Solutions:**
+1. Ensure Docker is running: `docker ps`
+2. Check Docker has internet access for image pulls
+3. Increase timeout in your test: `{ timeout: 120000 }`
+4. Pull the node image manually: `docker pull node:20-alpine`
+
+**Problem:** `Permission denied` in cleanroom
+
+**Solutions:**
+- Ensure files have read permissions: `chmod -R +r ./project`
+- Check Docker volume mounts are correct
+- Try running with elevated privileges (not recommended)
+
+**Problem:** "Cannot connect to Docker daemon"
+
+**Solutions:**
+- Start Docker Desktop or Docker daemon
+- Check Docker socket: `docker info`
+- Ensure your user is in the docker group (Linux)
+
+### Test Execution Issues
+
+**Problem:** Scenario tests fail with "Unknown scenario"
+
+**Solutions:**
+- Check available scenarios: `ctu test scenario --help`
+- Use correct scenario names: `help`, `version`, `invalidCommand`, etc.
+- View scenario source code: `src/core/scenarios/scenarios.js`
+
+**Problem:** Error tests fail unexpectedly
+
+**Solutions:**
+- Verify error message matches: Use regex patterns for flexibility
+- Check command actually fails (exit code ≠ 0)
+- Use `--verbose` to see detailed error output
+
+### Common Error Messages
+
+**Error:** `Process exited with code 1`
+
+**Meaning:** Command failed (this is often expected in error tests)
+
+**Action:** Check if failure is expected, review error message for details
+
+**Error:** `Timeout exceeded`
+
+**Meaning:** Command took too long to execute
+
+**Action:**
+- Increase timeout value
+- Check command isn't hanging
+- Verify Docker/network connectivity
+
+**Error:** `Expected exit code 0, got 1`
+
+**Meaning:** Command failed when success was expected
+
+**Action:**
+- Run command manually to debug: `node cli.js <args>`
+- Check error output in stderr
+- Enable verbose mode for more context
+
+### Debugging Tips
+
+1. **Use Verbose Mode**: Add `--verbose` to any command for detailed output
+2. **Check Exit Codes**: Commands exit with code 1 on failure (fail-fast)
+3. **Read Error Messages**: All errors include actionable suggestions
+4. **Test Manually**: Run commands outside the framework to isolate issues
+5. **Check Dependencies**: Ensure citty and all dependencies are installed
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. **Check Documentation**: Review API docs and examples
+2. **Search Issues**: Check GitHub issues for similar problems
+3. **Enable Verbose**: Run with `--verbose` for debugging info
+4. **Provide Context**: Include error messages, command, and environment
+5. **Minimal Reproduction**: Create minimal example that reproduces the issue
 
 ## 🤝 **Contributing**
 

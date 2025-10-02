@@ -9,8 +9,8 @@ describe.concurrent('Citty Integration Tests', () => {
   describe.concurrent('Local Runner Integration', () => {
     it('should test basic citty CLI commands locally', async () => {
       // Test basic help
-      const helpResult = await runLocalCitty(['--help'], {
-        cwd: process.cwd(),
+      const helpResult = await runLocalCitty({
+        args: ['--help'],
         env: { TEST_CLI: 'true' },
       })
 
@@ -20,9 +20,8 @@ describe.concurrent('Citty Integration Tests', () => {
     })
 
     it('should test version command', async () => {
-      const versionResult = await runLocalCitty(['--show-version'], {
-        cwd: process.cwd(),
-        env: {}, // Use main CLI, not test CLI
+      const versionResult = await runLocalCitty({
+        args: ['--show-version'],
       })
 
       expect(versionResult.exitCode).toBe(0)
@@ -30,9 +29,8 @@ describe.concurrent('Citty Integration Tests', () => {
     })
 
     it('should test info version command', async () => {
-      const result = await runLocalCitty(['info', 'version'], {
-        cwd: process.cwd(),
-        env: {}, // Use main CLI, not test CLI
+      const result = await runLocalCitty({
+        args: ['info', 'version'],
       })
 
       expect(result.exitCode).toBe(0)
@@ -40,22 +38,17 @@ describe.concurrent('Citty Integration Tests', () => {
     })
 
     it('should test gen project command', async () => {
-      const result = await runLocalCitty(
-        ['gen', 'project', 'test-project', '--description', 'Test project'],
-        {
-          cwd: process.cwd(),
-          env: {}, // Use main CLI, not test CLI
-        }
-      )
+      const result = await runLocalCitty({
+        args: ['gen', 'project', 'test-project', '--description', 'Test project'],
+      })
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Generated complete project: test-project')
     })
 
     it('should test runner execute command', async () => {
-      const result = await runLocalCitty(['runner', 'execute', 'node --version'], {
-        cwd: process.cwd(),
-        env: {}, // Use main CLI, not test CLI
+      const result = await runLocalCitty({
+        args: ['runner', 'execute', 'node --version'],
       })
 
       expect(result.exitCode).toBe(0)
@@ -65,9 +58,8 @@ describe.concurrent('Citty Integration Tests', () => {
     })
 
     it('should test JSON output', async () => {
-      const result = await runLocalCitty(['info', 'version', '--json'], {
-        cwd: process.cwd(),
-        env: {}, // Use main CLI, not test CLI
+      const result = await runLocalCitty({
+        args: ['info', 'version', '--json'],
       })
 
       expect(result.exitCode).toBe(0)
@@ -77,9 +69,8 @@ describe.concurrent('Citty Integration Tests', () => {
     })
 
     it('should test invalid arguments', async () => {
-      const result = await runLocalCitty(['--invalid-flag'], {
-        cwd: process.cwd(),
-        env: {}, // Use main CLI, not test CLI
+      const result = await runLocalCitty({
+        args: ['--invalid-flag'],
       })
 
       // Citty doesn't fail on unknown flags, it shows help
@@ -100,7 +91,7 @@ describe.concurrent('Citty Integration Tests', () => {
       ]
 
       const promises = commands.map((cmd) =>
-        runLocalCitty(cmd.args, { cwd: process.cwd(), env: { TEST_CLI: 'true' } })
+        runLocalCitty({ args: cmd.args, env: { TEST_CLI: 'true' } })
       )
 
       const results = await Promise.all(promises)
@@ -211,8 +202,8 @@ describe.concurrent('Citty Integration Tests', () => {
 
   describe.concurrent('Fluent Assertions Integration', () => {
     it('should work with local runner assertions', async () => {
-      const result = await runLocalCitty(['info', 'version'], {
-        cwd: process.cwd(),
+      const result = await runLocalCitty({
+        args: ['info', 'version'],
         env: { TEST_CLI: 'true' },
       })
 
@@ -241,9 +232,8 @@ describe.concurrent('Citty Integration Tests', () => {
     })
 
     it('should handle JSON assertions', async () => {
-      const result = await runLocalCitty(['info', 'version', '--json'], {
-        cwd: process.cwd(),
-        env: {}, // Use main CLI, not test CLI
+      const result = await runLocalCitty({
+        args: ['info', 'version', '--json'],
       })
 
       result.expectSuccess().expectJson((data) => {
@@ -258,13 +248,13 @@ describe.concurrent('Citty Integration Tests', () => {
 
     it('should handle multiple assertion types concurrently', async () => {
       const assertions = [
-        runLocalCitty(['--help'], { cwd: process.cwd(), env: { TEST_CLI: 'true' } }).then((r) =>
+        runLocalCitty({ args: ['--help'], env: { TEST_CLI: 'true' } }).then((r) =>
           r.expectSuccess().expectOutput('USAGE')
         ),
-        runLocalCitty(['--show-version'], { cwd: process.cwd(), env: { TEST_CLI: 'true' } }).then(
+        runLocalCitty({ args: ['--show-version'], env: { TEST_CLI: 'true' } }).then(
           (r) => r.expectSuccess().expectOutput('0.5.0')
         ),
-        runLocalCitty(['info', 'version'], { cwd: process.cwd(), env: { TEST_CLI: 'true' } }).then(
+        runLocalCitty({ args: ['info', 'version'], env: { TEST_CLI: 'true' } }).then(
           (r) => r.expectSuccess().expectOutput('Version: 0.5.0')
         ),
       ]
@@ -275,8 +265,8 @@ describe.concurrent('Citty Integration Tests', () => {
 
   describe.concurrent('Error Handling Integration', () => {
     it('should handle invalid commands gracefully', async () => {
-      const result = await runLocalCitty(['invalid', 'command'], {
-        cwd: process.cwd(),
+      const result = await runLocalCitty({
+        args: ['invalid', 'command'],
         env: { TEST_CLI: 'true' },
       })
 
@@ -313,7 +303,7 @@ describe.concurrent('Citty Integration Tests', () => {
       ]
 
       const promises = errorCommands.map((cmd) =>
-        runLocalCitty(cmd, { cwd: process.cwd(), env: { TEST_CLI: 'true' } })
+        runLocalCitty({ args: cmd, env: { TEST_CLI: 'true' } })
       )
 
       const results = await Promise.all(promises)

@@ -1,7 +1,7 @@
 {
   "name": "citty-test-utils",
-  "version": "0.5.1",
-  "description": "A comprehensive testing framework for CLI applications built with Citty, featuring Docker cleanroom support, fluent assertions, advanced scenario DSL, and noun-verb CLI structure with template generation.",
+  "version": "0.6.0",
+  "description": "A comprehensive testing framework for CLI applications built with Citty, featuring Docker cleanroom support, fluent assertions, advanced scenario DSL, flexible CLI entry points, and fail-fast error handling.",
   "type": "module",
   "main": "index.js",
   "bin": {
@@ -47,7 +47,8 @@
     "n3": "^1.26.0",
     "nunjucks": "^3.2.4",
     "proper-lockfile": "^4.1.2",
-    "testcontainers": "^10.0.0"
+    "testcontainers": "^10.0.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^1.6.1",
