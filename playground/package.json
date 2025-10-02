@@ -37,7 +37,7 @@
   "license": "MIT",
   "dependencies": {
     "citty": "^0.1.6",
-    "citty-test-utils": "^0.5.1"
+    "citty-test-utils": "^0.6.0"
   },
   "devDependencies": {
     "vitest": "^1.0.0"
