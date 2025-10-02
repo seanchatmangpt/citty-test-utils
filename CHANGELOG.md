@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-10-02
+
+### Changed
+- **Package Optimization**: Reduced npm package size by 79%
+  - Package size: 483.4 kB → 100.2 kB (79% reduction)
+  - Unpacked size: 1.9 MB → 471.9 kB (75% reduction)
+  - File count: 191 → 60 files (68% reduction)
+- Professionalized npm package structure with comprehensive `.npmignore`
+- Removed development files, test suites, and internal documentation from published package
+- Optimized `files` array in package.json to include only essential source files
+
+### Fixed
+- Removed invalid `.npmignore` field from package.json (should be separate file)
+- Cleaned up package.json configuration for better npm compatibility
+
+## [1.0.1] - 2025-10-02
+
+### Added
+- Docker availability check before cleanroom execution
+- Clear error messages when Docker is not running with:
+  - Installation/startup instructions
+  - Alternative solutions (disable cleanroom mode)
+  - Original error details for debugging
+
+### Fixed
+- Cleanroom testing now fails fast with helpful error when Docker is unavailable
+- Improved developer experience for cleanroom setup issues
+
+## [1.0.0] - 2025-10-02
+
+### Added
+- **Unified API**: Single `runCitty()` function for both local and cleanroom modes
+- **Auto Mode Detection**: Automatically selects execution mode based on configuration
+- **Vitest Config Integration**: Configure once in vitest.config.js, use everywhere
+- **Simplified DSL**: `.step(name, args)` pattern - no more `.run()` method
+- **Auto Lifecycle**: Cleanroom setup/teardown handled automatically
+- Comprehensive v1.0.0 API with breaking changes from v0.6.x
+
+### Changed
+- **BREAKING**: Not backward compatible with v0.6.x
+- **BREAKING**: Removed dual API (runLocalCitty/runCleanroom) in favor of unified runCitty()
+- **BREAKING**: Scenario DSL simplified - removed `.run()` method
+- **BREAKING**: Removed pre-built scenario templates
+
+### Removed
+- v0.6.x backward compatibility
+- Dual function API
+- Pre-built scenario templates
+- Manual cleanroom lifecycle management
+
 ## [0.5.2] - 2025-10-01
 
 ### Added

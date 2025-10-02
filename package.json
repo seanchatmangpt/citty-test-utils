@@ -1,6 +1,6 @@
 {
   "name": "citty-test-utils",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Unified testing framework for CLI applications with auto-detecting local/cleanroom execution, vitest config integration, and simplified scenario DSL.",
   "type": "module",
   "main": "index.js",
@@ -80,27 +80,11 @@
   },
   "files": [
     "index.js",
-    "src/",
+    "src/**/*.js",
+    "src/**/*.mjs",
+    "src/**/*.d.ts",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md",
-    "docs/"
-  ],
-  ".npmignore": [
-    "playground/",
-    "test/",
-    "tests/",
-    "*.test.mjs",
-    "*.test.js",
-    "vitest.config.*",
-    "node_modules/",
-    ".git/",
-    ".github/",
-    "*.log",
-    "*.tmp",
-    "coverage/",
-    ".nyc_output/",
-    "dist/",
-    "build/"
+    "CHANGELOG.md"
   ]
 }

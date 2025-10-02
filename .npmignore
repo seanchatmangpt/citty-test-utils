@@ -1,61 +1,171 @@
-# Development files
+# Test files and directories
+test/
 tests/
+playground/
+__tests__/
+__snapshots__/
+*.test.js
+*.test.mjs
+*.test.ts
+*.spec.js
+*.spec.mjs
+*.spec.ts
 test-*.mjs
+test-*.js
+*-test.mjs
+*-test.js
+
+# Demo and example files
 demo.mjs
+demo.js
+demo-*.mjs
+demo-*.js
 final-verification.mjs
 run-tests.mjs
 test-results.json
-TEST-SUITE-README.md
-vitest.config.*
-coverage/
-.nyc_output/
 
-# IDE files
+# Documentation - exclude dev/internal docs
+docs/architecture/
+docs/reviews/
+docs/implementation/
+docs/api/
+docs/examples/
+docs/guides/
+docs/cookbooks/
+docs/*-ANALYSIS*.md
+docs/*-REVIEW*.md
+docs/*-IMPLEMENTATION*.md
+docs/*-STRATEGY*.md
+docs/*-PLAN*.md
+docs/*-REPORT*.md
+docs/*-SUMMARY*.md
+docs/*-COMPLETE*.md
+docs/*-CHECKLIST*.md
+docs/*-GUIDE*.md
+docs/*DARK-MATTER*.md
+docs/*EDGE-CASE*.md
+docs/*-FIX*.md
+docs/*-WIP*.md
+docs/0.*.md
+docs/v0.*.md
+docs/V0.*.md
+docs/V1-*.md
+docs/*-v0.*.md
+docs/TEST-*.md
+docs/HIVE-*.md
+docs/architecture-*.md
+docs/competitive-*.md
+docs/refactoring-*.md
+docs/release-*.md
+docs/test-*.md
+docs/testing-*.md
+docs/cli-*.md
+docs/*.mjs
+docs/*.puml
+docs/AGENTS.md
+docs/DEPLOYMENT.md
+docs/MIGRATION-*.md
+docs/README.md
+docs/SNAPSHOT-TESTING.md
+docs/unified-runner-*.md
+
+# Config and build files
+vitest.config.*
+tsconfig.json
+build.config.ts
+.cursorrules
+.editorconfig
+.prettierrc
+*.config.js
+*.config.mjs
+*.config.ts
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+circle.yml
+appveyor.yml
+azure-pipelines.yml
+
+# Development tools
 .vscode/
 .idea/
+.fleet/
+.nova/
 *.swp
 *.swo
-
-# OS files
+*~
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs and databases
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Runtime data
 pids
 *.pid
 *.seed
 *.pid.lock
+*.db
+*.db-shm
+*.db-wal
 
-# Dependency directories
+# Dependencies
 node_modules/
 jspm_packages/
-
-# Optional npm cache directory
+bower_components/
 .npm
+.yarn
+.pnp.*
 
-# Optional eslint cache
-.eslintcache
+# Test coverage
+coverage/
+.nyc_output/
+*.lcov
 
-# Output of 'npm pack'
-*.tgz
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
 
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
+# Environment files
 .env
-.env.test
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
-# Temporary folders
+# Temporary files
 tmp/
 temp/
+*.tmp
+*.tgz
+*.gz
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-debug.log
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Claude-Flow and other tools
+.claude/
+.claude-flow/
+.swarm/
+.hive-mind/
+.test-runner-commands/
+.lh/
+.mcp.json
+
+# Development markdown files
+AGENTS.md
+TEST-SUITE-README.md
+CONTRIBUTING.md
