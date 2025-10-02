@@ -5,19 +5,26 @@
 
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
-import { writeFileSync } from 'fs'
+import {
+  parseCliOptions,
+  resolveCliPath,
+  generateAnalysisReport,
+  handleAnalysisError,
+  displayAnalysisMetadata,
+} from '../../core/utils/analysis-helpers.js'
+import { getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
 
+/**
+ * Analyze command definition
+ * Performs AST-based CLI test coverage analysis
+ */
 export const analyzeCommand = defineCommand({
   meta: {
     name: 'analyze',
     description: '🚀 AST-based CLI test coverage analysis for accurate results',
   },
   args: {
-    'cli-path': {
-      type: 'string',
-      description: 'Path to CLI file to analyze',
-      default: 'src/cli.mjs',
-    },
+    ...getCLIEntryArgs(),
     'test-dir': {
       type: 'string',
       description: 'Directory containing test files',
@@ -59,49 +66,41 @@ export const analyzeCommand = defineCommand({
     },
   },
   run: async (ctx) => {
-    const {
-      'cli-path': cliPath,
-      'test-dir': testDir,
-      format,
-      output,
-      verbose,
-      'include-patterns': includePatterns,
-      'exclude-patterns': excludePatterns,
-      'base-uri': baseUri,
-      'cli-name': cliName,
-    } = ctx.args
-
     try {
+      // Parse CLI options using shared utility
+      const options = parseCliOptions(ctx.args)
+
+      // Resolve CLI entry point (supports --entry-file, --cli-file, auto-detection)
+      const resolvedCliPath = await resolveCliPath(options)
+
+      // Create analyzer instance
       const analyzer = new EnhancedASTCLIAnalyzer({
-        cliPath,
-        testDir,
-        includePatterns: includePatterns.split(',').map((p) => p.trim()),
-        excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
-        verbose,
+        cliPath: resolvedCliPath,
+        testDir: options.testDir,
+        includePatterns: options.includePatterns,
+        excludePatterns: options.excludePatterns,
+        verbose: options.verbose,
       })
 
-      if (verbose) {
-        console.log('🚀 Starting AST-based CLI coverage analysis...')
-        console.log(`CLI Path: ${cliPath}`)
-        console.log(`Test Directory: ${testDir}`)
-        console.log(`Format: ${format}`)
-      }
+      // Display metadata if verbose
+      displayAnalysisMetadata(options.verbose, options)
 
+      // Perform analysis
       const report = await analyzer.analyze()
-      const formattedReport = await analyzer.formatReport(report, { format })
 
-      if (output) {
-        writeFileSync(output, formattedReport)
-        console.log(`✅ AST-based analysis report saved to: ${output}`)
+      // Generate and output report
+      const message = await generateAnalysisReport(analyzer, report, {
+        format: options.format,
+        output: options.output,
+      })
+
+      if (options.output) {
+        console.log(message)
       } else {
-        console.log(formattedReport)
+        console.log(message)
       }
     } catch (error) {
-      console.error(`❌ AST-based analysis failed: ${error.message}`)
-      if (verbose) {
-        console.error(error.stack)
-      }
-      process.exit(1)
+      handleAnalysisError(error, ctx.args.verbose, 'analysis')
     }
   },
 })

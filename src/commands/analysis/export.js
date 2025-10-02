@@ -6,6 +6,8 @@
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
 import { CLCoverageAnalyzer } from '../../core/coverage/cli-coverage-analyzer.js'
+import { parseCliOptions, resolveCliPath } from '../../core/utils/analysis-helpers.js'
+import { getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
 import { writeFileSync } from 'fs'
 
 export const exportCommand = defineCommand({
@@ -14,11 +16,7 @@ export const exportCommand = defineCommand({
     description: '🚀 AST-based coverage data export (JSON, Turtle)',
   },
   args: {
-    'cli-path': {
-      type: 'string',
-      description: 'Path to CLI file to analyze',
-      default: 'src/cli.mjs',
-    },
+    ...getCLIEntryArgs(),
     'test-dir': {
       type: 'string',
       description: 'Directory containing test files',
@@ -66,43 +64,40 @@ export const exportCommand = defineCommand({
     },
   },
   run: async (ctx) => {
-    const {
-      'cli-path': cliPath,
-      'test-dir': testDir,
-      format,
-      output,
-      verbose,
-      'include-patterns': includePatterns,
-      'exclude-patterns': excludePatterns,
-      'base-uri': baseUri,
-      'cli-name': cliName,
-    } = ctx.args
-
     try {
+      // Parse CLI options using shared utility
+      const options = parseCliOptions(ctx.args)
+      const { format, output, verbose } = ctx.args
+      const baseUri = ctx.args['base-uri']
+      const cliName = ctx.args['cli-name']
+
+      // Resolve CLI entry point (supports --entry-file, --cli-file, auto-detection)
+      const resolvedCliPath = await resolveCliPath(options)
+
       if (verbose) {
         console.log('🚀 Starting AST-based CLI coverage analysis...')
-        console.log(`CLI Path: ${cliPath}`)
-        console.log(`Test Directory: ${testDir}`)
+        console.log(`CLI Path: ${resolvedCliPath}`)
+        console.log(`Test Directory: ${options.testDir}`)
         console.log(`Format: ${format}`)
         console.log(`Output: ${output}`)
       }
 
       // Use AST-based analyzer for JSON, legacy analyzer for Turtle
       if (format === 'turtle') {
-        const options = {
-          cliPath,
-          testDir,
+        const exportOptions = {
+          cliPath: resolvedCliPath,
+          testDir: options.testDir,
           format,
           verbose,
-          includePatterns: includePatterns.split(',').map((p) => p.trim()),
-          excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
+          includePatterns: options.includePatterns,
+          excludePatterns: options.excludePatterns,
           baseUri,
           cliName,
         }
 
-        const analyzer = new CLCoverageAnalyzer(options)
-        const report = await analyzer.analyze(options)
-        const formattedReport = await analyzer.formatReport(report, options)
+        const analyzer = new CLCoverageAnalyzer(exportOptions)
+        const report = await analyzer.analyze(exportOptions)
+        const formattedReport = await analyzer.formatReport(report, exportOptions)
 
         writeFileSync(output, formattedReport)
         console.log(`✅ Coverage data exported to: ${output}`)
@@ -113,11 +108,11 @@ export const exportCommand = defineCommand({
       } else {
         // Use AST-based analyzer for JSON
         const analyzer = new EnhancedASTCLIAnalyzer({
-          cliPath,
-          testDir,
-          includePatterns: includePatterns.split(',').map((p) => p.trim()),
-          excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
-          verbose,
+          cliPath: resolvedCliPath,
+          testDir: options.testDir,
+          includePatterns: options.includePatterns,
+          excludePatterns: options.excludePatterns,
+          verbose: options.verbose,
         })
 
         const report = await analyzer.analyze()
@@ -132,7 +127,7 @@ export const exportCommand = defineCommand({
       }
     } catch (error) {
       console.error(`❌ AST-based export failed: ${error.message}`)
-      if (verbose) {
+      if (ctx.args.verbose) {
         console.error(error.stack)
       }
       process.exit(1)

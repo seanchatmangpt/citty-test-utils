@@ -5,6 +5,8 @@
 
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
+import { parseCliOptions, resolveCliPath } from '../../core/utils/analysis-helpers.js'
+import { getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
 import { writeFileSync } from 'fs'
 
 export const reportCommand = defineCommand({
@@ -13,11 +15,7 @@ export const reportCommand = defineCommand({
     description: '🚀 AST-based detailed coverage report',
   },
   args: {
-    'cli-path': {
-      type: 'string',
-      description: 'Path to CLI file to analyze',
-      default: 'src/cli.mjs',
-    },
+    ...getCLIEntryArgs(),
     'test-dir': {
       type: 'string',
       description: 'Directory containing test files',
@@ -49,44 +47,40 @@ export const reportCommand = defineCommand({
     },
   },
   run: async (ctx) => {
-    const {
-      'cli-path': cliPath,
-      'test-dir': testDir,
-      format,
-      output,
-      verbose,
-      'include-patterns': includePatterns,
-      'exclude-patterns': excludePatterns,
-    } = ctx.args
-
     try {
+      // Parse CLI options using shared utility
+      const options = parseCliOptions(ctx.args)
+
+      // Resolve CLI entry point (supports --entry-file, --cli-file, auto-detection)
+      const resolvedCliPath = await resolveCliPath(options)
+
       const analyzer = new EnhancedASTCLIAnalyzer({
-        cliPath,
-        testDir,
-        includePatterns: includePatterns.split(',').map((p) => p.trim()),
-        excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
-        verbose,
+        cliPath: resolvedCliPath,
+        testDir: options.testDir,
+        includePatterns: options.includePatterns,
+        excludePatterns: options.excludePatterns,
+        verbose: options.verbose,
       })
 
-      if (verbose) {
+      if (options.verbose) {
         console.log('🚀 Starting AST-based CLI coverage analysis...')
-        console.log(`CLI Path: ${cliPath}`)
-        console.log(`Test Directory: ${testDir}`)
-        console.log(`Format: ${format}`)
+        console.log(`CLI Path: ${resolvedCliPath}`)
+        console.log(`Test Directory: ${options.testDir}`)
+        console.log(`Format: ${options.format}`)
       }
 
       const report = await analyzer.analyze()
-      const formattedReport = await analyzer.formatReport(report, { format })
+      const formattedReport = await analyzer.formatReport(report, { format: options.format })
 
-      if (output) {
-        writeFileSync(output, formattedReport)
-        console.log(`✅ AST-based report saved to: ${output}`)
+      if (options.output) {
+        writeFileSync(options.output, formattedReport)
+        console.log(`✅ AST-based report saved to: ${options.output}`)
       } else {
         console.log(formattedReport)
       }
     } catch (error) {
       console.error(`❌ AST-based report generation failed: ${error.message}`)
-      if (verbose) {
+      if (options.verbose) {
         console.error(error.stack)
       }
       process.exit(1)

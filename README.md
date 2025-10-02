@@ -19,6 +19,53 @@ A comprehensive testing framework for CLI applications built with Citty, featuri
 npm install citty-test-utils
 ```
 
+## 💡 Philosophy
+
+### Fail-Fast Behavior
+Citty Test Utils follows a strict fail-fast philosophy for reliable testing:
+
+- **No Silent Failures**: Errors are never hidden or suppressed
+- **Clear Error Messages**: Every failure includes actionable suggestions
+- **Immediate Exit**: Commands exit with code 1 on any error
+- **Full Context**: Verbose mode shows complete stack traces and debugging info
+- **No Graceful Degradation**: If something fails, you know immediately
+
+**Example Error:**
+```bash
+$ ctu analysis discover --entry-file ./missing.js
+❌ CLI entry file not found: /path/to/missing.js
+
+💡 Tip: Use --entry-file with a valid path:
+  $ ctu analyze --entry-file ./path/to/your/cli.js
+```
+
+### Flexible CLI Testing
+Test **ANY** file as your CLI entry point - no restrictions on file location:
+
+```bash
+# Auto-detection (from package.json or common paths)
+ctu analysis discover
+
+# Explicit file selection - works with ANY structure
+ctu analysis discover --entry-file ./my-cli.js
+ctu analysis discover --entry-file ./packages/cli/src/index.mjs
+ctu analysis discover --entry-file ./bin/custom-cli.mjs
+ctu analysis discover --entry-file ./dist/compiled-cli.js
+```
+
+**Supported Entry Points:**
+- Any JavaScript file: `.js`, `.mjs`, `.cjs`
+- TypeScript files: `.ts`, `.mts`, `.cts`
+- Relative or absolute paths
+- Anywhere in your project structure
+- Monorepo support
+
+**Auto-Detection Strategies:**
+1. **package.json bin field** (high confidence)
+2. **Common patterns**: `src/cli.mjs`, `cli.mjs`, `bin/cli.mjs`
+3. **Parent directory search** (up to 5 levels)
+4. **Validated fallback** to `src/cli.mjs`
+
 ### Inspect the toolkit CLI
 ```bash
 node src/cli.mjs --show-help
@@ -84,15 +131,35 @@ npx vitest run test/unit/local-runner.test.mjs test/unit/scenario-dsl.test.mjs -
 ```
 `npm test` executes the full suite (integration, Docker, snapshot, analysis) and may require snapshot updates and additional resources.
 
-### Analysis status
+### Analysis commands (✅ Working with --entry-file)
 ```bash
+# Auto-detection (recommended)
+node src/cli.mjs analysis discover --verbose
+node src/cli.mjs analysis coverage --test-dir test
 node src/cli.mjs analysis recommend --priority high
+
+# Explicit file selection (for flexibility)
+node src/cli.mjs analysis discover --entry-file ./custom/cli.js
+node src/cli.mjs analysis coverage --entry-file ./packages/cli/src/index.mjs
+node src/cli.mjs analysis recommend --entry-file ./bin/my-cli.mjs
 ```
-Recommendation commands work today. `analysis coverage` remains experimental and can exit with `Cannot convert undefined or null to object` for complex projects.
+All analysis commands support both auto-detection and explicit `--entry-file` flag.
 
-### CLI Auto-Detection
+### Runner commands (✅ Working)
+```bash
+# Local runner - executes CLI commands locally
+node src/cli.mjs runner local "--help"
+node src/cli.mjs runner local "gen project test-app"
 
-All analysis commands now automatically detect your CLI entry point using multiple strategies:
+# Cleanroom runner - executes in Docker container
+node src/cli.mjs runner cleanroom "--version"
+node src/cli.mjs runner cleanroom "info version"
+```
+Runner commands now fully implemented with fluent assertions and error handling.
+
+### CLI Auto-Detection with --entry-file
+
+All analysis commands support flexible CLI entry point selection:
 
 ```bash
 # Auto-detection (recommended) - just run from your project root
@@ -100,25 +167,41 @@ npx citty-test-utils analysis discover
 npx citty-test-utils analysis coverage
 npx citty-test-utils analysis recommend
 
-# Or provide explicit path if needed
+# Explicit file selection with --entry-file (for custom structures)
+npx citty-test-utils analysis discover --entry-file ./my-cli.js
+npx citty-test-utils analysis discover --entry-file ./packages/cli/src/index.mjs
+npx citty-test-utils analysis discover --entry-file ./bin/custom-cli.mjs
+
+# Legacy --cli-path also supported
 npx citty-test-utils analysis discover --cli-path custom/path/cli.mjs
 ```
 
+**Why Use --entry-file?**
+- **Monorepo Support**: Analyze CLIs in packages subdirectory
+- **Custom Structure**: Works with any project organization
+- **Multiple CLIs**: Test different entry points in same project
+- **Dist Files**: Analyze compiled/bundled CLI files
+
 **Detection Strategies (tried in order):**
 
-1. **package.json bin field** (High confidence)
+1. **Explicit --entry-file flag** (Highest priority)
+   - Direct path to any CLI file in your project
+   - Validates file exists and is JavaScript/TypeScript
+   - Works with relative or absolute paths
+
+2. **package.json bin field** (High confidence)
    - Reads your package.json and finds the bin entry
    - Most reliable method for published CLIs
 
-2. **Common file patterns** (Medium confidence)
+3. **Common file patterns** (Medium confidence)
    - Searches for: `src/cli.mjs`, `cli.mjs`, `bin/cli.mjs`, `index.mjs`
    - Also checks `.js` extensions
 
-3. **Parent directory search** (Medium confidence)
+4. **Parent directory search** (Medium confidence)
    - Traverses up to 5 parent directories looking for package.json
    - Useful when running from subdirectories
 
-4. **Default with validation** (Low confidence)
+5. **Default with validation** (Low confidence)
    - Falls back to `src/cli.mjs` but validates it exists
    - Shows helpful error message if detection fails
 
@@ -127,19 +210,84 @@ npx citty-test-utils analysis discover --cli-path custom/path/cli.mjs
 # See the full detection process
 npx citty-test-utils analysis discover --verbose
 # Output:
-# 🔍 Starting smart CLI detection...
-# ✅ Auto-detected CLI: /path/to/src/cli.mjs
-#    Detection method: package-json-bin
-#    Confidence: high
+# 🔍 Resolving explicit CLI entry: src/cli.mjs
+# ✅ Resolved CLI entry: /path/to/src/cli.mjs
+# 🔍 Starting CLI structure discovery...
 ```
 
-**Error Handling:**
-If auto-detection fails, you'll see a helpful error:
+**Error Handling (Fail-Fast):**
+If file not found, you'll see a clear error with suggestions:
 ```
-❌ CLI file not found: src/cli.mjs
-💡 Tip: Run from project root or use --cli-path <path>
-📁 Looking for: src/cli.mjs, cli.mjs, or bin/cli.mjs
+❌ CLI entry file not found: /path/to/missing.js
+
+Suggestion: Use --entry-file with a valid path:
+  $ ctu analyze --entry-file ./path/to/your/cli.js
 ```
+
+---
+
+## 🏗️ **Architecture**
+
+citty-test-utils follows a clean, modular architecture with clear separation of concerns:
+
+### Core Components
+
+```
+src/
+├── core/                    # Core functionality (business logic)
+│   ├── runners/             # Test execution engines
+│   │   ├── local-runner.js      # Local CLI execution
+│   │   └── cleanroom-runner.js  # Docker container execution
+│   ├── coverage/            # Coverage analysis tools
+│   │   ├── ast-cli-analyzer.js      # AST-based analysis
+│   │   ├── cli-coverage-analyzer.js # Coverage computation
+│   │   └── discovery/               # Command & test discovery
+│   ├── scenarios/           # Test scenario library
+│   │   ├── scenario-dsl.js          # Scenario DSL builder
+│   │   └── scenarios.js             # Pre-built scenarios
+│   ├── assertions/          # Fluent assertion API
+│   │   ├── assertions.js            # Assertion methods
+│   │   └── snapshot.js              # Snapshot testing
+│   ├── utils/               # Shared utilities
+│   │   ├── smart-cli-detector.js    # Auto CLI detection
+│   │   ├── analysis-report-utils.js # Report generation
+│   │   └── context-manager.js       # Execution context
+│   └── cache/               # Performance caching
+│       └── ast-cache.js             # AST result caching
+│
+└── commands/                # CLI command layer (thin wrappers)
+    ├── runner/              # Runner command wrappers
+    │   ├── local.js             # Wraps core/runners/local-runner
+    │   └── cleanroom.js         # Wraps core/runners/cleanroom-runner
+    ├── analysis/            # Analysis command wrappers
+    │   ├── discover.js          # CLI structure discovery
+    │   ├── coverage.js          # Coverage analysis
+    │   └── recommend.js         # Test recommendations
+    ├── test/                # Test execution commands
+    ├── gen/                 # Template generation commands
+    └── info/                # Information commands
+```
+
+### Design Principles
+
+1. **Core vs Commands Separation**
+   - `core/`: Pure business logic, testable, reusable
+   - `commands/`: Thin CLI wrappers that call core functionality
+
+2. **Shared Utilities**
+   - Eliminate code duplication across commands
+   - Centralized error handling and validation
+   - Consistent reporting and output formatting
+
+3. **Modular Architecture**
+   - Each component has a single responsibility
+   - Easy to test, maintain, and extend
+   - Clear dependencies and interfaces
+
+4. **Performance Optimization**
+   - AST caching for faster analysis
+   - Lazy loading of heavy dependencies
+   - Efficient command detection strategies
 
 ---
 
@@ -242,14 +390,27 @@ await scenarios.concurrent([
 ], 'cleanroom').execute()
 ```
 
-## 🚀 **What's New in v0.4.0**
+## 🚀 **What's New in v0.6.0**
 
+### Major Feature Additions
+- **🎯 Flexible CLI Entry**: New `--entry-file` flag for testing ANY CLI file in your project
+- **⚡ Fail-Fast Philosophy**: Strict error handling with clear, actionable messages
+- **🧪 Scenario Testing**: CLI commands for executing pre-built test scenarios
+- **❌ Error Testing**: CLI commands for validating error handling and edge cases
+- **🔧 Top-Level Error Handlers**: Graceful handling of unhandled rejections and exceptions
+
+### Enhanced Analysis
+- **📁 Multi-Entry Support**: Analyze any CLI file with `--entry-file ./path/to/cli.js`
+- **🔍 Smart Detection**: Auto-detects CLI from package.json or common patterns
+- **🎨 Flexible Paths**: Support for monorepos, custom structures, and any file location
+- **📊 Improved Validation**: Better error messages and fail-fast on invalid paths
+
+### Previous Features (v0.5.1)
+- **✅ Working Runner Commands**: Full implementation of `runner local` and `runner cleanroom` commands
+- **🏗️ Modular Architecture**: Clean separation between core runners and CLI commands
 - **🧠 AST-Based Analysis**: Revolutionary AST-first CLI coverage analysis
 - **🎯 Smart Recommendations**: AI-powered test improvement suggestions
-- **📊 Multi-Dimensional Coverage**: Commands, subcommands, flags, and options
 - **⚡ Performance Optimization**: Parallel processing and AST caching
-- **🔍 CLI Discovery**: Automatic CLI structure discovery via AST parsing
-- **📈 Coverage Trends**: Historical coverage tracking and analysis
 
 ## 🚀 **Quick Start**
 
@@ -312,10 +473,16 @@ const result = await scenario('User Registration Flow')
 The framework includes powerful CLI tools for analysis and generation (secondary to the core testing utilities):
 
 ```bash
-# AST-based CLI analysis
-npx citty-test-utils analysis discover --cli-path src/cli.mjs
+# AST-based CLI analysis (Auto-detection or --entry-file)
+npx citty-test-utils analysis discover
+npx citty-test-utils analysis discover --entry-file src/cli.mjs
 npx citty-test-utils analysis coverage --test-dir test --threshold 80
-npx citty-test-utils analysis recommend --priority high
+npx citty-test-utils analysis recommend --priority high --entry-file ./my-cli.js
+
+# Runner commands (Fully implemented)
+npx citty-test-utils runner local "--help"
+npx citty-test-utils runner cleanroom "--version"
+npx citty-test-utils runner execute --command "node --version"
 
 # Template generation
 npx citty-test-utils gen project my-cli

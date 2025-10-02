@@ -5,18 +5,29 @@
 
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
+import {
+  parseCliOptions,
+  resolveCliPath,
+  handleAnalysisError,
+  displayAnalysisMetadata,
+  displayCoverageSummary,
+  displayRecommendations,
+  displayCommandDetails,
+  displayUntestedItems,
+} from '../../core/utils/analysis-helpers.js'
+import { getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
 
+/**
+ * Statistics command definition
+ * Displays comprehensive coverage statistics summary
+ */
 export const statsCommand = defineCommand({
   meta: {
     name: 'stats',
     description: '🚀 AST-based coverage statistics summary',
   },
   args: {
-    'cli-path': {
-      type: 'string',
-      description: 'Path to CLI file to analyze',
-      default: 'src/cli.mjs',
-    },
+    ...getCLIEntryArgs(),
     'test-dir': {
       type: 'string',
       description: 'Directory containing test files',
@@ -39,141 +50,35 @@ export const statsCommand = defineCommand({
     },
   },
   run: async (ctx) => {
-    const {
-      'cli-path': cliPath,
-      'test-dir': testDir,
-      verbose,
-      'include-patterns': includePatterns,
-      'exclude-patterns': excludePatterns,
-    } = ctx.args
-
     try {
+      // Parse CLI options using shared utility
+      const options = parseCliOptions(ctx.args)
+
+      // Resolve CLI entry point (supports --entry-file, --cli-file, auto-detection)
+      const resolvedCliPath = await resolveCliPath(options)
+
+      // Create analyzer instance
       const analyzer = new EnhancedASTCLIAnalyzer({
-        cliPath,
-        testDir,
-        includePatterns: includePatterns.split(',').map((p) => p.trim()),
-        excludePatterns: excludePatterns.split(',').map((p) => p.trim()),
-        verbose,
+        cliPath: resolvedCliPath,
+        testDir: options.testDir,
+        includePatterns: options.includePatterns,
+        excludePatterns: options.excludePatterns,
+        verbose: options.verbose,
       })
 
-      if (verbose) {
-        console.log('🚀 Starting AST-based CLI coverage analysis...')
-        console.log(`CLI Path: ${cliPath}`)
-        console.log(`Test Directory: ${testDir}`)
-      }
+      // Display metadata if verbose
+      displayAnalysisMetadata(options.verbose, options)
 
+      // Perform analysis
       const report = await analyzer.analyze()
 
-      // Display enhanced statistics summary
-      console.log('🚀 Enhanced AST-Based CLI Coverage Statistics')
-      console.log('============================================')
-      console.log(`CLI: ${report.metadata.cliPath}`)
-      console.log(`Test Directory: ${report.metadata.testDir}`)
-      console.log(`Analysis Method: ${report.metadata.analysisMethod}`)
-      console.log(`Total Test Files: ${report.metadata.totalTestFiles}`)
-      console.log(`Total Commands: ${report.metadata.totalCommands}`)
-      console.log(`Total Subcommands: ${report.metadata.totalSubcommands || 0}`)
-      console.log(`Total Flags: ${report.metadata.totalFlags}`)
-      console.log(`Total Options: ${report.metadata.totalOptions}`)
-      console.log('')
-      console.log('📈 Coverage Summary:')
-      
-      // Handle new hierarchy structure
-      if (report.coverage.summary.mainCommand) {
-        console.log(
-          `  Main Command: ${report.coverage.summary.mainCommand.tested}/${
-            report.coverage.summary.mainCommand.total
-          } (${report.coverage.summary.mainCommand.percentage.toFixed(1)}%)`
-        )
-      } else if (report.coverage.summary.commands) {
-        console.log(
-          `  Commands: ${report.coverage.summary.commands.tested}/${
-            report.coverage.summary.commands.total
-          } (${report.coverage.summary.commands.percentage.toFixed(1)}%)`
-        )
-      }
-      if (report.coverage.summary.subcommands) {
-        console.log(
-          `  Subcommands: ${report.coverage.summary.subcommands.tested}/${
-            report.coverage.summary.subcommands.total
-          } (${report.coverage.summary.subcommands.percentage.toFixed(1)}%)`
-        )
-      }
-      console.log(
-        `  Flags: ${report.coverage.summary.flags.tested}/${
-          report.coverage.summary.flags.total
-        } (${report.coverage.summary.flags.percentage.toFixed(1)}%)`
-      )
-      console.log(
-        `  Options: ${report.coverage.summary.options.tested}/${
-          report.coverage.summary.options.total
-        } (${report.coverage.summary.options.percentage.toFixed(1)}%)`
-      )
-      console.log(
-        `  Overall: ${report.coverage.summary.overall.tested}/${
-          report.coverage.summary.overall.total
-        } (${report.coverage.summary.overall.percentage.toFixed(1)}%)`
-      )
-      console.log('')
-
-      if (report.recommendations.length > 0) {
-        console.log('💡 Top Recommendations:')
-        report.recommendations.slice(0, 3).forEach((rec, index) => {
-          console.log(`  ${index + 1}. [${rec.priority.toUpperCase()}] ${rec.message}`)
-        })
-      }
-
-      // Show detailed command breakdown
-      console.log('')
-      console.log('📋 Command Details:')
-      for (const [name, command] of Object.entries(report.commands)) {
-        const status = command.tested ? '✅' : '❌'
-        console.log(`  ${status} ${name}: ${command.description}`)
-
-        // Show subcommands if any
-        if (command.subcommands && Object.keys(command.subcommands).length > 0) {
-          for (const [subName, subcommand] of Object.entries(command.subcommands)) {
-            const subStatus = subcommand.tested ? '✅' : '❌'
-            const imported = subcommand.imported ? ' (imported)' : ''
-            console.log(`    ${subStatus} ${name} ${subName}: ${subcommand.description}${imported}`)
-          }
-        }
-      }
-
-      // Show untested items details
-      if (report.coverage.details.untestedCommands.length > 0) {
-        console.log('')
-        console.log('❌ Untested Commands:')
-        report.coverage.details.untestedCommands.forEach((cmd) => {
-          console.log(`  - ${cmd.name}: ${cmd.description}`)
-        })
-      }
-
-      if (report.coverage.details.untestedSubcommands.length > 0) {
-        console.log('')
-        console.log('❌ Untested Subcommands:')
-        report.coverage.details.untestedSubcommands.forEach((subcmd) => {
-          const imported = subcmd.imported ? ' (imported)' : ''
-          console.log(
-            `  - ${subcmd.command} ${subcmd.subcommand}: ${subcmd.description}${imported}`
-          )
-        })
-      }
-
-      if (report.coverage.details.untestedFlags.length > 0) {
-        console.log('')
-        console.log('❌ Untested Flags:')
-        report.coverage.details.untestedFlags.forEach((flag) => {
-          const global = flag.global ? ' (global)' : ''
-          console.log(`  - --${flag.name}: ${flag.description}${global}`)
-        })
-      }
+      // Display enhanced statistics using shared utilities
+      displayCoverageSummary(report)
+      displayRecommendations(report.recommendations, 3)
+      displayCommandDetails(report.commands)
+      displayUntestedItems(report.coverage.details)
     } catch (error) {
-      console.error(`❌ AST-based statistics calculation failed: ${error.message}`)
-      if (verbose) {
-        console.error(error.stack)
-      }
-      process.exit(1)
+      handleAnalysisError(error, ctx.args.verbose, 'statistics calculation')
     }
   },
 })

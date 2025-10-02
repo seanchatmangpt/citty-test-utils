@@ -6,14 +6,14 @@
 
 import { defineCommand } from 'citty'
 import { EnhancedASTCLIAnalyzer } from '../../core/coverage/enhanced-ast-cli-analyzer.js'
-import { SmartCLIDetector } from '../../core/utils/smart-cli-detector.js'
+import { resolveCLIEntry, getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
 import {
   validateCLIPath,
   buildAnalysisMetadata,
   formatCLIDetection,
   buildReportHeader,
 } from '../../core/utils/analysis-report-utils.js'
-import { writeFileSync, existsSync } from 'fs'
+import { writeFileSync } from 'fs'
 
 export const discoverCommand = defineCommand({
   meta: {
@@ -21,11 +21,7 @@ export const discoverCommand = defineCommand({
     description: '🔍 Discover CLI structure using AST parsing for accurate command extraction',
   },
   args: {
-    'cli-path': {
-      type: 'string',
-      description: 'Path to CLI file to analyze',
-      default: 'src/cli.mjs',
-    },
+    ...getCLIEntryArgs(),
     format: {
       type: 'string',
       description: 'Output format (text, json, yaml)',
@@ -63,6 +59,8 @@ export const discoverCommand = defineCommand({
   },
   run: async (ctx) => {
     const {
+      'entry-file': entryFile,
+      'cli-file': cliFile,
       'cli-path': cliPath,
       format,
       output,
@@ -74,40 +72,21 @@ export const discoverCommand = defineCommand({
     } = ctx.args
 
     try {
-      // Smart CLI detection
-      const detector = new SmartCLIDetector({ verbose })
-      let detectedCLI = null
-      let finalCLIPath = cliPath
+      // Resolve CLI entry point (supports --entry-file, --cli-file, auto-detection)
+      const detectionResult = await resolveCLIEntry({
+        entryFile,
+        cliFile,
+        cliPath,
+        verbose,
+      })
 
-      if (verbose) {
-        console.log('🔍 Starting smart CLI detection...')
-      }
+      const finalCLIPath = typeof detectionResult === 'string'
+        ? detectionResult
+        : detectionResult.cliPath
 
-      // If no CLI path specified, try to detect it
-      if (!cliPath || cliPath === 'src/cli.mjs') {
-        detectedCLI = await detector.detectCLI()
-
-        if (detectedCLI && detectedCLI.cliPath) {
-          finalCLIPath = detectedCLI.cliPath
-
-          if (verbose) {
-            console.log(`✅ Auto-detected CLI: ${finalCLIPath}`)
-            console.log(`   Detection method: ${detectedCLI.detectionMethod}`)
-            console.log(`   Confidence: ${detectedCLI.confidence}`)
-            if (detectedCLI.packageName) {
-              console.log(`   Package: ${detectedCLI.packageName}`)
-            }
-            if (detectedCLI.binName) {
-              console.log(`   Bin name: ${detectedCLI.binName}`)
-            }
-          }
-        } else {
-          console.log('⚠️ No CLI auto-detected, using default path')
-        }
-      }
-
-      // Validate final CLI path exists using shared utility
-      validateCLIPath(finalCLIPath)
+      const detectedCLI = typeof detectionResult === 'object'
+        ? detectionResult
+        : null
 
       const analyzer = new EnhancedASTCLIAnalyzer({
         cliPath: finalCLIPath,
