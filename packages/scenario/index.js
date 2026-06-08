@@ -166,6 +166,10 @@ export function scenario(name) {
      * @returns {Promise<Object>} Execution results
      */
     async execute(customRunner) {
+      if (steps.length === 0) {
+        throw new Error('No steps defined')
+      }
+
       // Auto-detect mode if not explicitly set
       const executionMode = mode || process.env.TEST_RUNNER || 'local'
 
@@ -373,6 +377,7 @@ async function executeStep(step, executionMode, customRunner) {
       cwd: options.cwd || '/app',
       env: options.env || {},
       timeout: options.timeout || 10000,
+      cliPath: options.cliPath,
     })
   } else {
     // Local execution (default)

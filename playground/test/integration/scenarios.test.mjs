@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { setupCleanroom, teardownCleanroom } from 'citty-test-utils'
-import { scenarios, scenario } from '../../scenario-config.mjs'
+import { scenarios, scenario, cleanroomScenario } from '../../scenario-config.mjs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -21,15 +21,15 @@ describe('Playground Scenario Tests', () => {
       const result = await scenarios.help('local').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.stdout).toContain('playground')
-      expect(result.result.stdout).toContain('COMMANDS')
+      expect(result.lastResult.stdout).toContain('playground')
+      expect(result.lastResult.stdout).toContain('COMMANDS')
     })
 
     it('should execute version scenario', async () => {
       const result = await scenarios.version('local').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.stdout).toMatch(/1\.0\.0/)
+      expect(result.lastResult.stdout).toMatch(/1\.0\.0/)
     })
 
     it('should execute invalid command scenario', async () => {
@@ -42,15 +42,15 @@ describe('Playground Scenario Tests', () => {
       const result = await scenarios.jsonOutput(['greet', 'Test', '--json'], 'local').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.json).toBeDefined()
-      expect(result.result.json.message).toBe('Hello, Test!')
+      expect(result.lastResult.json).toBeDefined()
+      expect(result.lastResult.json.message).toBe('Hello, Test!')
     })
 
     it('should execute subcommand scenario', async () => {
       const result = await scenarios.subcommand('math', ['add', '5', '3'], 'local').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.stdout).toContain('5 + 3 = 8')
+      expect(result.lastResult.stdout).toContain('5 + 3 = 8')
     })
 
     it('should execute idempotent scenario', async () => {
@@ -183,18 +183,18 @@ describe('Playground Scenario Tests', () => {
       const result = await scenarios.help('cleanroom').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.stdout).toContain('playground')
+      expect(result.lastResult.stdout).toContain('playground')
     })
 
     it('should execute cleanroom version scenario', async () => {
       const result = await scenarios.version('cleanroom').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.stdout).toMatch(/1\.0\.0/)
+      expect(result.lastResult.stdout).toMatch(/1\.0\.0/)
     })
 
     it('should execute complex cleanroom workflow', async () => {
-      const cleanroomScenario = scenario('Cleanroom Workflow')
+      const myCleanroomScenario = cleanroomScenario('Cleanroom Workflow')
         .step('Get help in cleanroom')
         .run(['--help'])
         .expectSuccess()
@@ -208,14 +208,14 @@ describe('Playground Scenario Tests', () => {
         .expectSuccess()
         .expectOutput(/15 \+ 25 = 40/)
 
-      const result = await cleanroomScenario.execute('cleanroom')
+      const result = await myCleanroomScenario.execute('cleanroom')
 
       expect(result.success).toBe(true)
       expect(result.results).toHaveLength(3)
     })
 
     it('should execute JSON workflow in cleanroom', async () => {
-      const jsonScenario = scenario('Cleanroom JSON Workflow')
+      const jsonScenario = cleanroomScenario('Cleanroom JSON Workflow')
         .step('JSON greeting')
         .run(['greet', 'Cleanroom', '--json'])
         .expectSuccess()
@@ -244,7 +244,7 @@ describe('Playground Scenario Tests', () => {
 
       expect(localResult.success).toBe(true)
       expect(cleanroomResult.success).toBe(true)
-      expect(localResult.result.stdout).toBe(cleanroomResult.result.stdout)
+      expect(localResult.lastResult.stdout).toBe(cleanroomResult.lastResult.stdout)
     })
 
     it('should handle JSON output consistently', async () => {
@@ -255,7 +255,7 @@ describe('Playground Scenario Tests', () => {
 
       expect(localResult.success).toBe(true)
       expect(cleanroomResult.success).toBe(true)
-      expect(localResult.result.json).toEqual(cleanroomResult.result.json)
+      expect(localResult.lastResult.json).toEqual(cleanroomResult.lastResult.json)
     })
 
     it('should handle subcommands consistently', async () => {
@@ -266,7 +266,7 @@ describe('Playground Scenario Tests', () => {
 
       expect(localResult.success).toBe(true)
       expect(cleanroomResult.success).toBe(true)
-      expect(localResult.result.stdout).toBe(cleanroomResult.result.stdout)
+      expect(localResult.lastResult.stdout).toBe(cleanroomResult.lastResult.stdout)
     })
   })
 
@@ -288,7 +288,7 @@ describe('Playground Scenario Tests', () => {
     })
 
     it('should handle missing arguments', async () => {
-      const result = await scenarios.errorCase(['math', 'add'], /error/, 'local').execute()
+      const result = await scenarios.errorCase(['math', 'add'], /ERROR/i, 'local').execute()
 
       expect(result.success).toBe(true)
     })

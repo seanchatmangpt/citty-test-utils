@@ -1,13 +1,13 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Generate coverage report subcommand
  * @description Generate a detailed coverage report with AST caching
  */
 
 import { defineCommand } from 'citty'
-import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
-import { parseCliOptions, resolveCliPath } from '../../core/utils/analysis-helpers.js'
-import { getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
+import { ASTAnalyzer } from '@un-test/coverage'
+import { parseCliOptions, resolveCliPath } from '@un-test/coverage'
+import { getCLIEntryArgs } from '@un-test/coverage'
 import { writeFileSync } from 'node:fs'
 
 export const reportCommand = defineCommand({
@@ -76,11 +76,8 @@ export const reportCommand = defineCommand({
         console.log(formattedReport)
       }
     } catch (error) {
-      consola.error(`❌ AST-based report generation failed: ${error.message}`)
-      if (ctx.args.verbose) {
-        consola.error(error.stack)
-      }
-      process.exit(1)
+      consola.fatal(`❌ AST-based report generation failed!`)
+      throw error
     }
   },
 })

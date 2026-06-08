@@ -1,14 +1,14 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Export coverage data subcommand
  * @description Export coverage data in structured formats (JSON, Turtle) with AST caching
  */
 
 import { defineCommand } from 'citty'
-import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
-import { CLCoverageAnalyzer } from '../../core/coverage/cli-coverage-analyzer.js'
-import { parseCliOptions, resolveCliPath } from '../../core/utils/analysis-helpers.js'
-import { getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
+import { ASTAnalyzer } from '@un-test/coverage'
+import { CLCoverageAnalyzer } from '@un-test/coverage'
+import { parseCliOptions, resolveCliPath } from '@un-test/coverage'
+import { getCLIEntryArgs } from '@un-test/coverage'
 import { writeFileSync } from 'node:fs'
 
 export const exportCommand = defineCommand({
@@ -18,6 +18,14 @@ export const exportCommand = defineCommand({
   },
   args: {
     ...getCLIEntryArgs(),
+    'show-help': {
+      type: 'boolean',
+      description: 'Show help information',
+    },
+    help: {
+      type: 'boolean',
+      description: 'Show help information',
+    },
     'test-dir': {
       type: 'string',
       description: 'Directory containing test files',
@@ -64,6 +72,16 @@ export const exportCommand = defineCommand({
     },
   },
   run: async (ctx) => {
+    if (ctx.args['show-help'] || ctx.args.help) {
+      console.log('ctu analysis export - Export coverage data in structured formats')
+      console.log('\nOPTIONS')
+      console.log('  --format      Export format (json, turtle)')
+      console.log('  --output      Output file path (required for export)')
+      console.log('  --base-uri    Base URI for Turtle/RDF output')
+      console.log('  --cli-name    CLI name for Turtle/RDF output')
+      return
+    }
+
     const { format, output, verbose } = ctx.args
     if (!output) {
       consola.error('❌ Missing required argument: --output')
@@ -120,11 +138,8 @@ export const exportCommand = defineCommand({
         consola.log(`📈 Overall Coverage: ${report.coverage.summary.overall.percentage.toFixed(1)}%`)
       }
     } catch (error) {
-      consola.error(`❌ AST-based export failed: ${error.message}`)
-      if (ctx.args.verbose) {
-        consola.error(error.stack)
-      }
-      process.exit(1)
+      consola.fatal(`❌ AST-based export failed!`)
+      throw error
     }
   },
 })

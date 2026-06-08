@@ -1,16 +1,16 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Coverage analysis subcommand
  * @description Analyze test coverage using AST-based pattern matching for accurate results
  */
 
 import { defineCommand } from 'citty'
-import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
-import { resolveCLIEntry, getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
+import { ASTAnalyzer } from '@un-test/coverage'
+import { resolveCLIEntry, getCLIEntryArgs } from '@un-test/coverage'
 import {
   validateCLIPath,
   buildAnalysisMetadata,
-} from '../../core/utils/analysis-report-utils.js'
+} from '@un-test/coverage'
 import { writeFileSync } from 'fs'
 
 export const coverageCommand = defineCommand({
@@ -160,11 +160,8 @@ export const coverageCommand = defineCommand({
         console.log(coverageReport)
       }
     } catch (error) {
-      consola.error(`❌ Coverage analysis failed: ${error.message}`)
-      if (verbose) {
-        consola.error(error.stack)
-      }
-      process.exit(1)
+      consola.fatal(`❌ Coverage analysis failed!`)
+      throw error
     }
   },
 })

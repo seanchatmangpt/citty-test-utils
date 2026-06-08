@@ -1,17 +1,17 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Smart recommendations subcommand
  * @description Generate intelligent recommendations for improving test coverage
  */
 
 import { defineCommand } from 'citty'
-import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
-import { resolveCLIEntry, getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
+import { ASTAnalyzer } from '@un-test/coverage'
+import { resolveCLIEntry, getCLIEntryArgs } from '@un-test/coverage'
 import {
   validateCLIPath,
   buildAnalysisMetadata,
   getPriorityEmoji,
-} from '../../core/utils/analysis-report-utils.js'
+} from '@un-test/coverage'
 import { writeFileSync } from 'fs'
 
 export const recommendCommand = defineCommand({
@@ -129,11 +129,8 @@ export const recommendCommand = defineCommand({
         console.log(recommendationReport)
       }
     } catch (error) {
-      consola.error(`❌ Smart recommendations generation failed: ${error.message}`)
-      if (verbose) {
-        consola.error(error.stack)
-      }
-      process.exit(1)
+      consola.fatal(`❌ Smart recommendations generation failed!`)
+      throw error
     }
   },
 })
@@ -167,7 +164,7 @@ function generateSmartRecommendations(report, options) {
         actionable: true,
         suggestion: `Create test file: test/${command.name}.test.mjs`,
         example: `// Test for ${command.name} command
-import { runLocalCitty } from '../src/core/runners/local-runner.js'
+import { runLocalCitty } from '@un-test/runners-local'
 
 test('${command.name} command works', async () => {
   const result = await runLocalCitty(['${command.name}', '--help'])

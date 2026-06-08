@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/test/error.js - Test error verb command
 
 import { defineCommand } from 'citty'
-import { scenarios } from '../../core/scenarios/scenarios.js'
+import { scenarioTemplates as scenarios } from '@un-test/scenario'
 
 export const errorCommand = defineCommand({
   meta: {

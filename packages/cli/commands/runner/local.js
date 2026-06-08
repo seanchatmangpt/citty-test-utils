@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Local runner command for Citty CLI
  * @description Execute CLI commands locally with fluent assertions
  */
 
 import { defineCommand } from 'citty'
-import { runLocalCitty } from '../../core/runners/local-runner.js'
+import { runLocalCitty } from '@un-test/runners-local'
 
 /**
  * Local runner command definition

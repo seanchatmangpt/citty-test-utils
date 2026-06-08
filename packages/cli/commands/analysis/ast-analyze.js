@@ -1,11 +1,11 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview AST-based analysis command
  * @description Uses AST parsing for accurate CLI coverage analysis
  */
 
 import { defineCommand } from 'citty'
-import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
+import { ASTAnalyzer } from '@un-test/coverage'
 import { writeFileSync } from 'fs'
 
 export const astAnalyzeCommand = defineCommand({
@@ -79,8 +79,8 @@ export const astAnalyzeCommand = defineCommand({
         console.log(formattedReport)
       }
     } catch (error) {
-      consola.error(`❌ AST analysis failed: ${error.message}`)
-      process.exit(1)
+      consola.fatal(`❌ AST analysis failed!`)
+      throw error
     }
   },
 })

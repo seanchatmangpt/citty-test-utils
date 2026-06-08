@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/test/run.js - Test run verb command
 
 import { defineCommand } from 'citty'
-import { scenarios } from '../../core/scenarios/scenarios.js'
-import { setupCleanroom } from '../../core/runners/cleanroom-runner.js'
+import { scenarioTemplates as scenarios } from '@un-test/scenario'
+import { setupCleanroom } from '@un-test/runners-cleanroom'
 
 export const runCommand = defineCommand({
   meta: {
@@ -102,19 +102,8 @@ export const runCommand = defineCommand({
         }
       }
     } catch (error) {
-      const errorResult = {
-        error: error.message,
-        scenario: scenarioName,
-        environment,
-        timestamp: new Date().toISOString(),
-      }
-
-      if (json) {
-        console.log(JSON.stringify(errorResult))
-      } else {
-        consola.error(`Test failed: ${error.message}`)
-      }
-      process.exit(1)
+      consola.fatal(`❌ Test run failed!`)
+      throw error
     }
   },
 })

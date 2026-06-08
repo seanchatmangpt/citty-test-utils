@@ -1,13 +1,10 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
-// src/commands/gen/scenario.js - Gen scenario verb command
-
+import { consola, getEnvironmentPaths } from '@un-test/core'
 import { defineCommand } from 'citty'
 import nunjucks from 'nunjucks'
 import { writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'pathe'
-import { getEnvironmentPaths } from '../../core/utils/environment-detection.js'
 
 export const scenarioCommand = defineCommand({
   meta: {

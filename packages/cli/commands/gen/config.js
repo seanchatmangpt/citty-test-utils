@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/gen/config.js - Gen config verb command
 
 import { defineCommand } from 'citty'
@@ -132,23 +132,8 @@ export const configCommand = defineCommand({
         console.log(`🎯 Status: ${result.status}`)
       }
     } catch (error) {
-      const errorResult = {
-        template: 'config',
-        name,
-        output,
-        format,
-        status: 'error',
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      }
-
-      if (json) {
-        console.log(JSON.stringify(errorResult))
-      } else {
-        consola.error(`❌ Failed to generate config template: ${name}.${format}`)
-        consola.error(`Error: ${error.message}`)
-      }
-      process.exit(1)
+      consola.fatal(`❌ Failed to generate config template: ${name}.${format}`)
+      throw error
     }
   },
 })

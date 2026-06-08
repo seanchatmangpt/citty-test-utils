@@ -5,6 +5,18 @@ import { promisify } from 'node:util'
 
 const execAsync = promisify(exec)
 let singleton
+let execMutex = Promise.resolve()
+
+async function acquireLock() {
+  let release
+  const nextLock = new Promise((resolve) => {
+    release = resolve
+  })
+  const currentLock = execMutex
+  execMutex = nextLock
+  await currentLock
+  return release
+}
 
 // Docker availability check - let it crash if Docker is not available
 async function checkDockerAvailable() {
@@ -58,8 +70,17 @@ export async function setupCleanroom({
       if (fs.existsSync(path.resolve(rootDir, 'src'))) {
         dirs.push({ source: path.resolve(rootDir, 'src'), target: '/app/src' })
       }
+      if (fs.existsSync(path.resolve(rootDir, 'packages'))) {
+        dirs.push({ source: path.resolve(rootDir, 'packages'), target: '/app/packages' })
+      }
       if (fs.existsSync(path.resolve(rootDir, 'templates'))) {
         dirs.push({ source: path.resolve(rootDir, 'templates'), target: '/app/templates' })
+      }
+      if (fs.existsSync(path.resolve(rootDir, 'playground'))) {
+        dirs.push({ source: path.resolve(rootDir, 'playground'), target: '/app/playground' })
+      }
+      if (fs.existsSync(path.resolve(rootDir, 'projects'))) {
+        dirs.push({ source: path.resolve(rootDir, 'projects'), target: '/app/projects' })
       }
       if (fs.existsSync(path.resolve(rootDir, 'node_modules'))) {
         dirs.push({ source: path.resolve(rootDir, 'node_modules'), target: '/app/node_modules' })
@@ -112,59 +133,74 @@ export function isCleanroomActive() {
 
 export async function runCitty(
   args,
-  { json = false, cwd = '/app', timeout = 10000, env = {} } = {}
+  { json = false, cwd = '/app', timeout = 10000, env = {}, cliPath } = {}
 ) {
   if (!singleton) throw new Error('Cleanroom not initialized. Call setupCleanroom first.')
 
-  // Verify container is still healthy - let it crash if unhealthy
-  const containerHealthy = await verifyContainerHealth(singleton.container)
-  if (!containerHealthy) {
-    throw new Error('Container is no longer healthy. Please restart cleanroom.')
+  const release = await acquireLock()
+  try {
+    // Verify container is still healthy - let it crash if unhealthy
+    const containerHealthy = await verifyContainerHealth(singleton.container)
+    if (!containerHealthy) {
+      throw new Error('Container is no longer healthy. Please restart cleanroom.')
+    }
+
+    // Execute command directly - let it crash if it fails
+    const startTime = Date.now()
+
+    // Check if we should use the test CLI
+    const useTestCli = env.TEST_CLI === 'true'
+    let finalCliPath = cliPath
+    if (!finalCliPath) {
+      if (useTestCli) {
+        finalCliPath = 'src/cli.mjs'
+      } else if (process.env.TEST_CLI_PATH) {
+        const path = await import('pathe')
+        finalCliPath = path.relative(process.cwd(), path.resolve(process.env.TEST_CLI_PATH))
+      } else {
+        finalCliPath = 'src/cli.mjs'
+      }
+    }
+
+    // Create timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Command timed out after ${timeout}ms`)), timeout)
+    })
+
+    // Execute command with timeout
+    const execPromise = singleton.container.exec(['node', finalCliPath, ...args], {
+      workdir: cwd,
+      env: {
+        ...env,
+        CITTY_DISABLE_DOMAIN_DISCOVERY: 'true',
+      },
+    })
+
+    const { exitCode, output, stderr } = await Promise.race([execPromise, timeoutPromise])
+    const durationMs = Date.now() - startTime
+
+    const result = {
+      exitCode,
+      stdout: output.trim(),
+      stderr: stderr.trim(),
+      args,
+      cwd,
+      durationMs,
+      json: json
+        ? safeJsonParse(output)
+        : args.includes('--json')
+        ? safeJsonParse(output)
+        : undefined,
+    }
+
+    // Wrap in expectations layer
+    const { wrapExpectation } = await import('@un-test/core')
+    const wrapped = wrapExpectation(result)
+    wrapped.result = result
+    return wrapped
+  } finally {
+    release()
   }
-
-  // Execute command directly - let it crash if it fails
-  const startTime = Date.now()
-
-  // Check if we should use the test CLI
-  const useTestCli = env.TEST_CLI === 'true'
-  const cliPath = useTestCli ? 'src/cli.mjs' : 'src/cli.mjs' // Use src/cli.mjs
-
-  // Create timeout promise
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error(`Command timed out after ${timeout}ms`)), timeout)
-  })
-
-  // Execute command with timeout
-  const execPromise = singleton.container.exec(['node', cliPath, ...args], {
-    workdir: cwd,
-    env: {
-      ...env,
-      CITTY_DISABLE_DOMAIN_DISCOVERY: 'true',
-    },
-  })
-
-  const { exitCode, output, stderr } = await Promise.race([execPromise, timeoutPromise])
-  const durationMs = Date.now() - startTime
-
-  const result = {
-    exitCode,
-    stdout: output.trim(),
-    stderr: stderr.trim(),
-    args,
-    cwd,
-    durationMs,
-    json: json
-      ? safeJsonParse(output)
-      : args.includes('--json')
-      ? safeJsonParse(output)
-      : undefined,
-  }
-
-  // Wrap in expectations layer
-  const { wrapExpectation } = await import('@un-test/core')
-  const wrapped = wrapExpectation(result)
-  wrapped.result = result
-  return wrapped
 }
 
 export async function teardownCleanroom() {
@@ -187,5 +223,25 @@ function safeJsonParse(str) {
     return destr(str)
   } catch {
     return undefined
+  }
+}
+
+export async function runCittySafe(args, options = {}) {
+  try {
+    return await runCitty(args, options)
+  } catch (e) {
+    const { consola, wrapExpectation } = await import('@un-test/core')
+    consola.fatal(`❌ runCittySafe failed!`)
+    return wrapExpectation({
+      success: false,
+      exitCode: 1,
+      stdout: '',
+      stderr: e.message || String(e),
+      args,
+      cwd: options?.cwd || process.cwd(),
+      durationMs: 0,
+      command: `runCitty(${JSON.stringify(args)})`,
+      error: e,
+    })
   }
 }

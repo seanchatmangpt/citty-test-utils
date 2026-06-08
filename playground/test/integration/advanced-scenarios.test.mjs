@@ -305,7 +305,7 @@ describe('Advanced Scenario Testing', () => {
         .expectSuccess()
         .expectOutput(/Hello, Normal/)
         .step('Timeout command')
-        .run(['error', 'timeout'])
+        .run(['error', 'timeout'], { timeout: 1000 })
         .expectFailure()
 
       const result = await timeoutWorkflow.execute('local')
@@ -320,30 +320,30 @@ describe('Advanced Scenario Testing', () => {
       const result = await scenarios.help('local').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.stdout).toContain('playground')
-      expect(result.result.stdout).toContain('COMMANDS')
+      expect(result.lastResult.stdout).toContain('playground')
+      expect(result.lastResult.stdout).toContain('COMMANDS')
     })
 
     it('should execute extended version scenario', async () => {
       const result = await scenarios.version('local').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.stdout).toMatch(/1\.0\.0/)
+      expect(result.lastResult.stdout).toMatch(/1\.0\.0/)
     })
 
     it('should execute extended JSON scenario', async () => {
       const result = await scenarios.jsonOutput(['greet', 'Extended', '--json'], 'local').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.json).toBeDefined()
-      expect(result.result.json.message).toBe('Hello, Extended!')
+      expect(result.lastResult.json).toBeDefined()
+      expect(result.lastResult.json.message).toBe('Hello, Extended!')
     })
 
     it('should execute extended subcommand scenario', async () => {
       const result = await scenarios.subcommand('math', ['multiply', '8', '9'], 'local').execute()
 
       expect(result.success).toBe(true)
-      expect(result.result.stdout).toContain('8 × 9 = 72')
+      expect(result.lastResult.stdout).toContain('8 × 9 = 72')
     })
 
     it('should execute extended idempotent scenario', async () => {

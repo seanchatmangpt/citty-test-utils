@@ -1,18 +1,18 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Discover CLI structure subcommand
  * @description Discover and analyze CLI structure using AST parsing for accurate results
  */
 
 import { defineCommand } from 'citty'
-import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
-import { resolveCLIEntry, getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
+import { ASTAnalyzer } from '@un-test/coverage'
+import { resolveCLIEntry, getCLIEntryArgs } from '@un-test/coverage'
 import {
   validateCLIPath,
   buildAnalysisMetadata,
   formatCLIDetection,
   buildReportHeader,
-} from '../../core/utils/analysis-report-utils.js'
+} from '@un-test/coverage'
 import { writeFileSync } from 'fs'
 
 export const discoverCommand = defineCommand({
@@ -136,11 +136,8 @@ export const discoverCommand = defineCommand({
         console.log(discoveryReport)
       }
     } catch (error) {
-      consola.error(`❌ CLI structure discovery failed: ${error.message}`)
-      if (verbose) {
-        consola.error(error.stack)
-      }
-      process.exit(1)
+      consola.fatal(`❌ CLI structure discovery failed!`)
+      throw error
     }
   },
 })

@@ -2,16 +2,20 @@
  * @fileoverview Local Runner for Citty Testing
  */
 
-import { spawnSync } from 'child_process'
+import { spawnSync, execSync } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
 import { resolve, dirname } from 'pathe'
 import { destr } from 'destr'
 import { consola, monitorPerformance } from '@un-test/core'
 import { fileURLToPath } from 'node:url'
 import { wrapExpectation } from '@un-test/core'
+import { loadConfig } from 'c12'
+import { defu } from 'defu'
+import { z } from 'zod'
+import { setupCleanroom, runCitty as executeCleanroom, teardownCleanroom, isCleanroomActive } from '@un-test/runners-cleanroom'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const defaultCliPath = resolve(__dirname, '../../src/cli.mjs')
+const defaultCliPath = resolve(__dirname, '../../packages/cli/index.mjs')
 
 /**
  * Normalizes input arguments and options into a standard object
@@ -128,6 +132,8 @@ export function runLocalCitty(firstArg, secondArg) {
   const cleanEnv = { ...process.env, ...env }
   if (cleanEnv.NODE_ENV === 'test') cleanEnv.NODE_ENV = 'development'
   delete cleanEnv.VITEST
+  delete cleanEnv.JEST_WORKER_ID
+  delete cleanEnv.TEST
   delete cleanEnv.NODE_OPTIONS
 
   const startTime = Date.now()
@@ -169,6 +175,17 @@ export function runLocalCitty(firstArg, secondArg) {
  * Fluent assertion wrapper
  */
 export function wrapWithAssertions(result) {
+  if (!('json' in result)) {
+    Object.defineProperty(result, 'json', { 
+      get() { 
+        if (!result.stdout) return undefined
+        const data = destr(result.stdout)
+        return (typeof data === 'object' && data !== null) ? data : undefined
+      },
+      configurable: true, enumerable: true
+    })
+  }
+
   const wrapped = wrapExpectation(result)
   wrapped.result = result
   wrapped.durationMs = result.durationMs
@@ -176,11 +193,7 @@ export function wrapWithAssertions(result) {
   
   if (!('json' in wrapped)) {
     Object.defineProperty(wrapped, 'json', { 
-      get() { 
-        if (!result.stdout) return undefined
-        const data = destr(result.stdout)
-        return (typeof data === 'object' && data !== null) ? data : undefined
-      },
+      get() { return result.json },
       configurable: true, enumerable: true
     })
   }
@@ -201,14 +214,174 @@ export function wrapWithAssertions(result) {
   return wrapped
 }
 
-export { runCitty } from '@un-test/runners-cleanroom'
+// Cleanroom and Unified Runner implementation
+const CleanroomConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  nodeImage: z.string().optional().default('node:20-alpine'),
+  memoryLimit: z.string().optional().default('512m'),
+  cpuLimit: z.string().optional().default('1.0'),
+  timeout: z.number().positive().optional().default(60000),
+  rootDir: z.string().optional().default('.'),
+}).optional()
+
+const UnifiedRunnerOptionsSchema = z.object({
+  cliPath: z.string().optional(),
+  cwd: z.string().optional(),
+  env: z.any().optional(),
+  timeout: z.number().positive().optional(),
+  cleanroom: CleanroomConfigSchema,
+  json: z.boolean().optional(),
+  mode: z.enum(['local', 'cleanroom', 'auto']).optional(),
+}).passthrough()
+
+async function loadCittyConfig(cwd = process.cwd(), overrides = {}) {
+  const useTestCli = overrides.env?.TEST_CLI === 'true' || process.env.TEST_CLI === 'true'
+  const defaults = {
+    cliPath: useTestCli ? './src/cli.mjs' : (process.env.TEST_CLI_PATH || './src/cli.mjs'),
+    cwd: cwd && existsSync(cwd) ? cwd : process.cwd(),
+    env: {},
+    timeout: 30000,
+    cleanroom: {
+      enabled: false,
+      nodeImage: 'node:20-alpine',
+      memoryLimit: '512m',
+      cpuLimit: '1.0',
+      timeout: 60000,
+      rootDir: '.',
+    },
+    json: false,
+    mode: 'auto',
+  }
+
+  try {
+    const { config } = await loadConfig({
+      name: 'ctu',
+      cwd: cwd && existsSync(cwd) ? cwd : process.cwd(),
+      defaults,
+      overrides,
+    })
+
+    return config
+  } catch (error) {
+    consola.fatal(`❌ Failed to load configuration: ${error.message}`)
+    throw error
+  }
+}
+
+async function executeLocalMode(args, config) {
+  const { cliPath, cwd, env, timeout } = config
+  const resolvedCliPath = resolve(cwd, cliPath)
+
+  if (!existsSync(resolvedCliPath)) {
+    throw new Error(`CLI file not found: ${resolvedCliPath}`)
+  }
+
+  return runLocalCitty(args, { cliPath, cwd, env, timeout, failFast: false })
+}
+
+function checkDockerAvailability() {
+  try {
+    execSync('docker ps', { stdio: 'pipe' })
+  } catch (error) {
+    throw new Error(`Docker is not available: ${error.message}`)
+  }
+}
+
+async function executeCleanroomMode(args, config) {
+  const { cleanroom, cwd, env, timeout, json } = config
+
+  checkDockerAvailability()
+
+  await setupCleanroom({
+    rootDir: cleanroom.rootDir || cwd,
+    nodeImage: cleanroom.nodeImage,
+    memoryLimit: cleanroom.memoryLimit,
+    cpuLimit: cleanroom.cpuLimit,
+    timeout: cleanroom.timeout,
+  })
+
+  return await executeCleanroom(args, { json, cwd: '/app', timeout, env, cliPath: config.cliPath })
+}
+
+export async function runCitty(args, options = {}) {
+  if (!Array.isArray(args)) {
+    throw new Error(
+      `Invalid arguments: expected array, got ${typeof args}\n` +
+      `Usage: runCitty(['--help'], options)`
+    )
+  }
+
+  const config = await loadCittyConfig(options.cwd, options)
+
+  const mode = config.mode === 'auto'
+    ? (config.cleanroom?.enabled || isCleanroomActive() ? 'cleanroom' : 'local')
+    : config.mode
+
+
+  let result
+  if (mode === 'cleanroom') {
+    result = await executeCleanroomMode(args, config)
+  } else {
+    result = await executeLocalMode(args, config)
+  }
+
+  if (typeof result.expectSuccess !== 'function') {
+    result = wrapExpectation(result)
+  }
+
+  result.mode = mode
+  result.config = config
+
+  return result
+}
+
+export async function runCittySafe(args, options = {}) {
+  try {
+    return await runCitty(args, options)
+  } catch (error) {
+    consola.fatal(`❌ runCittySafe failed!`)
+    return wrapExpectation({
+      success: false,
+      exitCode: 1,
+      stdout: '',
+      stderr: error.message || String(error),
+      args,
+      cwd: options.cwd || process.cwd(),
+      durationMs: 0,
+      command: `runCitty(${JSON.stringify(args)})`,
+      error,
+    })
+  }
+}
+
+export async function getCittyConfig(options = {}) {
+  const config = await loadCittyConfig(options.cwd, options)
+  return {
+    ...config,
+    detectedMode: config.mode === 'auto'
+      ? (config.cleanroom?.enabled ? 'cleanroom' : 'local')
+      : config.mode
+  }
+}
+
+export { teardownCleanroom }
 
 export function runLocalCittySafe(firstArg, secondArg) {
   try { return runLocalCitty(firstArg, secondArg) }
-  catch (e) { 
-    return wrapWithAssertions({ 
-      success: false, exitCode: 1, stdout: '', stderr: e.message, 
-      args: [], cliPath: '', cwd: process.cwd(), durationMs: 0, duration: 0, command: 'unknown' 
-    }) 
+  catch (e) {
+    consola.fatal(`❌ runLocalCittySafe failed!`)
+    return wrapWithAssertions({
+      success: false,
+      exitCode: 1,
+      stdout: '',
+      stderr: e.message,
+      args: [],
+      cliPath: '',
+      cwd: process.cwd(),
+      durationMs: 0,
+      duration: 0,
+      command: 'unknown'
+    })
   }
 }
+

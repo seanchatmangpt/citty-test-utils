@@ -1,19 +1,19 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Analyze CLI coverage subcommand
  * @description Analyze CLI test coverage with AST caching
  */
 
 import { defineCommand } from 'citty'
-import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
+import { ASTAnalyzer } from '@un-test/coverage'
 import {
   parseCliOptions,
   resolveCliPath,
   generateAnalysisReport,
   handleAnalysisError,
   displayAnalysisMetadata,
-} from '../../core/utils/analysis-helpers.js'
-import { getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
+} from '@un-test/coverage'
+import { getCLIEntryArgs } from '@un-test/coverage'
 
 /**
  * Analyze command definition
@@ -25,6 +25,14 @@ export const analyzeCommand = defineCommand({
   },
   args: {
     ...getCLIEntryArgs(),
+    'show-help': {
+      type: 'boolean',
+      description: 'Show help information',
+    },
+    help: {
+      type: 'boolean',
+      description: 'Show help information',
+    },
     'test-dir': {
       type: 'string',
       description: 'Directory containing test files',
@@ -56,6 +64,15 @@ export const analyzeCommand = defineCommand({
     },
   },
   run: async (ctx) => {
+    if (ctx.args['show-help'] || ctx.args.help) {
+      console.log('ctu analysis analyze - CLI test coverage analysis')
+      console.log('\nOPTIONS')
+      console.log('  --format      Output format (text, json)')
+      console.log('  --output      Output file path (optional)')
+      console.log('  --verbose     Enable verbose output')
+      return
+    }
+
     if (ctx.args.format !== 'json') {
       consola.start('🚀 Analyzing CLI test coverage...')
     }

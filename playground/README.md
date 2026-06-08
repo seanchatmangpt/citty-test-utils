@@ -16,7 +16,13 @@ This playground serves as both a testing ground and example implementation of ho
 - **JSON Output Testing**: Examples of testing JSON output
 - **Error Handling**: Demonstrates error simulation and testing
 
+
 ## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `greet` | Greet someone |
+| `error` | Simulate different types of errors |
 
 ### Basic Commands
 

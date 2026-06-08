@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/test/help.js - Test help verb command
 
 import { defineCommand } from 'citty'
-import { scenarios } from '../../core/scenarios/scenarios.js'
+import { scenarioTemplates as scenarios } from '@un-test/scenario'
 
 export const helpCommand = defineCommand({
   meta: {
@@ -40,19 +40,8 @@ export const helpCommand = defineCommand({
         console.log(`Help test: ${result.success ? '✅ PASS' : '❌ FAIL'}`)
       }
     } catch (error) {
-      const errorResult = {
-        command: 'help',
-        environment,
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      }
-
-      if (json) {
-        console.log(JSON.stringify(errorResult))
-      } else {
-        consola.error(`Help test failed: ${error.message}`)
-      }
-      process.exit(1)
+      consola.fatal(`❌ Help test failed!`)
+      throw error
     }
   },
 })

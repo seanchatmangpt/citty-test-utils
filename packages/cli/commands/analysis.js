@@ -1,4 +1,4 @@
-import { consola } from './utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/analysis.js - Analysis noun command
 
 import { defineCommand } from 'citty'

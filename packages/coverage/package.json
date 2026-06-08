@@ -1,0 +1,20 @@
+{
+  "name": "@un-test/coverage",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./helpers": "./helpers.js"
+  },
+  "dependencies": {
+    "@un-test/core": "workspace:*",
+    "acorn": "^8.11.3",
+    "acorn-walk": "^8.3.2",
+    "consola": "^3.4.2",
+    "n3": "^1.26.0",
+    "ohash": "^2.0.11",
+    "unstorage": "^1.17.5",
+    "defu": "^6.1.7",
+    "pathe": "^2.0.3"
+  }
+}

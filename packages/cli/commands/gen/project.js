@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola, getEnvironmentPaths } from '@un-test/core'
 // src/commands/generate/project.js - Generate project verb command
 
 import { defineCommand } from 'citty'
@@ -8,10 +8,9 @@ import { mkdir } from 'node:fs/promises'
 import { writeFileSync, existsSync } from 'node:fs'
 import { join, resolve, dirname } from 'pathe'
 import { fileURLToPath } from 'node:url'
-import { getEnvironmentPaths } from '../../core/utils/environment-detection.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const templatesDir = resolve(__dirname, '../../../templates')
+const templatesDir = resolve(__dirname, '../../../../templates')
 
 // Enhanced error handling for file operations
 async function safeMkdir(dirPath, options = {}) {

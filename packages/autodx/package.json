@@ -1,0 +1,19 @@
+{
+  "name": "@un-test/autodx",
+  "version": "1.0.0",
+  "description": "Hyper advanced AutoDX, AutoQoL, and AutoEtc generative engine for un-test-utils",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@un-test/core": "workspace:*",
+    "@un-test/scenario": "workspace:*",
+    "@un-test/runners-local": "workspace:*",
+    "citty": "^0.1.6",
+    "pathe": "^1.1.2",
+    "magicast": "^0.3.3",
+    "magic-regexp": "^0.11.0"
+  }
+}

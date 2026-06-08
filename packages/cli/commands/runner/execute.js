@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/runner/execute.js - Runner execute verb command
 
 import { defineCommand } from 'citty'
 import { spawn, exec } from 'node:child_process'
 import { promisify } from 'node:util'
-import { runCitty } from '../../core/runners/cleanroom-runner.js'
+import { runCitty } from '@un-test/runners-cleanroom'
 
 const execAsync = promisify(exec)
 
@@ -37,15 +37,18 @@ export const executeCommand = defineCommand({
     },
   },
   run: async (ctx) => {
-    const { command, environment, timeout, cwd, json, verbose } = ctx.args
+    const { command, environment: argEnvironment, timeout, cwd, json, verbose } = ctx.args
+    const { isCleanroomEnvironment } = await import('@un-test/core')
+    const inCleanroom = isCleanroomEnvironment()
+    const reportedEnvironment = inCleanroom ? 'cleanroom' : argEnvironment
 
     if (verbose) {
-      consola.error(`Running command "${command}" in ${environment} environment`)
+      consola.error(`Running command "${command}" in ${reportedEnvironment} environment`)
     }
 
     let result
 
-    if (environment === 'cleanroom') {
+    if (argEnvironment === 'cleanroom' && !inCleanroom) {
       // For cleanroom, we need to use runCitty but with a different approach
       // Since runCitty is designed for CLI commands, we'll use it to run the command
       // through the CLI's runner execute functionality - NO try-catch, fail fast!
@@ -76,7 +79,7 @@ export const executeCommand = defineCommand({
       }).catch(error => {
         // Transform exec errors into result format but still throw
         const errorResult = {
-          environment: 'local',
+          environment: reportedEnvironment,
           command,
           exitCode: error.code || 1,
           stdout: error.stdout || '',
@@ -90,7 +93,7 @@ export const executeCommand = defineCommand({
           console.log(JSON.stringify(errorResult))
         } else {
           console.log(`Command: ${command}`)
-          console.log(`Environment: ${environment}`)
+          console.log(`Environment: ${reportedEnvironment}`)
           console.log(`Exit Code: ${errorResult.exitCode}`)
           console.log(`Success: ❌`)
           if (errorResult.stdout) {
@@ -107,7 +110,7 @@ export const executeCommand = defineCommand({
       })
 
       result = {
-        environment: 'local',
+        environment: reportedEnvironment,
         command,
         exitCode: 0,
         stdout: stdout.trim(),
@@ -121,7 +124,7 @@ export const executeCommand = defineCommand({
       console.log(JSON.stringify(result))
     } else {
       console.log(`Command: ${command}`)
-      console.log(`Environment: ${environment}`)
+      console.log(`Environment: ${reportedEnvironment}`)
       console.log(`Exit Code: ${result.exitCode}`)
       console.log(`Success: ${result.success ? '✅' : '❌'}`)
       if (result.stdout) {

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/test/version.js - Test version verb command
 
 import { defineCommand } from 'citty'
-import { scenarios } from '../../core/scenarios/scenarios.js'
+import { scenarioTemplates as scenarios } from '@un-test/scenario'
 
 export const versionCommand = defineCommand({
   meta: {
@@ -40,19 +40,8 @@ export const versionCommand = defineCommand({
         console.log(`Version test: ${result.success ? '✅ PASS' : '❌ FAIL'}`)
       }
     } catch (error) {
-      const errorResult = {
-        command: 'version',
-        environment,
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      }
-
-      if (json) {
-        console.log(JSON.stringify(errorResult))
-      } else {
-        consola.error(`Version test failed: ${error.message}`)
-      }
-      process.exit(1)
+      consola.fatal(`❌ Version test failed!`)
+      throw error
     }
   },
 })

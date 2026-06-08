@@ -4,11 +4,11 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { runCitty, scenario } from 'citty-test-utils'
+import { runLocalCitty, scenario } from 'citty-test-utils'
 
 describe('Playground CLI v1.0.0', () => {
   it('should show help', async () => {
-    const result = await runCitty(['--show-help'])
+    const result = await runLocalCitty(['--show-help'])
 
     result
       .expectSuccess()
@@ -17,7 +17,7 @@ describe('Playground CLI v1.0.0', () => {
   })
 
   it('should show version', async () => {
-    const result = await runCitty(['--show-version'])
+    const result = await runLocalCitty(['--show-version'])
 
     result
       .expectSuccess()
@@ -25,12 +25,12 @@ describe('Playground CLI v1.0.0', () => {
   })
 
   it('should handle invalid commands', async () => {
-    // Use runCittySafe for expected failures
-    const { runCittySafe } = await import('citty-test-utils')
-    const result = await runCittySafe(['invalid-command'])
+    // Use runLocalCittySafe for expected failures
+    const { runLocalCittySafe } = await import('citty-test-utils')
+    const result = await runLocalCittySafe(['invalid-command'])
 
     expect(result.success).toBe(false)
-    expect(result.error).toBeDefined()
+    expect(result.stderr).toBeDefined()
   })
 
   it('should run multi-step scenario', async () => {
@@ -44,7 +44,7 @@ describe('Playground CLI v1.0.0', () => {
 
   it('should use config from vitest.config.js', async () => {
     // No cliPath needed - comes from config!
-    const result = await runCitty(['--show-help'])
+    const result = await runLocalCitty(['--show-help'])
 
     result.expectSuccess()
     expect(result.command).toContain('cli.mjs')

@@ -4,8 +4,8 @@
  */
 
 import { defineCommand } from 'citty'
-import { consola } from '../../core/utils/logging.js'
-import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
+import { consola } from '@un-test/core'
+import { ASTAnalyzer } from '@un-test/coverage'
 import {
   parseCliOptions,
   resolveCliPath,
@@ -13,8 +13,8 @@ import {
   displayAnalysisMetadata,
   displayCommandDetails,
   displayUntestedItems,
-} from '../../core/utils/analysis-helpers.js'
-import { getCLIEntryArgs } from '../../core/utils/cli-entry-resolver.js'
+} from '@un-test/coverage'
+import { getCLIEntryArgs } from '@un-test/coverage'
 
 /**
  * Statistics command definition

@@ -8,8 +8,11 @@
   "dependencies": {
     "@un-test/core": "workspace:*",
     "@un-test/runners-cleanroom": "workspace:*",
+    "c12": "^4.0.0-beta.5",
     "consola": "^3.4.2",
+    "defu": "^6.1.7",
     "destr": "^2.0.5",
-    "pathe": "^2.0.3"
+    "pathe": "^2.0.3",
+    "zod": "^3.23.8"
   }
 }

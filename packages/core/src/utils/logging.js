@@ -7,7 +7,7 @@ import { renderUnicode } from 'uqr'
 
 // Persistent storage for test performance tracking
 const performanceStorage = createStorage({
-  driver: fsDriver({ base: '.ctu/cache/performance' })
+  driver: fsDriver({ base: '.ctu/cache/performance' }),
 })
 
 /**
@@ -20,7 +20,8 @@ export const consola = createConsola({
     {
       log: (logObj, ctx) => {
         // Handle critical failures with QR code crash dumps
-        if (logObj.level === 0) { // Fatal
+        if (logObj.level === 0 && logObj.type === 'fatal') {
+          // Fatal
           const error = logObj.args[0]
           const errorMessage = error instanceof Error ? error.message : String(error)
           const errorStack = error instanceof Error ? error.stack : new Error().stack
@@ -34,52 +35,61 @@ export const consola = createConsola({
               version: process.version,
               arch: process.arch,
               cwd: process.cwd(),
-              env: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY') && !k.includes('TOKEN'))
-            }
+              env: Object.keys(process.env).filter(
+                (k) => !k.includes('SECRET') && !k.includes('KEY') && !k.includes('TOKEN')
+              ),
+            },
           }
 
           const base64Dump = Buffer.from(JSON.stringify(crashDump)).toString('base64')
-          
+
+          let qrCode = ''
+          try {
+            qrCode = renderUnicode(base64Dump, { border: 1 })
+          } catch (e) {
+            qrCode = `(QR code too large to display, base64 length: ${base64Dump.length})`
+          }
+
           // Use consola.box for beautiful presentation
           consola.box({
             title: ' 🚨 CRITICAL FAILURE DETECTED 🚨 ',
             style: {
               borderColor: 'red',
               borderStyle: 'double',
-              padding: 1
+              padding: 1,
             },
             message: [
               `Error: ${errorMessage}`,
               '',
               'Scan this QR code to view the base64 encoded crash dump:',
               '',
-              renderUnicode(base64Dump, { border: 1 }),
+              qrCode,
               '',
-              'Alternatively, report this issue at: https://github.com/seanchatmangpt/citty-test-utils/issues'
-            ].join('\n')
+              'Alternatively, report this issue at: https://github.com/seanchatmangpt/citty-test-utils/issues',
+            ].join('\n'),
           })
 
           // Still log to stderr for non-interactive environments
           if (!process.stdout.isTTY) {
-             console.error(`FATAL: ${errorMessage}\n${errorStack}`)
+            console.error(`FATAL: ${errorMessage}\n${errorStack}`)
           }
           return
         }
 
         const args = Array.isArray(logObj.args) ? logObj.args : [logObj.args]
-        
+
         // In test mode, keep it clean unless verbose
         if (isTest && !process.env.VERBOSE) {
-           return
+          return
         }
 
         // Use standard consola formatting for other levels
         // We can use a trick to delegate to default console or use another reporter
         // But for UNJS maximalism, let's keep it clean
         console.log(...args)
-      }
-    }
-  ]
+      },
+    },
+  ],
 })
 
 /**
@@ -91,9 +101,9 @@ export async function monitorPerformance(command, currentDuration) {
 
   const cmdHash = hash(command)
   const key = `baseline:${cmdHash}`
-  
-  const history = await performanceStorage.getItem(key) || []
-  
+
+  const history = (await performanceStorage.getItem(key)) || []
+
   if (history.length > 3) {
     const avg = history.reduce((a, b) => a + b, 0) / history.length
     const threshold = avg * 1.5 // 50% slower than average
