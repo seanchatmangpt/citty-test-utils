@@ -1,5 +1,5 @@
 // Cleanroom test utilities - "Let it crash" philosophy
-import { runCitty, runLocalCitty } from '../../index.js'
+import { runCitty, runLocalCitty } from 'un-test-utils'
 
 export class CleanroomTestUtils {
   /**

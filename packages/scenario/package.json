@@ -1,0 +1,21 @@
+{
+  "name": "@un-test/scenario",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./innovative": "./innovative.js"
+  },
+  "dependencies": {
+    "@un-test/runners-local": "workspace:*",
+    "@un-test/runners-cleanroom": "workspace:*",
+    "@un-test/core": "workspace:*",
+    "consola": "^3.4.2",
+    "pathe": "^2.0.3",
+    "listhen": "^1.10.0",
+    "h3": "^2.0.1-rc.22",
+    "crossws": "^0.4.5",
+    "ofetch": "^1.5.1",
+    "get-port-please": "^3.2.0"
+  }
+}

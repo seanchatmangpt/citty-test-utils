@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { scenario, testUtils } from '../../src/core/scenarios/scenario-dsl.js'
+import { scenario, testUtils } from '@un-test/scenario'
 
 describe.concurrent('Scenario DSL Unit Tests', () => {
   describe.concurrent('scenario', () => {

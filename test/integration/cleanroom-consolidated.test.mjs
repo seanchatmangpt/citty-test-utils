@@ -3,7 +3,7 @@
 // Consolidated cleanroom tests - replaces multiple redundant files
 
 import { describe, it, expect } from 'vitest'
-import { runLocalCitty, runCitty } from '../../index.js'
+import { runLocalCitty, runCitty } from 'un-test-utils'
 import { getSharedCleanroom, isCleanroomAvailable } from '../setup/shared-cleanroom.mjs'
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
@@ -23,7 +23,7 @@ describe.concurrent('Cleanroom Consolidated Tests', () => {
       const result = await runCitty(['--version'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('0.5.0')
+      expect(result.stdout).toContain('1.0.0')
       expect(result.cwd).toBe('/app')
     })
 
@@ -64,7 +64,7 @@ describe.concurrent('Cleanroom Consolidated Tests', () => {
       expect(cleanroomResult.exitCode).toBe(0)
       expect(localResult.exitCode).toBe(0)
       expect(cleanroomResult.stdout).toContain('Generated CLI template')
-      expect(localResult.stdout).toContain('0.5.0')
+      expect(localResult.stdout).toContain('1.0.0')
       expect(totalTime).toBeLessThan(15000)
     })
 
@@ -124,7 +124,7 @@ describe.concurrent('Cleanroom Consolidated Tests', () => {
 
       const localResult = await runLocalCitty(['--version'], { env: { TEST_CLI: 'true' } })
       expect(localResult.exitCode).toBe(0)
-      expect(localResult.stdout).toContain('0.5.0')
+      expect(localResult.stdout).toContain('1.0.0')
     })
   })
 

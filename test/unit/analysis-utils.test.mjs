@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   buildAnalysisMetadata,
   validateCLIPath,
@@ -15,7 +15,7 @@ import {
   formatReport,
   createReportSummary,
   formatDuration,
-} from '../../src/core/utils/analysis-report-utils.js'
+} from '@un-test/coverage/helpers'
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'fs'
 import { join } from 'path'
 

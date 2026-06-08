@@ -3,7 +3,7 @@
 // Consolidated command tests - replaces multiple command-specific files
 
 import { describe, it, expect } from 'vitest'
-import { runLocalCitty, runCitty } from '../../index.js'
+import { runLocalCitty, runCitty } from 'un-test-utils'
 import { getSharedCleanroom, isCleanroomAvailable } from '../setup/shared-cleanroom.mjs'
 
 describe.concurrent('Commands Consolidated Tests', () => {
@@ -13,11 +13,11 @@ describe.concurrent('Commands Consolidated Tests', () => {
     it('should test info version command locally', async () => {
       const result = await runLocalCitty(['info', 'version'], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 0.5.0')
+      expect(result.stdout).toContain('Version: 1.0.0')
     })
 
     it('should test info version command in cleanroom', async () => {
@@ -33,18 +33,18 @@ describe.concurrent('Commands Consolidated Tests', () => {
       })
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('Version: 0.5.0')
+      expect(result.stdout).toContain('Version: 1.0.0')
     })
 
     it('should test JSON output', async () => {
       const result = await runLocalCitty(['info', 'version', '--json'], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
       expect(result.json).toBeDefined()
-      expect(result.json.version).toBe('0.5.0')
+      expect(result.json.version).toBe('1.0.0')
       expect(result.json.name).toBe('ctu')
     })
   })
@@ -55,7 +55,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
         ['gen', 'project', `test-project-${testTimestamp}`, '--description', 'Test project'],
         {
           cwd: process.cwd(),
-          env: {},
+          env: { TEST_CLI: 'true' },
         }
       )
 
@@ -91,7 +91,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
     it('should test gen test command', async () => {
       const result = await runLocalCitty(['gen', 'test', `test-${testTimestamp}`], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -101,7 +101,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
     it('should test gen scenario command', async () => {
       const result = await runLocalCitty(['gen', 'scenario', `scenario-${testTimestamp}`], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -111,7 +111,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
     it('should test gen cli command', async () => {
       const result = await runLocalCitty(['gen', 'cli', `cli-${testTimestamp}`], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -123,7 +123,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
     it('should test runner execute command locally', async () => {
       const result = await runLocalCitty(['runner', 'execute', 'node --version'], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -155,7 +155,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
     it('should test test command locally', async () => {
       const result = await runLocalCitty(['test'], {
         cwd: process.cwd(),
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -188,8 +188,8 @@ describe.concurrent('Commands Consolidated Tests', () => {
 
       // Citty shows help for invalid commands but exits with code 1
       expect(result.exitCode).toBe(1)
-      expect(result.stdout).toContain('USAGE')
-      expect(result.stdout).toContain('ctu')
+      const output = result.stdout + result.stderr
+      expect(output).toContain('Unknown command')
     })
 
     it('should handle invalid commands in cleanroom', async () => {

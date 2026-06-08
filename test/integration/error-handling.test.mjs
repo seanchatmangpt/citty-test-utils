@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { runLocalCitty } from '../../src/core/runners/local-runner.js'
+import { runLocalCitty } from '@un-test/runners-local'
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'fs'
 import { join } from 'path'
 
@@ -35,31 +35,21 @@ const args = process.argv.slice(2)
 if (args.includes('--crash')) {
   // Simulate immediate crash
   throw new Error('Simulated crash')
-}
-
-if (args.includes('--segfault')) {
+} else if (args.includes('--segfault')) {
   // Simulate segmentation fault (exit without cleanup)
   process.exit(139)
-}
-
-if (args.includes('--memory-error')) {
+} else if (args.includes('--memory-error')) {
   // Simulate out of memory
   console.error('JavaScript heap out of memory')
   process.exit(134)
-}
-
-if (args.includes('--syntax-error')) {
+} else if (args.includes('--syntax-error')) {
   // Simulate syntax error by executing invalid code
   eval('invalid syntax here')
-}
-
-if (args.includes('--null-ref')) {
+} else if (args.includes('--null-ref')) {
   // Simulate null reference error
   const obj = null
   console.log(obj.property)
-}
-
-if (args.includes('--async-error')) {
+} else if (args.includes('--async-error')) {
   // Simulate async error that doesn't get caught
   Promise.reject(new Error('Unhandled promise rejection'))
   setTimeout(() => process.exit(1), 100)
@@ -68,23 +58,17 @@ if (args.includes('--async-error')) {
   setInterval(() => {
     // Keep process alive
   }, 1000)
-} else
-
-if (args.includes('--stderr-flood')) {
+} else if (args.includes('--stderr-flood')) {
   // Simulate excessive stderr output
   for (let i = 0; i < 1000; i++) {
     console.error('Error line ' + i)
   }
   process.exit(1)
-}
-
-if (args.includes('--invalid-json')) {
+} else if (args.includes('--invalid-json')) {
   // Output invalid JSON
   console.log('{ invalid json }')
   process.exit(0)
-}
-
-if (args.includes('--mixed-output')) {
+} else if (args.includes('--mixed-output')) {
   // Mix stdout and stderr
   console.log('stdout line 1')
   console.error('stderr line 1')
@@ -118,18 +102,18 @@ if (args.includes('--mixed-output')) {
     })
 
     it('should handle empty file path', async () => {
-      const result = await runLocalCitty(['--help'], {
-        cliPath: '',
-        timeout: 5000,
-      })
-
-      expect(result.result.exitCode).not.toBe(0)
+      await expect(async () => {
+        await runLocalCitty(['--help'], {
+          cliPath: '',
+          timeout: 5000,
+        })
+      }).rejects.toThrow()
     })
   })
 
   describe('Invalid Input Rejection', () => {
     it('should handle null command array', async () => {
-      expect(async () => {
+      await expect(async () => {
         await runLocalCitty(null, {
           cliPath: testCliPath,
           timeout: 5000,
@@ -138,7 +122,7 @@ if (args.includes('--mixed-output')) {
     })
 
     it('should handle undefined command array', async () => {
-      expect(async () => {
+      await expect(async () => {
         await runLocalCitty(undefined, {
           cliPath: testCliPath,
           timeout: 5000,
@@ -147,13 +131,12 @@ if (args.includes('--mixed-output')) {
     })
 
     it('should handle invalid timeout values', async () => {
-      const result = await runLocalCitty(['--help'], {
-        cliPath: testCliPath,
-        timeout: -1, // Invalid timeout
-      })
-
-      // Should still execute (timeout validation might be handled differently)
-      expect(result.result).toBeDefined()
+      await expect(async () => {
+        await runLocalCitty(['--help'], {
+          cliPath: testCliPath,
+          timeout: -1, // Invalid timeout
+        })
+      }).rejects.toThrow()
     })
   })
 

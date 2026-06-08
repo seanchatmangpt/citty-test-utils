@@ -3,7 +3,7 @@
 // Simple but robust cleanroom validation tests with maximum concurrency
 
 import { describe, it, expect } from 'vitest'
-import { runLocalCitty, runCitty } from '../../index.js'
+import { runLocalCitty, runCitty } from 'un-test-utils'
 import { getSharedCleanroom, isCleanroomAvailable } from '../setup/shared-cleanroom.mjs'
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
@@ -23,7 +23,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
       const result = await runCitty(['--version'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('0.5.0')
+      expect(result.stdout).toContain('1.0.0')
       expect(result.cwd).toBe('/app')
     })
 
@@ -50,7 +50,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
 
       await getSharedCleanroom()
       const commands = [
-        { args: ['--version'], expected: '0.5.0' },
+        { args: ['--version'], expected: '1.0.0' },
         { args: ['--help'], expected: 'USAGE' },
         {
           args: ['gen', 'test', `concurrent-test-${testTimestamp}-1`],
@@ -158,7 +158,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
 
       // Verify results
       expect(cleanroomResult.stdout).toContain('Generated CLI template')
-      expect(localResult.stdout).toContain('0.5.0')
+      expect(localResult.stdout).toContain('1.0.0')
 
       // Should complete in reasonable time (proving concurrency)
       expect(totalTime).toBeLessThan(15000)
@@ -237,7 +237,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
       // Local environment should still work
       const localResult = await runLocalCitty(['--version'], { env: { TEST_CLI: 'true' } })
       expect(localResult.exitCode).toBe(0)
-      expect(localResult.stdout).toContain('0.5.0')
+      expect(localResult.stdout).toContain('1.0.0')
     })
 
     it('should prove cleanroom can recover from errors', async () => {
@@ -298,7 +298,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
 
       // Both should work independently
       expect(result1.stdout).toContain('Generated scenario template')
-      expect(result2.stdout).toContain('0.5.0')
+      expect(result2.stdout).toContain('1.0.0')
 
       // Both should have same working directory
       expect(result1.cwd).toBe('/app')
@@ -437,7 +437,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
 
       expect(result.exitCode).toBe(0)
       expect(result.cwd).toBe('/app')
-      expect(result.stdout).toContain('0.5.0')
+      expect(result.stdout).toContain('1.0.0')
     })
 
     it('should prove cleanroom environment is consistent', async () => {
@@ -457,7 +457,7 @@ describe.concurrent('Cleanroom Simple Validation - Robust Concurrent Tests', () 
       results.forEach((result) => {
         expect(result.exitCode).toBe(0)
         expect(result.cwd).toBe('/app')
-        expect(result.stdout).toContain('0.5.0')
+        expect(result.stdout).toContain('1.0.0')
       })
     })
   })

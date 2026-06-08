@@ -1,5 +1,5 @@
 // Global setup for README tests
-import { setupCleanroom } from '../../index.js'
+import { setupCleanroom } from 'un-test-utils'
 
 export default async function setup() {
   console.log('🚀 Setting up README tests...')

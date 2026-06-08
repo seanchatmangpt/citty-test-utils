@@ -6,9 +6,9 @@ import {
   resetSnapshotManager,
   matchSnapshot,
   snapshotUtils,
-} from '../../src/core/assertions/snapshot.js'
-import { runLocalCitty } from '../../index.js'
-import { scenario } from '../../src/core/scenarios/scenario-dsl.js'
+} from '@un-test/core'
+import { runLocalCitty } from 'un-test-utils'
+import { scenario } from '@un-test/scenario'
 import { scenarios } from '../../src/core/scenarios/scenarios.js'
 import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -83,13 +83,13 @@ describe('Snapshot Testing', () => {
 
   describe('SnapshotManager', () => {
     it('should generate consistent keys', () => {
-      const key1 = snapshotManager.generateKey('test1', 'snapshot1', { args: ['--help'] })
-      const key2 = snapshotManager.generateKey('test1', 'snapshot1', { args: ['--help'] })
+      const key1 = snapshotManager.generateKey('test1', 'snapshot1', { args: ['--show-help'] })
+      const key2 = snapshotManager.generateKey('test1', 'snapshot1', { args: ['--show-help'] })
       expect(key1).toBe(key2)
     })
 
     it('should generate different keys for different contexts', () => {
-      const key1 = snapshotManager.generateKey('test1', 'snapshot1', { args: ['--help'] })
+      const key1 = snapshotManager.generateKey('test1', 'snapshot1', { args: ['--show-help'] })
       const key2 = snapshotManager.generateKey('test1', 'snapshot1', { args: ['--version'] })
       expect(key1).not.toBe(key2)
     })
@@ -216,7 +216,7 @@ describe('Snapshot Testing', () => {
         stdout: 'hello world',
         stderr: 'error message',
         exitCode: 0,
-        args: ['--help'],
+        args: ['--show-help'],
         cwd: '/test',
         json: { message: 'hello' },
       }
@@ -258,7 +258,7 @@ describe('Snapshot Testing', () => {
         stdout: 'hello world',
         stderr: '',
         exitCode: 0,
-        args: ['--help'],
+        args: ['--show-help'],
         cwd: '/test',
         json: null,
       }
@@ -268,7 +268,7 @@ describe('Snapshot Testing', () => {
         exitCode: 0,
         stdout: 'hello world',
         stderr: '',
-        args: ['--help'],
+        args: ['--show-help'],
         // cwd field is excluded from snapshots to avoid temporary directory path mismatches
         json: null,
       })
@@ -301,7 +301,7 @@ describe('Snapshot Testing', () => {
   describe('Integration with Local Runner', () => {
     it('should work with runLocalCitty and snapshot assertions', async () => {
       // Test snapshot with help output using the actual test CLI
-      const result = await runLocalCitty(['--help'], {
+      const result = await runLocalCitty(['--show-help'], {
         env: { TEST_CLI: 'true' },
       })
 
@@ -322,7 +322,7 @@ describe('Snapshot Testing', () => {
     it('should work with scenario snapshot expectations', async () => {
       const result = await scenario('Scenario snapshot test')
         .step('Get help')
-        .run('--help', { env: { TEST_CLI: 'true' } })
+        .run('--show-help', { env: { TEST_CLI: 'true' } })
         .expectSuccess()
         .expectSnapshotStdout('scenario-help')
         .execute()
@@ -333,7 +333,7 @@ describe('Snapshot Testing', () => {
     it('should work with scenario snapshot steps', async () => {
       const result = await scenario('Scenario snapshot step test')
         .step('Get help')
-        .run('--help', { env: { TEST_CLI: 'true' } })
+        .run('--show-help', { env: { TEST_CLI: 'true' } })
         .expectSuccess()
         .snapshot('scenario-step-help')
         .execute()

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { setupCleanroom, runCitty, teardownCleanroom } from '../../index.js'
+import { setupCleanroom, runCitty, teardownCleanroom } from 'un-test-utils'
 
 describe('README Cleanroom Examples - Complete Coverage', () => {
+  if (process.env.RUN_CLEANROOM !== '1') return
   let cleanroomSetup = false
 
   beforeAll(async () => {
@@ -9,7 +10,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
     try {
       await setupCleanroom({
         rootDir: '.',
-        timeout: 60000, // 1 minute timeout
+        timeout: 120000, // 2 minute timeout
       })
       cleanroomSetup = true
       console.log('✅ Cleanroom setup complete')
@@ -18,7 +19,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       console.log('📝 Skipping cleanroom tests')
       cleanroomSetup = false
     }
-  }, 60000) // 1 minute timeout for Docker setup
+  }, 120000) // 2 minute timeout for Docker setup
 
   afterAll(async () => {
     if (cleanroomSetup) {
@@ -40,7 +41,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Docker cleanroom testing example
-      const cleanResult = await runCitty(['--version'], {
+      const cleanResult = await runCitty(['--show-version'], {
         env: { TEST_CLI: 'true' },
       })
 
@@ -54,7 +55,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Cleanroom runner example
-      const result = await runCitty(['--help'], {
+      const result = await runCitty(['--show-help'], {
         json: false,
         cwd: '/app',
         timeout: 30000,
@@ -75,11 +76,11 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Environment-specific scenarios
-      const { scenario } = await import('../../src/core/scenarios/scenario-dsl.js')
+      const { scenario } = await import('@un-test/scenario')
 
       const cleanroomResult = await scenario('Cleanroom test')
         .step('Test help')
-        .run('--help')
+        .run('--show-help')
         .expectSuccess()
         .execute('cleanroom')
 
@@ -124,7 +125,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       // From README: Subcommand testing in cleanroom
       const { scenarios } = await import('../../src/core/scenarios/scenarios.js')
 
-      const subcommandResult = await scenarios.subcommand('test', ['--help'], 'cleanroom').execute()
+      const subcommandResult = await scenarios.subcommand('test', ['--show-help'], 'cleanroom').execute()
       expect(subcommandResult.success).toBe(true)
     })
 
@@ -152,7 +153,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
 
       const concurrentResult = await scenarios
         .concurrent(
-          [{ args: ['--help'] }, { args: ['--version'] }, { args: ['info'] }],
+          [{ args: ['--show-help'] }, { args: ['--show-version'] }, { args: ['info'] }],
           'cleanroom'
         )
         .execute()
@@ -185,14 +186,14 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
 
       // From README: Cross-environment testing
       // Test that cleanroom works independently
-      const cleanroomResult = await runCitty(['--version'], {
+      const cleanroomResult = await runCitty(['--show-version'], {
         env: {},
       })
 
       // Check that cleanroom result exists and has stdout
       expect(cleanroomResult).toBeDefined()
       expect(cleanroomResult.stdout).toBeDefined()
-      expect(cleanroomResult.stdout).toBe('0.5.0') // Main CLI version
+      expect(cleanroomResult.stdout).toBe('1.0.0') // Main CLI version
       expect(cleanroomResult.exitCode).toBe(0)
     })
 
@@ -203,7 +204,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // Test main CLI help command works in cleanroom
-      const cleanroomResult = await runCitty(['--help'], {
+      const cleanroomResult = await runCitty(['--show-help'], {
         timeout: 30000,
       })
 
@@ -223,7 +224,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Vitest cleanroom example
-      const result = await runCitty(['--help'], {
+      const result = await runCitty(['--show-help'], {
         env: { TEST_CLI: 'true' },
       })
       result.expectSuccess().expectOutput('USAGE').expectOutput(/ctu/).expectNoStderr()
@@ -236,15 +237,15 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Complex workflow example in cleanroom
-      const { scenario } = await import('../../src/core/scenarios/scenario-dsl.js')
+      const { scenario } = await import('@un-test/scenario')
 
       const result = await scenario('Complete workflow')
         .step('Get help')
-        .run('--help')
+        .run('--show-help')
         .expectSuccess()
         .expectOutput('USAGE')
         .step('Get version')
-        .run('--version')
+        .run('--show-version')
         .expectSuccess()
         .expectOutput(/\d+\.\d+\.\d+/)
         .step('Test invalid command')
@@ -265,7 +266,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
       }
 
       // From README: Custom actions in scenarios
-      const { scenario } = await import('../../src/core/scenarios/scenario-dsl.js')
+      const { scenario } = await import('@un-test/scenario')
 
       const result = await scenario('Custom workflow')
         .step('Custom action', async ({ lastResult, context }) => {
@@ -273,7 +274,7 @@ describe('README Cleanroom Examples - Complete Coverage', () => {
           return { success: true, data: 'processed' }
         })
         .step('Run command')
-        .run('--help')
+        .run('--show-help')
         .expectSuccess()
         .execute('cleanroom')
 

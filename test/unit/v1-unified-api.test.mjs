@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { scenario } from '../../src/core/scenarios/scenario-dsl.js'
+import { scenario } from '@un-test/scenario'
 
 /**
  * v1.0.0 UNIFIED API SPECIFICATION
@@ -23,7 +23,7 @@ describe.concurrent('v1.0.0 Unified API - runCitty()', () => {
       // Test that runCitty defaults to local execution
       const mockRunLocalCitty = vi.fn().mockResolvedValue({
         exitCode: 0,
-        stdout: '0.5.0',
+        stdout: '1.0.0',
         stderr: '',
         cliPath: './playground/src/cli.mjs',
         cwd: process.cwd(),
@@ -52,7 +52,7 @@ describe.concurrent('v1.0.0 Unified API - runCitty()', () => {
       const result = await runCitty(['--version'])
 
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain('0.5.0')
+      expect(result.stdout).toContain('1.0.0')
       expect(mockRunLocalCitty).toHaveBeenCalledOnce()
     })
 
@@ -127,7 +127,7 @@ describe.concurrent('v1.0.0 Unified API - runCitty()', () => {
     it('should execute in cleanroom when config.cleanroom.enabled is true', async () => {
       const mockRunCleanroom = vi.fn().mockResolvedValue({
         exitCode: 0,
-        stdout: '0.5.0',
+        stdout: '1.0.0',
         stderr: '',
         cwd: '/app',
         durationMs: 150

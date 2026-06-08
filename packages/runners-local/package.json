@@ -1,0 +1,15 @@
+{
+  "name": "@un-test/runners-local",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@un-test/core": "workspace:*",
+    "@un-test/runners-cleanroom": "workspace:*",
+    "consola": "^3.4.2",
+    "destr": "^2.0.5",
+    "pathe": "^2.0.3"
+  }
+}

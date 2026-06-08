@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { CLIEntryResolver, resolveCLIEntry, getCLIEntryArgs } from '../../src/core/utils/cli-entry-resolver.js'
+import { CLIEntryResolver, resolveCLIEntry, getCLIEntryArgs } from '@un-test/core'
 import { existsSync } from 'fs'
 import { resolve } from 'path'
 

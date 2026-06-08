@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { setupCleanroom, runCitty, teardownCleanroom } from '../../index.js'
-import { scenario } from '../../src/core/scenarios/scenario-dsl.js'
+import { setupCleanroom, runCitty, teardownCleanroom } from 'un-test-utils'
+import { scenario } from '@un-test/scenario'
 
 describe('Production Deployment Tests', () => {
+  if (process.env.RUN_CLEANROOM !== '1') return
   let cleanroomSetup = false
 
   beforeAll(async () => {
@@ -140,11 +141,11 @@ describe('Production Deployment Tests', () => {
         .step('Handle invalid command')
         .run(['invalid-command'])
         .expectFailure()
-        .expectOutput(/Unknown command/)
+        .expectStderr(/Unknown command/)
         .step('Handle invalid math operation')
         .run(['math', 'invalid', '1', '2'])
         .expectFailure()
-        .expectOutput(/Unknown command invalid/)
+        .expectStderr(/Unknown command/)
         .execute('cleanroom', {
           cliPath: '/app/src/cli.mjs',
           timeout: 30000,

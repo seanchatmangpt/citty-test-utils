@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
-import { runLocalCitty, runLocalCittySafe, wrapWithAssertions } from '../../../src/core/runners/local-runner.js'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { runLocalCitty, runLocalCittySafe, wrapWithAssertions } from '@un-test/runners-local'
 import { existsSync, writeFileSync, unlinkSync, mkdirSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 
 /**
  * Unit Tests for Local Runner
@@ -10,7 +10,7 @@ import { join } from 'node:path'
  * NO MOCKS - Tests actual CLI execution behavior!
  */
 
-describe.concurrent('Local Runner Unit Tests', () => {
+describe('Local Runner Unit Tests', () => {
   const testDir = join(process.cwd(), '.test-local-runner')
   const testCliPath = join(testDir, 'test-cli.mjs')
 
@@ -72,12 +72,11 @@ if (args.includes('slow')) {
     console.log('Done')
     process.exit(0)
   }, delay)
-  return
+} else {
+  // Default: show help
+  console.log('Unknown command. Use --help for usage information.')
+  process.exit(1)
 }
-
-// Default: show help
-console.log('Unknown command. Use --help for usage information.')
-process.exit(1)
 `
 
     writeFileSync(testCliPath, testCliContent, { encoding: 'utf8', mode: 0o755 })
@@ -92,9 +91,17 @@ process.exit(1)
   describe('Zod Schema Validation', () => {
     it('should require cliPath or use default', () => {
       // Without cliPath, should use default from env or './src/cli.mjs'
-      expect(() => {
-        runLocalCitty({ args: ['--help'] })
-      }).toThrow() // Throws because default CLI doesn't exist
+      const defaultCliPath = process.env.TEST_CLI_PATH || './src/cli.mjs'
+      const resolvedDefault = resolve(process.env.TEST_CWD || process.cwd(), defaultCliPath)
+      
+      if (!existsSync(resolvedDefault)) {
+        expect(() => {
+          runLocalCitty({ args: ['--help'] })
+        }).toThrow() // Throws because default CLI doesn't exist
+      } else {
+        const result = runLocalCitty({ args: ['--help'] })
+        expect(result.success).toBe(true)
+      }
 
       // With explicit cliPath
       const result = runLocalCitty({
@@ -110,10 +117,10 @@ process.exit(1)
       }).toThrow()
     })
 
-    it('should validate args must be array', () => {
-      expect(() => {
-        runLocalCitty({ cliPath: testCliPath, args: '--help' })
-      }).toThrow()
+    it('should parse and handle non-array args in options-object', () => {
+      const result = runLocalCitty({ cliPath: testCliPath, args: '--help' })
+      expect(result.success).toBe(true)
+      expect(result.args).toEqual(['--help'])
     })
 
     it('should validate timeout must be positive number', () => {
@@ -127,11 +134,11 @@ process.exit(1)
     })
 
     it('should use defaults for optional fields', () => {
-      const result = runLocalCitty({ cliPath: testCliPath })
+      const result = runLocalCittySafe({ cliPath: testCliPath })
 
       expect(result.args).toEqual([]) // Default empty args
       expect(result.cwd).toBeDefined() // Default cwd
-      expect(result.exitCode).toBe(0)
+      expect(result.exitCode).toBe(1)
     })
 
     it('should validate env must be object with string values', () => {
@@ -242,7 +249,8 @@ process.exit(1)
       expect(() => {
         runLocalCitty({
           cliPath: testCliPath,
-          args: ['error']
+          args: ['error'],
+          failFast: true
         })
       }).toThrow()
     })
@@ -252,7 +260,8 @@ process.exit(1)
         runLocalCitty({
           cliPath: testCliPath,
           args: ['slow', '5000'],
-          timeout: 100 // Very short timeout
+          timeout: 100, // Very short timeout
+          failFast: true
         })
       }).toThrow()
     })
@@ -322,7 +331,7 @@ process.exit(1)
 
       expect(() => {
         wrapped.expectSuccess()
-      }).toThrow('Expected success')
+      }).toThrow('Expected exit code 0')
     })
 
     it('should validate expectFailure', () => {
@@ -333,7 +342,7 @@ process.exit(1)
 
       expect(() => {
         wrapWithAssertions(successResult).expectFailure()
-      }).toThrow('Expected failure')
+      }).toThrow('Expected command to fail')
     })
 
     it('should validate expectOutput with string', () => {
@@ -344,7 +353,7 @@ process.exit(1)
 
       expect(() => {
         wrapWithAssertions(result).expectOutput('NONEXISTENT')
-      }).toThrow('Expected output to contain')
+      }).toThrow('Expected stdout to match NONEXISTENT')
     })
 
     it('should validate expectOutput with regex', () => {
@@ -355,7 +364,7 @@ process.exit(1)
 
       expect(() => {
         wrapWithAssertions(result).expectOutput(/NONEXISTENT/)
-      }).toThrow('Expected output to match')
+      }).toThrow('Expected stdout to match /NONEXISTENT/')
     })
 
     it('should validate expectJson', () => {
@@ -566,7 +575,7 @@ console.log('relative')
 
   describe('Edge Cases', () => {
     it('should handle empty args array', () => {
-      const result = runLocalCitty({
+      const result = runLocalCittySafe({
         cliPath: testCliPath,
         args: []
       })
@@ -617,6 +626,57 @@ console.log('relative')
       expect(result.stdout).toBe('1.0.0') // Trimmed
       expect(result.stdout).not.toMatch(/^\s/)
       expect(result.stdout).not.toMatch(/\s$/)
+    })
+  })
+
+  describe('Backward-Compatible Signatures (R1)', () => {
+    it('should support runLocalCitty with old positional signature (args as array, options)', () => {
+      const result = runLocalCitty(['--version'], { cliPath: testCliPath })
+      expect(result.success).toBe(true)
+      expect(result.stdout).toBe('1.0.0')
+      expect(result.duration).toBeDefined()
+      expect(result.durationMs).toBeDefined()
+      expect(result.result.duration).toBeDefined()
+      expect(result.result.durationMs).toBeDefined()
+    })
+
+    it('should support runLocalCitty with old positional signature (args as string, options)', () => {
+      const result = runLocalCitty('--version', { cliPath: testCliPath })
+      expect(result.success).toBe(true)
+      expect(result.stdout).toBe('1.0.0')
+      expect(result.duration).toBe(result.durationMs)
+    })
+
+    it('should support runLocalCittySafe with old positional signature (args as array, options)', () => {
+      const result = runLocalCittySafe(['--version'], { cliPath: testCliPath })
+      expect(result.success).toBe(true)
+      expect(result.stdout).toBe('1.0.0')
+      expect(result.duration).toBe(result.durationMs)
+    })
+
+    it('should support runLocalCittySafe with old positional signature (args as string, options)', () => {
+      const result = runLocalCittySafe('--version', { cliPath: testCliPath })
+      expect(result.success).toBe(true)
+      expect(result.stdout).toBe('1.0.0')
+      expect(result.duration).toBe(result.durationMs)
+    })
+
+    it('should support runLocalCitty with positional signature and no options', () => {
+      const result = runLocalCitty(['--version'])
+      expect(result.success).toBe(true)
+      expect(result.stdout).toBeDefined()
+    })
+
+    it('should return wrapped result using wrapExpectation with both duration and durationMs', () => {
+      const result = runLocalCitty('--version', { cliPath: testCliPath })
+      expect(typeof result.expectSuccess).toBe('function')
+      expect(typeof result.expectDuration).toBe('function')
+      expect(result.duration).toBeTypeOf('number')
+      expect(result.durationMs).toBeTypeOf('number')
+      
+      // Verify fluent assertions can be chained
+      const chained = result.expectSuccess().expectOutput('1.0.0').expectDuration(5000)
+      expect(chained).toBe(result)
     })
   })
 })

@@ -1,0 +1,27 @@
+{
+  "name": "un-test-utils",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "utu": "./index.mjs"
+  },
+  "dependencies": {
+    "@un-test/core": "workspace:*",
+    "@un-test/runners-local": "workspace:*",
+    "@un-test/runners-cleanroom": "workspace:*",
+    "@un-test/scenario": "workspace:*",
+    "@un-test/coverage": "workspace:*",
+    "citty": "^0.1.6",
+    "consola": "^3.4.2",
+    "std-env": "^4.1.0",
+    "defu": "^6.1.7",
+    "pathe": "^2.0.3",
+    "hookable": "^5.5.3",
+    "nypm": "^0.5.2"
+  }
+}
