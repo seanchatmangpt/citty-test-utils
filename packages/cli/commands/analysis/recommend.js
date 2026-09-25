@@ -1,4 +1,4 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Smart recommendations subcommand
  * @description Generate intelligent recommendations for improving test coverage

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/generate/project.js - Generate project verb command
 
 import { defineCommand } from 'citty'

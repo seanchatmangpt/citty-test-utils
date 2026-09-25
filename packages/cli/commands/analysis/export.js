@@ -1,4 +1,4 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Export coverage data subcommand
  * @description Export coverage data in structured formats (JSON, Turtle) with AST caching

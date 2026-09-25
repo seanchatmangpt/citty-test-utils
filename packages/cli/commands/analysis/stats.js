@@ -4,7 +4,7 @@
  */
 
 import { defineCommand } from 'citty'
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 import { ASTAnalyzer } from '../../core/coverage/ast-analyzer.js'
 import {
   parseCliOptions,

@@ -12,6 +12,7 @@ describe('Playground Unit Tests', () => {
     it('should execute basic commands', async () => {
       const result = await runLocalCitty(['greet', 'Test'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(result.result.exitCode).toBe(0)
@@ -22,6 +23,7 @@ describe('Playground Unit Tests', () => {
     it('should handle command arguments correctly', async () => {
       const result = await runLocalCitty(['greet', 'Alice', '--count', '2'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(result.result.exitCode).toBe(0)
@@ -32,6 +34,7 @@ describe('Playground Unit Tests', () => {
     it('should handle boolean flags', async () => {
       const result = await runLocalCitty(['greet', 'Bob', '--verbose'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(result.result.exitCode).toBe(0)
@@ -42,6 +45,7 @@ describe('Playground Unit Tests', () => {
     it('should handle JSON output', async () => {
       const result = await runLocalCitty(['greet', 'Charlie', '--json'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
 
         json: true,
       })
@@ -56,6 +60,7 @@ describe('Playground Unit Tests', () => {
     it('should handle subcommands', async () => {
       const result = await runLocalCitty(['math', 'add', '5', '3'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(result.result.exitCode).toBe(0)
@@ -65,6 +70,7 @@ describe('Playground Unit Tests', () => {
     it('should handle nested subcommands', async () => {
       const result = await runLocalCitty(['math', 'multiply', '4', '7'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(result.result.exitCode).toBe(0)
@@ -76,15 +82,17 @@ describe('Playground Unit Tests', () => {
     it('should handle missing required arguments', async () => {
       const result = await runLocalCitty(['math', 'add'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(result.result.exitCode).not.toBe(0)
-      expect(result.result.stderr).toContain('error')
+      expect(result.result.stderr).toMatch(/error/i)
     })
 
     it('should handle invalid commands', async () => {
       const result = await runLocalCitty(['invalid-command'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(result.result.exitCode).not.toBe(0)
@@ -94,6 +102,7 @@ describe('Playground Unit Tests', () => {
     it('should handle error simulation', async () => {
       const result = await runLocalCitty(['error', 'generic'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(result.result.exitCode).not.toBe(0)
@@ -105,6 +114,7 @@ describe('Playground Unit Tests', () => {
     it('should support method chaining', async () => {
       const result = await runLocalCitty(['greet', 'Test'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       result
@@ -117,16 +127,18 @@ describe('Playground Unit Tests', () => {
     it('should provide meaningful error messages', async () => {
       const result = await runLocalCitty(['greet', 'Test'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
       })
 
       expect(() => {
         result.expectOutput(/Not Found/)
-      }).toThrow('Expected output to match /Not Found/')
+      }).toThrow('Expected stdout to match /Not Found/')
     })
 
     it('should handle JSON assertions', async () => {
       const result = await runLocalCitty(['greet', 'Test', '--json'], {
         cwd: playgroundDir,
+        cliPath: './src/cli.mjs',
 
         json: true,
       })

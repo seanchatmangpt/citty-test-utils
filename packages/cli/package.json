@@ -16,6 +16,7 @@
     "@un-test/runners-cleanroom": "workspace:*",
     "@un-test/scenario": "workspace:*",
     "@un-test/coverage": "workspace:*",
+    "@un-test/autodx": "workspace:*",
     "citty": "^0.1.6",
     "consola": "^3.4.2",
     "std-env": "^4.1.0",

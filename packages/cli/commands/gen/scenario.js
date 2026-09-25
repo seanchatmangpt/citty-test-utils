@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 // src/commands/gen/scenario.js - Gen scenario verb command
 
 import { defineCommand } from 'citty'

@@ -189,3 +189,20 @@ function safeJsonParse(str) {
     return undefined
   }
 }
+
+export async function runCittySafe(args, options) {
+  try {
+    return await runCitty(args, options)
+  } catch (e) {
+    const { wrapExpectation } = await import('@un-test/core')
+    const result = {
+      success: false, exitCode: 1, stdout: '', stderr: e.message,
+      args: Array.isArray(args) ? args : [], cwd: options?.cwd || '/app', durationMs: 0, duration: 0, command: 'unknown'
+    }
+    const wrapped = wrapExpectation(result)
+    wrapped.result = result
+    wrapped.durationMs = 0
+    wrapped.duration = 0
+    return wrapped
+  }
+}

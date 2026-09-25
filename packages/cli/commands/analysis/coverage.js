@@ -1,4 +1,4 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Coverage analysis subcommand
  * @description Analyze test coverage using AST-based pattern matching for accurate results

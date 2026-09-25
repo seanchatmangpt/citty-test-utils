@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Local runner command for Citty CLI
  * @description Execute CLI commands locally with fluent assertions

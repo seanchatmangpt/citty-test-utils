@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Cleanroom runner command for Citty CLI
  * @description Execute CLI commands in isolated Docker container

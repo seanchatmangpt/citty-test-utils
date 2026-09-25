@@ -151,7 +151,7 @@ describe('Fluent Assertions Integration Tests', () => {
 
       expect(() => {
         result.expectOutput(/Not Found/)
-      }).toThrow('Expected output to match /Not Found/')
+      }).toThrow('Expected stdout to match /Not Found/')
     })
 
     it('should provide meaningful error messages for wrong exit codes', async () => {
@@ -161,7 +161,7 @@ describe('Fluent Assertions Integration Tests', () => {
 
       expect(() => {
         result.expectFailure()
-      }).toThrow('Expected failure (non-zero exit code), got 0')
+      }).toThrow('Expected command to fail')
     })
 
     it('should provide meaningful error messages for stderr expectations', async () => {

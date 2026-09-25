@@ -10,6 +10,7 @@ import { runnerCommand } from './commands/runner.js'
 import { infoCommand } from './commands/info.js'
 import { analysisCommand } from './commands/analysis.js'
 import { installDepsCommand } from './commands/install-deps.js'
+import { autoCommand } from './commands/auto.js'
 
 // Create hooks instance
 const hooks = createHooks()

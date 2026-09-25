@@ -1,4 +1,4 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview AST-based analysis command
  * @description Uses AST parsing for accurate CLI coverage analysis

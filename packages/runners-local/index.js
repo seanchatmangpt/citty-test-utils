@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 import { wrapExpectation } from '@un-test/core'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const defaultCliPath = resolve(__dirname, '../../src/cli.mjs')
+const defaultCliPath = resolve(__dirname, '../../packages/cli/index.mjs')
 
 /**
  * Normalizes input arguments and options into a standard object
@@ -169,6 +169,17 @@ export function runLocalCitty(firstArg, secondArg) {
  * Fluent assertion wrapper
  */
 export function wrapWithAssertions(result) {
+  if (!('json' in result)) {
+    Object.defineProperty(result, 'json', { 
+      get() { 
+        if (!result.stdout) return undefined
+        const data = destr(result.stdout)
+        return (typeof data === 'object' && data !== null) ? data : undefined
+      },
+      configurable: true, enumerable: true
+    })
+  }
+
   const wrapped = wrapExpectation(result)
   wrapped.result = result
   wrapped.durationMs = result.durationMs
@@ -176,11 +187,7 @@ export function wrapWithAssertions(result) {
   
   if (!('json' in wrapped)) {
     Object.defineProperty(wrapped, 'json', { 
-      get() { 
-        if (!result.stdout) return undefined
-        const data = destr(result.stdout)
-        return (typeof data === 'object' && data !== null) ? data : undefined
-      },
+      get() { return result.json },
       configurable: true, enumerable: true
     })
   }

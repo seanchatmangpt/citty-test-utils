@@ -1,4 +1,4 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Discover CLI structure subcommand
  * @description Discover and analyze CLI structure using AST parsing for accurate results

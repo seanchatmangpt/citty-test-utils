@@ -1,4 +1,4 @@
-import { consola } from '../../core/utils/logging.js'
+import { consola } from '@un-test/core'
 /**
  * @fileoverview Analyze CLI coverage subcommand
  * @description Analyze CLI test coverage with AST caching

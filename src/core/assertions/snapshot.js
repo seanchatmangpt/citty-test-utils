@@ -1,1 +1,0 @@
-../../../packages/core/assertions/snapshot.js

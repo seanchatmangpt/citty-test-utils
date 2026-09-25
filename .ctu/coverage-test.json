@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "analyzedAt": "2026-06-08T04:57:24.146Z",
+    "cliPath": "/Users/sac/citty-test-utils/src/cli.mjs",
+    "testDir": "test",
+    "analysisMethod": "Optimized AST with Caching",
+    "totalTestFiles": 23,
+    "totalCommands": 1,
+    "totalSubcommands": 5,
+    "totalFlags": 0,
+    "totalOptions": 0
+  },
+  "coverage": {
+    "summary": {
+      "mainCommand": {
+        "tested": true,
+        "total": 1,
+        "percentage": 100
+      },
+      "subcommands": {
+        "tested": 5,
+        "total": 5,
+        "percentage": 100
+      },
+      "overall": {
+        "tested": 6,
+        "total": 6,
+        "percentage": 100
+      },
+      "flags": {
+        "tested": 0,
+        "total": 0,
+        "percentage": 0
+      },
+      "options": {
+        "tested": 0,
+        "total": 0,
+        "percentage": 0
+      }
+    },
+    "details": {
+      "untestedSubcommands": [],
+      "untestedCommands": [],
+      "untestedFlags": [],
+      "untestedOptions": []
+    }
+  },
+  "recommendations": [],
+  "commands": {
+    "ctu test": {
+      "name": "test",
+      "description": ""
+    },
+    "ctu gen": {
+      "name": "gen",
+      "description": ""
+    },
+    "ctu runner": {
+      "name": "runner",
+      "description": ""
+    },
+    "ctu info": {
+      "name": "info",
+      "description": ""
+    },
+    "ctu analysis": {
+      "name": "analysis",
+      "description": ""
+    }
+  }
+}
