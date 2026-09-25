@@ -1,1 +1,0 @@
-{"mainCommand":{"name":"ctu","description":"Citty Test Utils CLI - Comprehensive testing framework for CLI applications","options":[]},"subcommands":{"ctu test":{"name":"test","description":""},"ctu gen":{"name":"gen","description":""},"ctu runner":{"name":"runner","description":""},"ctu info":{"name":"info","description":""},"ctu analysis":{"name":"analysis","description":""}}}

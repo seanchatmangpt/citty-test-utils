@@ -1,1 +1,0 @@
-export default { tsKey: "from-ts", commonKey: "from-ts" }
