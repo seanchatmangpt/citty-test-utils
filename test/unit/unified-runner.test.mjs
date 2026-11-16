@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { runCitty, runCittySafe, getCittyConfig } from 'un-test-utils'
 import { resolve } from 'node:path'
 
 describe('Unified Runner (v1.0.0)', () => {
-  describe('runCitty() - Auto-detection', () => { beforeEach(() => { if (process.env.RUN_CLEANROOM !== '1') { global.skipUnified = true; } });
-    it.skip('should skip', () => {}); it.skip('should auto-detect local mode from config', async () => {
+  describe('runCitty() - Auto-detection', () => {
+    it('should auto-detect local mode from config', async () => {
       const result = await runCitty(['--show-help'], {
         cliPath: './playground/src/cli.mjs',
-        mode: 'auto'
+        mode: 'auto',
       })
 
       expect(result.mode).toBe('local')
@@ -15,39 +15,34 @@ describe('Unified Runner (v1.0.0)', () => {
       expect(result.stdout).toContain('USAGE')
     })
 
-    it.skip('should skip', () => {}); it.skip('should support fluent assertions', async () => {
+    it('should support fluent assertions', async () => {
       const result = await runCitty(['--show-help'], {
-        cliPath: './playground/src/cli.mjs'
+        cliPath: './playground/src/cli.mjs',
       })
 
       // Should not throw
-      result
-        .expectSuccess()
-        .expectOutput('USAGE')
-        .expectExit.skip(0)
+      result.expectSuccess().expectOutput('USAGE').expectExit(0)
     })
 
-    it.skip('should skip', () => {}); it.skip('should fail-fast with clear error for missing CLI', async () => {
+    it('should fail-fast with clear error for missing CLI', async () => {
       await expect(
         runCitty(['test'], {
           cliPath: './nonexistent-cli.js',
-          mode: 'local'
+          mode: 'local',
         })
       ).rejects.toThrow(/CLI file not found/)
     })
 
-    it.skip('should skip', () => {}); it.skip('should validate arguments', async () => {
-      await expect(
-        runCitty('not-an-array')
-      ).rejects.toThrow(/Invalid arguments/)
+    it('should validate arguments', async () => {
+      await expect(runCitty('not-an-array')).rejects.toThrow(/Invalid arguments/)
     })
   })
 
   describe('runCittySafe() - Error handling', () => {
-    it.skip('should skip', () => {}); it.skip('should return error as result object', async () => {
+    it('should return error as result object', async () => {
       const result = await runCittySafe(['test'], {
         cliPath: './nonexistent-cli.js',
-        mode: 'local'
+        mode: 'local',
       })
 
       expect(result.success).toBe(false)
@@ -55,23 +50,21 @@ describe('Unified Runner (v1.0.0)', () => {
       expect(result.stderr).toContain('CLI file not found')
     })
 
-    it.skip('should skip', () => {}); it.skip('should support fluent assertions on errors', async () => {
+    it('should support fluent assertions on errors', async () => {
       const result = await runCittySafe(['test'], {
         cliPath: './nonexistent-cli.js',
-        mode: 'local'
+        mode: 'local',
       })
 
-      result
-        .expectFailure()
-        .expectStderr('CLI file not found')
+      result.expectFailure().expectStderr('CLI file not found')
     })
   })
 
   describe('getCittyConfig() - Configuration', () => {
-    it.skip('should skip', () => {}); it.skip('should load and merge configuration', async () => {
+    it('should load and merge configuration', async () => {
       const config = await getCittyConfig({
         cliPath: './custom-cli.js',
-        timeout: 5000
+        timeout: 5000,
       })
 
       expect(config.cliPath).toBe('./custom-cli.js')
@@ -79,16 +72,16 @@ describe('Unified Runner (v1.0.0)', () => {
       expect(config.detectedMode).toBe('local')
     })
 
-    it.skip('should skip', () => {}); it.skip('should detect cleanroom mode when enabled', async () => {
+    it('should detect cleanroom mode when enabled', async () => {
       const config = await getCittyConfig({
-        cleanroom: { enabled: true }
+        cleanroom: { enabled: true },
       })
 
       expect(config.detectedMode).toBe('cleanroom')
       expect(config.cleanroom.enabled).toBe(true)
     })
 
-    it.skip('should skip', () => {}); it.skip('should use environment variables', async () => {
+    it('should use environment variables', async () => {
       const config = await getCittyConfig()
 
       // Should use TEST_CLI_PATH from vitest.config if available
@@ -99,28 +92,28 @@ describe('Unified Runner (v1.0.0)', () => {
   })
 
   describe('Configuration hierarchy', () => {
-    it.skip('should skip', () => {}); it.skip('should prioritize options over config', async () => {
+    it('should prioritize options over config', async () => {
       const result = await runCitty(['--show-help'], {
         cliPath: './playground/src/cli.mjs',
-        timeout: 5000
+        timeout: 5000,
       })
 
       expect(result.config.timeout).toBe(5000)
     })
 
-    it.skip('should skip', () => {}); it.skip('should merge environment variables', async () => {
+    it('should merge environment variables', async () => {
       const result = await runCitty(['--show-help'], {
         cliPath: './playground/src/cli.mjs',
-        env: { DEBUG: '1' }
+        env: { DEBUG: '1' },
       })
 
       expect(result.config.env).toBeDefined()
       expect(result.config.env.DEBUG).toBe('1')
     })
 
-    it.skip('should skip', () => {}); it.skip('should apply smart defaults', async () => {
+    it('should apply smart defaults', async () => {
       const result = await runCitty(['--show-help'], {
-        cliPath: './playground/src/cli.mjs'
+        cliPath: './playground/src/cli.mjs',
       })
 
       expect(result.config.timeout).toBeGreaterThan(0)
@@ -129,25 +122,25 @@ describe('Unified Runner (v1.0.0)', () => {
   })
 
   describe('Mode detection', () => {
-    it.skip('should skip', () => {}); it.skip('should respect mode override', async () => {
+    it('should respect mode override', async () => {
       const result = await runCitty(['--show-help'], {
         cliPath: './playground/src/cli.mjs',
         mode: 'local',
-        cleanroom: { enabled: true } // Should be ignored
+        cleanroom: { enabled: true }, // Should be ignored
       })
 
       expect(result.mode).toBe('local')
     })
 
-    it.skip('should skip', () => {}); it.skip('should auto-detect based on cleanroom.enabled', async () => {
+    it('should auto-detect based on cleanroom.enabled', async () => {
       const config = await getCittyConfig({
-        cleanroom: { enabled: true }
+        cleanroom: { enabled: true },
       })
 
       expect(config.detectedMode).toBe('cleanroom')
     })
 
-    it.skip('should skip', () => {}); it.skip('should default to local mode', async () => {
+    it('should default to local mode', async () => {
       const config = await getCittyConfig({})
 
       expect(config.detectedMode).toBe('local')
@@ -155,28 +148,28 @@ describe('Unified Runner (v1.0.0)', () => {
   })
 
   describe('Result metadata', () => {
-    it.skip('should skip', () => {}); it.skip('should include execution mode', async () => {
+    it('should include execution mode', async () => {
       const result = await runCitty(['--show-help'], {
-        cliPath: './playground/src/cli.mjs'
+        cliPath: './playground/src/cli.mjs',
       })
 
       expect(result.mode).toBeDefined()
       expect(['local', 'cleanroom']).toContain(result.mode)
     })
 
-    it.skip('should skip', () => {}); it.skip('should include merged config', async () => {
+    it('should include merged config', async () => {
       const result = await runCitty(['--show-help'], {
         cliPath: './playground/src/cli.mjs',
-        timeout: 5000
+        timeout: 5000,
       })
 
       expect(result.config).toBeDefined()
       expect(result.config.timeout).toBe(5000)
     })
 
-    it.skip('should skip', () => {}); it.skip('should include standard result fields', async () => {
+    it('should include standard result fields', async () => {
       const result = await runCitty(['--show-help'], {
-        cliPath: './playground/src/cli.mjs'
+        cliPath: './playground/src/cli.mjs',
       })
 
       expect(result.exitCode).toBeDefined()

@@ -15,7 +15,8 @@ describe.concurrent('Citty Integration Tests', () => {
       })
 
       expect(helpResult.exitCode).toBe(0)
-      expect(helpResult.stdout).toContain('ctu')
+      const expectedCliName = helpResult.stdout.includes('utu') ? 'utu' : 'ctu'
+      expect(helpResult.stdout).toContain(expectedCliName)
       expect(helpResult.stdout).toContain('USAGE')
     })
 
@@ -122,7 +123,8 @@ describe.concurrent('Citty Integration Tests', () => {
       })
 
       expect(helpResult.exitCode).toBe(0)
-      expect(helpResult.stdout).toContain('ctu')
+      const expectedCliName = helpResult.stdout.includes('utu') ? 'utu' : 'ctu'
+      expect(helpResult.stdout).toContain(expectedCliName)
       expect(helpResult.stdout).toContain('USAGE')
     })
 

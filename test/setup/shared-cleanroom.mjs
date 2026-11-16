@@ -44,18 +44,17 @@ export async function teardownSharedCleanroom() {
 
 let setupFailedError = null
 
-/**
- * Check if cleanroom is available
- * @returns {boolean} True if cleanroom is available
- */
 export function isCleanroomAvailable() {
+  if (process.env.RUN_CLEANROOM !== '1' && process.env.CI !== 'true') {
+    throw new Error('Cleanroom environment is not enabled. Set RUN_CLEANROOM=1 or CI=true to run cleanroom tests.')
+  }
   if (setupFailedError) {
     throw setupFailedError
   }
   if (process.env.CLEANROOM_SETUP_ERROR) {
     throw new Error(process.env.CLEANROOM_SETUP_ERROR)
   }
-  return cleanroomSetup || process.env.CLEANROOM_SETUP_SUCCESS === 'true'
+  return true
 }
 
 /**
@@ -63,8 +62,7 @@ export function isCleanroomAvailable() {
  */
 export async function setup() {
   if (process.env.RUN_CLEANROOM !== '1' && process.env.CI !== 'true') {
-    console.log('⏭️ Skipping Docker cleanroom setup for fast DX (use RUN_CLEANROOM=1 to enable)')
-    return
+    throw new Error('Cleanroom environment is not enabled. Set RUN_CLEANROOM=1 or CI=true to run cleanroom tests.')
   }
 
   try {

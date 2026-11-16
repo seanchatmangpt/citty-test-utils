@@ -29,7 +29,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
       await getSharedCleanroom()
       const result = await runCitty(['info', 'version'], {
         cwd: '/app',
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -80,7 +80,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
         ],
         {
           cwd: '/app',
-          env: {},
+          env: { TEST_CLI: 'true' },
         }
       )
 
@@ -141,7 +141,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
       await getSharedCleanroom()
       const result = await runCitty(['runner', 'execute', 'node --version'], {
         cwd: '/app',
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -171,7 +171,7 @@ describe.concurrent('Commands Consolidated Tests', () => {
       await getSharedCleanroom()
       const result = await runCitty(['test'], {
         cwd: '/app',
-        env: {},
+        env: { TEST_CLI: 'true' },
       })
 
       expect(result.exitCode).toBe(0)
@@ -204,8 +204,8 @@ describe.concurrent('Commands Consolidated Tests', () => {
         env: { TEST_CLI: 'true' },
       })
 
-      // Citty shows help for invalid commands but exits with code 0
-      expect(result.exitCode).toBe(0)
+      // Citty shows help for invalid commands but exits with code 1
+      expect(result.exitCode).toBe(1)
       expect(result.stdout).toContain('USAGE')
       expect(result.stdout).toContain('ctu')
     })

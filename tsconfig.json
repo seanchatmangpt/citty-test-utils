@@ -18,8 +18,12 @@
   },
   "include": [
     "src/**/*",
+    "packages/**/*",
+    "projects/**/*",
     "test/**/*",
-    "playground/**/*"
+    "playground/**/*",
+    "index.js",
+    "*.mjs"
   ]
 }
 

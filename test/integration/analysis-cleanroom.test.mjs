@@ -6,20 +6,16 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { setupCleanroom, runCitty, teardownCleanroom } from 'un-test-utils'
 
 describe('Analysis Commands Cleanroom Tests', () => {
-  if (process.env.RUN_CLEANROOM !== '1') return
+  if (process.env.RUN_CLEANROOM !== '1' && process.env.CI !== 'true') {
+    throw new Error('Cleanroom environment is not enabled. Set RUN_CLEANROOM=1 or CI=true to run cleanroom tests.')
+  }
   let cleanroomSetup = false
 
   beforeAll(async () => {
     console.log('🐳 Setting up Docker cleanroom for analysis tests...')
-    try {
-      await setupCleanroom({ rootDir: '.', timeout: 120000 })
-      cleanroomSetup = true
-      console.log('✅ Cleanroom setup complete')
-    } catch (error) {
-      console.warn('⚠️ Cleanroom setup failed:', error.message)
-      console.log('📝 Skipping cleanroom analysis tests')
-      cleanroomSetup = false
-    }
+    await setupCleanroom({ rootDir: '.', timeout: 120000 })
+    cleanroomSetup = true
+    console.log('✅ Cleanroom setup complete')
   }, 120000)
 
   afterAll(async () => {
@@ -36,7 +32,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
 
   describe('Analysis Stats Command', () => {
     it('should show coverage statistics in cleanroom', async () => {
-      if (!cleanroomSetup) return
       const result = await runCitty(['analysis', 'stats'], {
         env: { TEST_CLI: 'true' },
         timeout: 15000,
@@ -52,7 +47,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
     })
 
     it('should show verbose output when requested', async () => {
-      if (!cleanroomSetup) return
       const result = await runCitty(['analysis', 'stats', '--verbose'], {
         env: { TEST_CLI: 'true' },
         timeout: 15000,
@@ -66,7 +60,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
 
   describe('Analysis Analyze Command', () => {
     it('should perform full analysis in cleanroom', async () => {
-      if (!cleanroomSetup) return
       const result = await runCitty(['analysis', 'analyze'], {
         env: { TEST_CLI: 'true' },
         timeout: 20000,
@@ -80,7 +73,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
     })
 
     it('should support different output formats concurrently', async () => {
-      if (!cleanroomSetup) return
       // Test multiple formats concurrently
       const formatTests = [
         runCitty(['analysis', 'analyze', '--format', 'text'], {
@@ -118,7 +110,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
 
   describe('Analysis Export Command', () => {
     it('should export multiple formats concurrently in cleanroom', async () => {
-      if (!cleanroomSetup) return
       const exportOperations = [
         runCitty(
           ['analysis', 'export', '--format', 'json', '--output', '/tmp/coverage-cleanroom.json'],
@@ -163,7 +154,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
 
   describe('Analysis Report Command', () => {
     it('should generate reports in multiple formats concurrently', async () => {
-      if (!cleanroomSetup) return
       const reportOperations = [
         runCitty(['analysis', 'report'], { env: { TEST_CLI: 'true' }, timeout: 20000 }),
         runCitty(['analysis', 'report', '--format', 'json'], {
@@ -189,7 +179,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
 
   describe('Analysis Command Help', () => {
     it('should show all help commands concurrently', async () => {
-      if (!cleanroomSetup) return
       const helpOperations = [
         runCitty(['analysis', '--show-help'], { env: { TEST_CLI: 'true' }, timeout: 10000 }),
         runCitty(['analysis', 'analyze', '--show-help'], { env: { TEST_CLI: 'true' }, timeout: 10000 }),
@@ -225,7 +214,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
 
   describe('Maximum Concurrency Tests', () => {
     it('should run multiple analysis operations concurrently', async () => {
-      if (!cleanroomSetup) return
       // Run multiple analysis operations in parallel
       const operations = [
         runCitty(['analysis', 'stats'], { env: { TEST_CLI: 'true' }, timeout: 15000 }),
@@ -261,7 +249,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
     })
 
     it('should handle concurrent exports with different formats and URIs', async () => {
-      if (!cleanroomSetup) return
       const exportOperations = [
         runCitty(
           [
@@ -338,7 +325,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
     })
 
     it('should run mixed analysis operations concurrently', async () => {
-      if (!cleanroomSetup) return
       const mixedOperations = [
         // Stats with verbose
         runCitty(['analysis', 'stats', '--verbose'], { env: { TEST_CLI: 'true' }, timeout: 15000 }),
@@ -393,7 +379,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
 
   describe('Cleanroom Isolation Verification', () => {
     it('should not pollute main project with analysis files', async () => {
-      if (!cleanroomSetup) return
       // Run analysis export in cleanroom
       const result = await runCitty(
         ['analysis', 'export', '--format', 'json', '--output', '/tmp/analysis-test.json'],
@@ -411,7 +396,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
     })
 
     it('should handle analysis commands with test CLI', async () => {
-      if (!cleanroomSetup) return
       const result = await runCitty(['analysis', 'stats', '--use-test-cli'], {
         env: { TEST_CLI: 'true' },
         timeout: 15000,
@@ -422,7 +406,6 @@ describe('Analysis Commands Cleanroom Tests', () => {
     })
 
     it('should maintain isolation with concurrent file operations', async () => {
-      if (!cleanroomSetup) return
       // Run multiple file operations concurrently to test isolation
       const fileOperations = [
         runCitty(

@@ -3,23 +3,19 @@ import { setupCleanroom, runCitty, teardownCleanroom } from 'un-test-utils'
 import { scenario } from '@un-test/scenario'
 
 describe('Production Deployment Tests', () => {
-  if (process.env.RUN_CLEANROOM !== '1') return
+  if (process.env.RUN_CLEANROOM !== '1' && process.env.CI !== 'true') {
+    throw new Error('Cleanroom environment is not enabled. Set RUN_CLEANROOM=1 or CI=true to run cleanroom tests.')
+  }
   let cleanroomSetup = false
 
   beforeAll(async () => {
     console.log('🐳 Setting up production Docker environment...')
-    try {
-      await setupCleanroom({
-        rootDir: './playground',
-        timeout: 60000, // 1 minute timeout
-      })
-      cleanroomSetup = true
-      console.log('✅ Production environment setup complete')
-    } catch (error) {
-      console.warn('⚠️ Production environment setup failed:', error.message)
-      console.log('📝 Skipping production deployment tests')
-      cleanroomSetup = false
-    }
+    await setupCleanroom({
+      rootDir: './playground',
+      timeout: 60000, // 1 minute timeout
+    })
+    cleanroomSetup = true
+    console.log('✅ Production environment setup complete')
   }, 60000)
 
   afterAll(async () => {
@@ -36,11 +32,6 @@ describe('Production Deployment Tests', () => {
 
   describe('Production CLI Deployment', () => {
     it('should run playground CLI with production npm package', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const result = await runCitty(['--show-help'], {
         cliPath: '/app/src/cli.mjs', // Use playground CLI with production npm package
         timeout: 30000,
@@ -54,11 +45,6 @@ describe('Production Deployment Tests', () => {
     }, 30000)
 
     it('should handle playground commands in production', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const result = await runCitty(['greet', 'Production'], {
         cliPath: '/app/src/cli.mjs',
         timeout: 30000,
@@ -71,11 +57,6 @@ describe('Production Deployment Tests', () => {
     }, 30000)
 
     it('should handle playground math operations in production', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const result = await runCitty(['math', 'multiply', '7', '8'], {
         cliPath: '/app/src/cli.mjs',
         timeout: 30000,
@@ -85,11 +66,6 @@ describe('Production Deployment Tests', () => {
     }, 30000)
 
     it('should handle playground JSON output in production', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const result = await runCitty(['greet', 'Test', '--json'], {
         cliPath: '/app/src/cli.mjs',
         timeout: 30000,
@@ -104,11 +80,6 @@ describe('Production Deployment Tests', () => {
 
   describe('Production Workflow Deployment', () => {
     it('should execute complex playground workflow in production', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const result = await scenario('Production Playground Workflow')
         .step('Get playground help')
         .run(['--show-help'])
@@ -132,11 +103,6 @@ describe('Production Deployment Tests', () => {
     }, 45000)
 
     it('should handle production error scenarios', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const result = await scenario('Production Error Handling')
         .step('Handle invalid command')
         .run(['invalid-command'])
@@ -158,11 +124,6 @@ describe('Production Deployment Tests', () => {
 
   describe('Production Performance Tests', () => {
     it('should handle concurrent playground operations in production', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const startTime = Date.now()
 
       // Run multiple playground operations concurrently
@@ -194,11 +155,6 @@ describe('Production Deployment Tests', () => {
     }, 60000)
 
     it('should handle production stress testing', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const startTime = Date.now()
       const iterations = 10
 
@@ -223,11 +179,6 @@ describe('Production Deployment Tests', () => {
 
   describe('Production Integration Tests', () => {
     it('should work with production environment variables', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       const result = await runCitty(['greet', 'Production', '--json'], {
         cliPath: '/app/src/cli.mjs',
         env: {
@@ -245,11 +196,6 @@ describe('Production Deployment Tests', () => {
     }, 30000)
 
     it('should handle production file operations', async () => {
-      if (!cleanroomSetup) {
-        console.log('⏭️ Skipping test - production environment not available')
-        return
-      }
-
       // Test that the playground CLI can handle file operations in production
       const result = await runCitty(['--show-help'], {
         cliPath: '/app/src/cli.mjs',
